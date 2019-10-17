@@ -1,0 +1,60 @@
+{
+    "manifest_version": 2,
+    "name": "Yandex music control",
+    "description": "Yandex music control",
+    "version": "1.0",
+    "icons": {
+        "128": "img/iconY.png"
+    },
+    "background": {
+        "scripts": ["background.js"],
+        "persistent": false
+    },
+    "content_scripts": [{
+        "matches": ["<all_urls>"],
+        "all_frames": false,
+        "js": ["contentScript.js"]
+    }],
+    "browser_action": {
+        "default_icon": "img/iconY.png",
+        "default_popup": "popup.html"
+    },
+    "commands": {
+        "next-key": {
+            "description": "Next",
+            "global": true,
+            "suggested_key": {
+                "default": "Ctrl+Shift+9",
+                "mac": "Command+Shift+9"
+            }
+        },
+        "play-key": {
+            "description": "Play/Pause",
+            "global": true,
+            "suggested_key": {
+                "default": "Ctrl+Shift+8",
+                "mac": "Command+Shift+8"
+            }
+        },
+        "previous-key": {
+            "description": "Previous",
+            "global": true,
+            "suggested_key": {
+                "default": "Ctrl+Shift+7",
+                "mac": "Command+Shift+7"
+            }
+        }
+    },
+    "content_security_policy": "script-src 'self' https://ssl.google-analytics.com; object-src 'self'",
+
+    "permissions": [
+        "unlimitedStorage",
+        "notifications",
+        "activeTab",
+        "tabs",
+        "notifications"
+
+
+
+    ]
+}
