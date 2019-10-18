@@ -26,6 +26,10 @@ h6 {
     margin: 10px;
 }
 
+#shortcuts {
+    margin-top: 0px;
+}
+
 h4 {
     font-weight: bolder;
 }
