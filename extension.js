@@ -64,20 +64,21 @@ let toggleMenu = () => {
 document.addEventListener('DOMContentLoaded', function() {
     sendEvent("extensionIsLoad");
     sendEvent("getPause");
+    pushEvent("Extension Loaded", "loaded");
     container.onclick = function() {
         toggleMenu();
     }
     previous[0].addEventListener('click', function() {
         sendEvent("previous", true);
         console.log("previous click");
-        pushEvent(previous[0].className)
+        pushEvent(previous[0].className, "clicked")
 
     });
     pause[0].addEventListener('click', function() {
         sendEvent("pause");
         changeState();
         console.log("pause click");
-        pushEvent(pause[0].className)
+        pushEvent(pause[0].className, "clicked")
 
         //console.log(pause[0].className)
 
@@ -87,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
     next[0].addEventListener('click', function() {
         sendEvent("next", true);
         console.log("next click");
-        pushEvent(next[0].className)
+        pushEvent(next[0].className, "clicked")
 
     });
     trackImg[0].addEventListener('click', function() {
@@ -99,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     like[0].onclick = function() {
         sendEvent("like");
-        pushEvent(like[0].className)
+        pushEvent(like[0].className, "clicked")
 
     }
     shortCuts.onclick = () => {
@@ -257,8 +258,8 @@ function sendEvent(event, isBtn) {
     });
 }
 let urlCover;
-let pushEvent = (target) => {
-    _gaq.push(['_trackEvent', target, 'clicked']);
+let pushEvent = (target, event) => {
+    _gaq.push(['_trackEvent', target, event]);
 
 }
 
