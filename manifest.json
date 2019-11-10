@@ -1,19 +1,20 @@
 {
     "manifest_version": 2,
     "name": "Yandex music control",
+    "short_name": "Yandex Music",
     "description": "Yandex music control",
-    "version": "1.0",
+    "version": "1.1",
     "icons": {
         "128": "img/iconY.png"
     },
     "background": {
-        "scripts": ["background.js"],
+        "scripts": ["js/background.js"],
         "persistent": false
     },
     "content_scripts": [{
         "matches": ["<all_urls>"],
         "all_frames": false,
-        "js": ["contentScript.js"]
+        "js": ["js/contentScript.js"]
     }],
     "browser_action": {
         "default_icon": "img/iconY.png",
@@ -48,13 +49,10 @@
     "content_security_policy": "script-src 'self' https://ssl.google-analytics.com; object-src 'self'",
 
     "permissions": [
-        "unlimitedStorage",
-        "notifications",
-        "activeTab",
         "tabs",
-        "notifications"
-
-
-
+        "notifications",
+        "https://music.yandex.ua/*",
+        "https://music.yandex.ru/*",
+        "https://music.yandex.by/*"
     ]
 }

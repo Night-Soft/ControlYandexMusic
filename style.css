@@ -23,11 +23,12 @@ li {
 h6 {
     font-weight: lighter;
     text-align: left;
+    font-weight: normal;
     margin: 10px;
 }
 
 #shortcuts {
-    margin-top: 0px;
+    margin-top: 5px;
 }
 
 h4 {
@@ -35,10 +36,13 @@ h4 {
 }
 
 a {
-    /* text-shadow: 0px 0px 5px #ffffff; */
     background: white;
     padding: 3px 5px 5px;
     border-radius: 5px;
+}
+
+#headAllows {
+    font-size: 1.5rem;
 }
 
 .title {
@@ -47,7 +51,6 @@ a {
     text-align: center;
     margin: 15px;
     font-family: 'Roboto', sans-serif;
-    /* text-shadow: 0px 0px 15px #fffdfd; */
 }
 
 .content {
@@ -61,7 +64,6 @@ a {
 }
 
 .control {
-    /* background-color: #6d63b3; */
     background-color: rgba(252, 252, 255, 0.1);
     border-radius: 50%;
     border-style: solid;
@@ -84,7 +86,7 @@ a {
 .previous {
     cursor: pointer;
     cursor: pointer;
-    background-image: url(img/previous.svg);
+    background-image: url(img/previous.png);
     background-repeat: no-repeat, repeat;
     background-position: center;
 }
@@ -92,7 +94,7 @@ a {
 .next {
     cursor: pointer;
     cursor: pointer;
-    background-image: url(img/next.svg);
+    background-image: url(img/next.png);
     background-repeat: no-repeat, repeat;
     background-position: center;
 }
@@ -100,7 +102,7 @@ a {
 .pause {
     cursor: pointer;
     cursor: pointer;
-    background-image: url(img/pause.svg);
+    background-image: url(img/pause.png);
     background-repeat: no-repeat, repeat;
     background-position: center;
     width: 90px;
@@ -121,7 +123,7 @@ a {
 .like {
     cursor: pointer;
     cursor: pointer;
-    background-image: url(img/unLike.svg);
+    background-image: url(img/unLike.png);
     background-repeat: no-repeat, repeat;
     background-position: center;
     background-size: 45px;
@@ -133,7 +135,7 @@ a {
 }
 
 .cover {
-    background-image: url(img/icon.svg);
+    background-image: url(img/icon.png);
     background-repeat: no-repeat, repeat;
     background-position: center;
     width: 150px;
@@ -154,28 +156,17 @@ a {
 
 .modal {
     display: none;
-    /* Hidden by default */
     position: fixed;
-    /* Stay in place */
     z-index: 1;
-    /* Sit on top */
     left: 0;
     top: 0;
     width: 100%;
-    /* Full width */
     height: 100%;
-    /* Full height */
     overflow: auto;
-    /* Enable scroll if needed */
     background-color: rgb(0, 0, 0);
-    /* Fallback color */
     background-color: rgba(0, 0, 0, 0.4);
-    /* Black w/ opacity */
     cursor: pointer;
 }
-
-
-/* Modal Content */
 
 .modal-cover {
     margin: auto;
@@ -296,7 +287,6 @@ a {
 .side {
     padding: 10px;
     margin: 5px 0px 5px 0px;
-    /* border-radius: 10px; */
     font-size: 1.5rem;
     cursor: pointer;
     transition: 0.4s;
@@ -373,14 +363,16 @@ a {
 }
 
 .icon {
-    background-image: url(img/icon.svg);
+    background-image: url(img/icon.png);
     background-repeat: no-repeat, repeat;
     background-position: center;
     width: 150px;
     height: 150px;
     background-size: contain;
     align-self: center;
-    border-radius: 15px;
+    border-radius: 50%;
+    border: white;
+    border-style: solid;
 }
 
 .close-side {
@@ -391,8 +383,6 @@ a {
     transition: all 0.5s ease 1s;
 }
 
-.title-about {}
-
 .content-about {
     display: flex;
     flex-direction: column;
@@ -402,7 +392,6 @@ a {
     color: white;
     border-width: 10px;
     background: #FF3333;
-    /* border-style: solid; */
     border-radius: 10px;
 }
 
@@ -483,7 +472,7 @@ a {
 .donationalerts {
     transition: 0.5s;
     background: #172334;
-    background-image: url(img/donationalerts.svg);
+    background-image: url(img/donationalerts.png);
     background-repeat: no-repeat, repeat;
     background-position: center 45px;
     width: 40%;
@@ -496,7 +485,7 @@ a {
 
 .donationalerts:hover {
     background: #203047;
-    background-image: url(img/donationalerts.svg);
+    background-image: url(img/donationalerts.png);
     background-repeat: no-repeat, repeat;
     background-position: center 45px;
     width: 50%;
@@ -511,7 +500,7 @@ a {
     display: none;
     transition: 0.5s;
     background: #172334;
-    background-image: url(img/donationalerts.svg);
+    background-image: url(img/donationalerts.png);
     background-repeat: no-repeat, repeat;
     background-position: center 30px;
     width: 40%;
@@ -537,7 +526,7 @@ a {
 .paypal {
     transition: 0.5s;
     background: #172334;
-    background-image: url(img/payplal.svg);
+    background-image: url(img/payplal.png);
     background-repeat: no-repeat, repeat;
     background-position: center;
     width: 40%;
@@ -550,7 +539,7 @@ a {
 
 .paypal:hover {
     background: #203047;
-    background-image: url(img/payplal.svg);
+    background-image: url(img/payplal.png);
     background-repeat: no-repeat, repeat;
     background-position: center;
     width: 50%;
@@ -564,7 +553,7 @@ a {
 .paypal-menu {
     display: none;
     background: #172334;
-    background-image: url(img/payplal.svg);
+    background-image: url(img/payplal.png);
     color: white;
     text-align: center;
     background-size: 100px;
@@ -646,21 +635,6 @@ a {
     -webkit-animation: scale-in-center 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
     animation: scale-in-center 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
 }
-
-
-/* ----------------------------------------------
- * Generated by Animista on 2019-10-8 22:5:6
- * Licensed under FreeBSD License.
- * See http://animista.net/license for more info. 
- * w: http://animista.net, t: @cssanimista
- * ---------------------------------------------- */
-
-
-/**
- * ----------------------------------------
- * animation scale-in-center
- * ----------------------------------------
- */
 
 @-webkit-keyframes scale-in-center {
     0% {
