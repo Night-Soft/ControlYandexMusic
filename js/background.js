@@ -21,15 +21,32 @@ chrome.commands.onCommand.addListener(function(command) {
     console.log('Command:', command);
     console.log('Command:', cmd);
 });
+
 chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
         console.log(request)
         if (request.backgroundMessage == "background") {
             setNotifications(request.name, request.artists, request.imageUrl);
-
+        }
+        if (request.onload == true) {
+            console.log("first load is")
+            firstLoad(request.activeTab);
         }
     });
 
+let firstLoad = (activeTab) => {
+    chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+        console.log('tab id = ' + tabId);
+        console.log('activeTab = ' + activeTab);
+
+        if (tabId == activeTab && changeInfo.status == 'complete') {
+            console.log('load was ');
+            sendFirstLoad();
+            // do your things
+
+        }
+    });
+}
 
 function sendEvent(event, isKey) {
     let activeTab;
@@ -49,6 +66,24 @@ function sendEvent(event, isKey) {
             console.log('event is ' + event);
 
         });
+    });
+}
+
+function sendFirstLoad() {
+    let activeTab;
+    chrome.tabs.query({ windowType: "normal" }, function(tabs) {
+        for (let i = tabs.length - 1; i >= 0; i--) {
+            console.log("tabs length = " + tabs.length);
+            if (tabs[i].url.startsWith("https://music.yandex")) {
+                console.log(tabs[i].url);
+                console.log("current tab = " + i);
+                activeTab = tabs[i].id;
+                break;
+
+            }
+
+        }
+        chrome.runtime.sendMessage({ onload: true });
     });
 }
 

@@ -42,6 +42,26 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     //console.log(request);
 
 });
+let onloadS = () => {
+
+    }
+    // let body = document.getElementsByTagName("body");
+    // window.addEventListener("onload", function() {
+    //     console.log('onload is window');
+    //     chrome.runtime.sendMessage({ onload: "load" });
+    // });
+    // document.addEventListener("onload", function() {
+    //     console.log('onload is document');
+    //     chrome.runtime.sendMessage({ onload: "load" });
+    // });
+    // body.addEventListener("onload", function() {
+    //     console.log('onload is document');
+    //     chrome.runtime.sendMessage({ onload: "load" });
+    // });        "run_at": "document_end",
+
+console.log('why not load');
+
+
 
 
 function setPrevious() {
@@ -63,6 +83,8 @@ function setPause() {
     let pauseTarget = document.getElementsByClassName("deco-player-controls__button player-controls__btn_play");
     pauseTarget[0].click();
     console.log("title " + pauseTarget[0].title)
+    console.log("getTimeStamp " + this.getTimeStamp())
+
     sendMsgPause();
 }
 

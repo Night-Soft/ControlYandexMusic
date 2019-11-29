@@ -1,0 +1,36 @@
+{
+    "appName": {
+        "message": "Управление Яндекс музыкой"
+    },
+    "appDesc": {
+        "message": "Управление Яндекс музыкой"
+    },
+    "shortName": {
+        "message": "Яндекс Музыка"
+    },
+    "title": {
+        "message": "Яндекс Музыка"
+    },
+    "trackName": {
+        "message": "Имя"
+    },
+    "artistName": {
+        "message": "Исполнитель"
+    },
+    "about": {
+        "message": "О приложении"
+    },
+    "contactMe": {
+        "message": "Связь с разработчиком"
+    },
+    "openShortcuts": {
+        "message": "Cочетания клавиш"
+    },
+    "helpMenu": {
+        "message": "Помочь разработке"
+    },
+    "writeLetter": {
+        "message": "Написать "
+    }
+
+}

@@ -1,0 +1,36 @@
+{
+    "appName": {
+        "message": "Yandex music control"
+    },
+    "appDesc": {
+        "message": "Yandex music control"
+    },
+    "shortName": {
+        "message": "Yandex Music"
+    },
+    "title": {
+        "message": "Yandex Music"
+    },
+    "trackName": {
+        "message": "Name"
+    },
+    "artistName": {
+        "message": "Artist Name"
+    },
+    "about": {
+        "message": "About"
+    },
+    "contactMe": {
+        "message": "Contact Me"
+    },
+    "openShortcuts": {
+        "message": "Open Keyboard shortcuts"
+    },
+    "helpMenu": {
+        "message": "Say thanks to the developer"
+    },
+    "writeLetter": {
+        "message": "Any questions write to "
+    }
+
+}

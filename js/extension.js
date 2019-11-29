@@ -8,6 +8,7 @@ let trackImg = document.getElementsByClassName("cover");
 let modal = document.getElementsByClassName("modal");
 let modalCover = document.getElementsByClassName("modal-cover");
 let like = document.getElementsByClassName("like");
+//start [0]
 let container = document.getElementsByClassName("container")[0];
 let containerMenu = document.getElementsByClassName("content-menu")[0];
 let modalSide = document.getElementsByClassName("modal-side")[0];
@@ -31,6 +32,7 @@ let statePlay = false;
 let isBarOpen = false;
 //let isLike = false;
 let i = 0;
+
 let addAnimListener = () => {
     if (isBarOpen == true) {
         containerMenu.addEventListener("animationend", endAnimation);
@@ -61,10 +63,91 @@ let toggleMenu = () => {
     }
 
 }
+let tabId = 0;
+let tabIs = 0;
+
+// var promise1 = new Promise(function(resolve, reject) {
+//     getTabs();
+//     async function getTabs() {
+//         chrome.tabs.query({ windowType: "normal" }, function(tabs) {
+//             for (let i = tabs.length - 1; i >= 0; i--) {
+//                 console.log("tabs length getTab = " + tabs.length);
+//                 if (tabs[i].url.startsWith("https://music.yandex")) {
+//                     console.log("GetTab = " + tabs[i].url);
+//                     console.log("current tab = " + i);
+//                     //activeTab = tabs[i].id;
+//                     tabId = tabs[i].id;
+//                     tabIs = true;
+
+//                     console.log("tabId = " + tabId);
+//                     resolve('true');
+//                     //return tabIs;
+
+//                 } else if (tabIs != true && i == 0) {
+//                     tabIs = false;
+//                     console.log("tab2222 = " + tabIs);
+//                     resolve('false');
+
+//                     //return tabIs;
+
+//                 }
+//             }
+//         });
+//         //console.log(tabIs + ' tab is');
+//         //resolve('fooTab');
+
+//     }
+// });
+
+let firstLoadIs = () => {
+    sendEvent("extensionIsLoad");
+    sendEvent("getPause");
+}
+
+function getTab() {
+    return new Promise(function(resolve, reject) {
+        chrome.tabs.query({ windowType: "normal" }, function(tabs) {
+            for (let i = tabs.length - 1; i >= 0; i--) {
+                console.log("tabs length getTab = " + tabs.length);
+                if (tabs[i].url.startsWith("https://music.yandex")) {
+                    console.log(tabs[i].url);
+                    tabId = tabs[i].id;
+                    console.log("tabId GetTab() = " + tabId);
+                    tabId = tabs[i].id;
+                    tabIs = true;
+                    resolve(tabs[i].id);
+
+                    console.log("tabId = " + tabId);
+                    //resolve('true');
+                    //return tabIs;
+
+                } else if (tabIs != true && i == 0) {
+                    tabIs = false;
+                    console.log("tabIs = " + tabIs);
+                    resolve(false);
+
+                    //return tabIs;
+
+
+                }
+            }
+        });
+    });
+
+}
+
+//console.log(getTab() + " getTab");
 document.addEventListener('DOMContentLoaded', function() {
     sendEvent("extensionIsLoad");
     sendEvent("getPause");
-    //pushEvent("Extension Loaded", "loaded");
+    getTab().then(function(value) {
+        console.log("value = " + value)
+        if (value == false) {
+            chrome.tabs.create({ url: "https://music.yandex.ru", active: false });
+            sendFirstLoad("firstLoad");
+        }
+    });
+
     container.onclick = function() {
         toggleMenu();
     }
@@ -226,6 +309,19 @@ chrome.runtime.onMessage.addListener(
             console.log(request.like + " - like")
 
         }
+        if (request.onload == true) {
+            sendEvent("extensionIsLoad");
+            sendEvent("getPause");
+            console.log(request.onload + " - onload popup is")
+
+            getTab().then(function(value) {
+                console.log(value + " - value Promise")
+                if (value) {
+                    chrome.tabs.update(value, { active: true });
+
+                }
+            });
+        }
 
 
     });
@@ -247,14 +343,32 @@ function sendEvent(event, isBtn) {
                 break;
             }
         }
-        //chrome.tabs.executeScript(null, { code: "externalAPI.togglePause();" });
+        //chrome.tabs.executeScript(activeTab, { code: "console.log('external' + getSourceInfo());" });
         chrome.tabs.sendMessage(activeTab, {
             data: event,
             btn: isBtn
-        }, function(response) {
-            console.log('success ' + event);
-
         });
+    });
+}
+
+function sendFirstLoad(event) {
+    let activeTab;
+    chrome.tabs.query({
+        //url: "https://music.yandex.ua/*",
+        windowType: "normal"
+    }, function(tabs) {
+        for (let i = tabs.length - 1; i >= 0; i--) {
+            console.log("tabs length = " + tabs.length);
+            if (tabs[i].url.startsWith("https://music.yandex")) {
+                console.log(tabs[i].url);
+                console.log("current tab = " + i);
+                activeTab = tabs[i].id;
+                break;
+            }
+        }
+        //chrome.tabs.executeScript(activeTab, { code: "console.log('external' + getSourceInfo());" });
+        chrome.runtime.sendMessage({ onload: true, activeTab: activeTab });
+
     });
 }
 let urlCover;
@@ -297,9 +411,9 @@ function changeState() {
 
 function setLike(isLike) {
     if (isLike == true) { // noGood
-        like[0].style.backgroundImage = "url(img/like.svg)";
+        like[0].style.backgroundImage = "url(img/like.png)";
     } else {
-        like[0].style.backgroundImage = "url(img/unLike.svg)";
+        like[0].style.backgroundImage = "url(img/unLike.png)";
 
     }
 
