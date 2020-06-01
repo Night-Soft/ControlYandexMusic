@@ -31,6 +31,6 @@
     <h2>Installation and launch</h2>
     <p>
     To install you need to clone this repo and open your extensions tab, then click "Load unpacked" extension button and choose the folder to which it was downloaded. Or  
-        <a href="https://github.com/Night-Soft/MyCountDownTimer/releases">Download</a> the latest stable version from Chrome Web Store.
+        <a href="https://chrome.google.com/webstore/detail/yandex-music-control/bhcfibiihpkamomgolcmafcblbaonlka">Download</a> the latest stable version from Chrome Web Store.
     </p>
 </div>
