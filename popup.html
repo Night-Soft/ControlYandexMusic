@@ -5,10 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
+    <title>Yandex Music</title>
     <link rel="stylesheet" href="style.css">
-    <script src="js/popup.js"></script>
-    <link href="https://fonts.googleapis.com/css?family=Bree+Serif&display=swap" rel="stylesheet">
+    <script src="js/load.js"></script>
+    <!-- <script async src="js/popup.js"></script> -->
 </head>
 
 <body>
@@ -20,24 +20,42 @@
     <div class="modal-side">
         <div class="content-menu slide-out">
             <div class="title title-menu ">Control Yandex Music</div>
-            <div class="side ">About</div>
-            <div id="contactMe" class="side ">Contact Me</div>
-            <div class="side ">Open keyboard shortcuts</div>
+            <div class="list-menu">
+                <div class="side ">About</div>
+                <div class="side settings">
+                    <span id="settings" class="title-span">Say thanks to the developer</span>
 
-            <div class="side-help ">
-                <span class="title-help title-help-menu">Say thanks to the developer</span>
+                    <div id="listSettings" class="list-settings">
+                        <span id="showNotify">Show notifications when control from keyboard: </span>
+                        <div class="content-label">
+                            <label id="playPauseNotify" for="n1">Notification when play / pause.</label>
+                            <input type="checkbox" id="n1">
+                        </div>
+                        <div class="content-label">
+                            <label id="prevNextNotify" for="n2">Notification when previous / next track.</label>
+                            <input type="checkbox" id="n2">
+                        </div>
 
-                <div class="paypal-menu">
-                    <span class="paypal-title">PayPal</span>
+
+                    </div>
+
                 </div>
-                <div class="donationalerts-menu">
-                    <span class="donationalerts-title">Donation Alerts</span>
+                <div id="contactMe" class="side ">Contact Me</div>
+                <div id="shortCuts" class="side ">Open keyboard shortcuts</div>
+                <div class="side-help ">
+                    <span id="help" class="title-help title-help-menu">Say thanks to the developer</span>
+
+                    <!-- <div class="paypal-menu">
+                        <span class="paypal-title">PayPal</span>
+                    </div> -->
+                    <div class="donationalerts-menu">
+                        <span class="donationalerts-title">Donation Alerts</span>
+                    </div>
                 </div>
             </div>
-
             <div class="support-menu">
                 <h4>Any questions write to
-                    <a href="mailto:support@night-software.cf">support@night-software.cf</a>
+                    <a href="mailto:nightsoftware@outlook.com">nightsoftware@outlook.com</a>
                 </h4>
             </div>
         </div>
@@ -45,7 +63,7 @@
     </div>
     <div class="title ">Yandex Music</div>
     <div class="content-track ">
-        <div class="cover "></div>
+        <div class="cover"></div>
         <div class="modal ">
             <img class="modal-cover scale-in-center"></img>
         </div>
@@ -54,13 +72,45 @@
             <div class="title name-artists ">Name Artists</div>
         </div>
     </div>
+    <!-- <div class="grove-box">
+        <div class="groove-content">
+            <div class="groove-all ">
+                <div class="groove-current "></div>
+                <div class="handle ">
+                    <div class="move-time ">
+                        <span id="Time">2:11</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div> -->
+
     <div class="content ">
         <div class="previous control "></div>
         <div class="pause control "></div>
         <div class="next control "></div>
         <div class="like control "></div>
     </div>
+    <div class="no-connect">
+        <h2 id="AppDetected">App detected tab with "Yandex Music" but can't connect to the tab!</h2>
+        <div class="loader-container">
+            <div class="loader ">
+                <div class="loader2"></div>
+            </div>
+        </div>
+        <h2 id="AppQuestion">Reload the tab or open new?</h2>
+        <div class="yes-no-new">
+            <button id="Yes" class="no-conect-btn">Yes</button>
+            <button id="No" class="no-conect-btn">No</button>
+            <button id="New" class="no-conect-btn">New Yandex Music Tab</button>
+        </div>
+
+    </div>
     <script src="js/extension.js "></script>
+    <script src="js/options.js "></script>
+
+    <!-- <script src="js/grove.js"></script> -->
     <script src="js/translate.js"></script>
 
 </body>

@@ -2,88 +2,147 @@ chrome.commands.onCommand.addListener(function(command) {
     let cmd = command;
     switch (cmd) {
         case 'next-key':
-            console.log("next success");
-            pushEvent(cmd);
-            sendEvent('next', true);
+            sendEvent('next-key', true);
             break;
         case 'previous-key':
-            console.log("previous success");
-            pushEvent(cmd);
-            sendEvent('previous', true);
+            sendEvent('previous-key', true);
             break;
-        case 'play-key':
-            console.log("pause success");
-            pushEvent(cmd);
-            sendEvent('pause', true);
-            //setNotifications();
+        case 'togglePause-key':
+            sendEvent('togglePause-key', true);
+            break;
+        case 'toggleLike-key':
+            sendEvent('toggleLike-key', true);
             break;
     }
-    console.log('Command:', command);
-    console.log('Command:', cmd);
 });
+chrome.runtime.onMessageExternal.addListener(
+    function(request, sender, sendResponse) {
+        if (request.key == "key") {
+            let artists = request.currentTrack.artists;
+            let nameArtists = "";
+            for (let i = 0; i < artists.length; i++) {
+                nameArtists += artists[i].title + ", ";
+                if (i + 1 == artists.length) {
+                    nameArtists = nameArtists.slice(-nameArtists.length, -2);
+                }
+            }
+            let nameTrack = request.currentTrack.title;
+            let iconTrack = request.currentTrack.cover;
+            let isLike = request.currentTrack.liked;
+            iconTrack = "https://" + iconTrack
+            if (iconTrack.endsWith(".svg")) {
+                iconTrack = "img/iconY.svg"
+            } else {
+                iconTrack = iconTrack.slice(0, -2);
+                iconTrack += "200x200";
+                urlCover = iconTrack;
+            }
+            getKey().then((value) => {
+                if (isPlayPuaseNotify == true && isPrevNextNotify == true) {
+                    switch (request.dataKey) {
+                        case 'next-key':
+                            setNotifications(nameTrack, nameArtists, iconTrack);
+                            break;
+                        case 'previous-key':
+                            setNotifications(nameTrack, nameArtists, iconTrack);
+                            break;
+                        case 'togglePause-key':
+                            setNotifications(nameTrack, nameArtists, iconTrack)
+                            break;
+                        case 'toggleLike-key':
+                            let liked = chrome.i18n.getMessage("liked");
+                            let disliked = chrome.i18n.getMessage("disliked");
+                            if (isLike) { // noGood
+                                iconTrack = "img/like.png";
+                                nameArtists = liked;
+                            } else {
+                                iconTrack = "img/disliked.png";
+                                nameArtists = disliked;
 
+                            }
+                            setNotifications(nameTrack, nameArtists, iconTrack)
+                            break;
+                    }
+                } else if (isPlayPuaseNotify == true && isPrevNextNotify == false) {
+                    switch (request.dataKey) {
+                        case 'togglePause-key':
+                            setNotifications(nameTrack, nameArtists, iconTrack)
+                            break;
+                        case 'toggleLike-key':
+                            let liked = chrome.i18n.getMessage("liked");
+                            let disliked = chrome.i18n.getMessage("disliked");
+                            if (isLike) { // noGood
+                                iconTrack = "img/like.png";
+                                nameArtists = liked;
+                            } else {
+                                iconTrack = "img/disliked.png";
+                                nameArtists = disliked;
+
+                            }
+                            setNotifications(nameTrack, nameArtists, iconTrack)
+                            break;
+                    }
+                } else if (isPlayPuaseNotify == false && isPrevNextNotify == true) {
+                    switch (request.dataKey) {
+                        case 'next-key':
+                            setNotifications(nameTrack, nameArtists, iconTrack);
+                            break;
+                        case 'previous-key':
+                            setNotifications(nameTrack, nameArtists, iconTrack);
+                            break;
+                        case 'toggleLike-key':
+                            let liked = chrome.i18n.getMessage("liked");
+                            let disliked = chrome.i18n.getMessage("disliked");
+                            if (isLike) { // noGood
+                                iconTrack = "img/like.png";
+                                nameArtists = liked;
+                            } else {
+                                iconTrack = "img/disliked.png";
+                                nameArtists = disliked;
+
+                            }
+                            setNotifications(nameTrack, nameArtists, iconTrack)
+                            break;
+                    }
+                }
+            });
+
+
+        }
+    });
 chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
-        console.log(request)
         if (request.backgroundMessage == "background") {
             setNotifications(request.name, request.artists, request.imageUrl);
         }
-        if (request.onload == true) {
-            console.log("first load is")
+        if (request.loading == true) {
             firstLoad(request.activeTab);
         }
     });
 
 let firstLoad = (activeTab) => {
     chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-        console.log('tab id = ' + tabId);
-        console.log('activeTab = ' + activeTab);
-
-        if (tabId == activeTab && changeInfo.status == 'complete') {
-            console.log('load was ');
-            sendFirstLoad();
-            // do your things
-
+        if (changeInfo.status == 'complete') {
+            sendFirstLoad(tab.id);
         }
     });
+}
+
+function sendFirstLoad(activeTab) {
+    chrome.runtime.sendMessage({ uploaded: true, activeTab: activeTab });
+
 }
 
 function sendEvent(event, isKey) {
     let activeTab;
     chrome.tabs.query({ windowType: "normal" }, function(tabs) {
         for (let i = tabs.length - 1; i >= 0; i--) {
-            console.log("tabs length = " + tabs.length);
             if (tabs[i].url.startsWith("https://music.yandex")) {
-                console.log(tabs[i].url);
-                console.log("current tab = " + i);
                 activeTab = tabs[i].id;
                 break;
-
             }
-
         }
-        chrome.tabs.sendMessage(activeTab, { data: event, key: isKey }, function(response) {
-            console.log('event is ' + event);
-
-        });
-    });
-}
-
-function sendFirstLoad() {
-    let activeTab;
-    chrome.tabs.query({ windowType: "normal" }, function(tabs) {
-        for (let i = tabs.length - 1; i >= 0; i--) {
-            console.log("tabs length = " + tabs.length);
-            if (tabs[i].url.startsWith("https://music.yandex")) {
-                console.log(tabs[i].url);
-                console.log("current tab = " + i);
-                activeTab = tabs[i].id;
-                break;
-
-            }
-
-        }
-        chrome.runtime.sendMessage({ onload: true });
+        chrome.tabs.sendMessage(activeTab, { commandKey: event, key: isKey });
     });
 }
 
@@ -91,30 +150,31 @@ function setNotifications(trackTitle, trackArtists, iconTrack) {
     if (iconTrack == undefined) {
         iconTrack = "img/iconY.png"
     }
-    chrome.notifications.create("YandexMusicControl", { type: "basic", eventTime: 700.0, title: trackTitle, message: trackArtists, iconUrl: iconTrack }, function(callback) {
-        //chrome.notifications.clear("YandexMusicControl", function (callback){});
-        timer = setTimeout(function() { chrome.notifications.clear("YandexMusicControl"); }, 7000);
+    chrome.notifications.create("YandexMusicControl", {
+        type: "basic",
+        eventTime: 700.0,
+        title: trackTitle,
+        message: trackArtists,
+        iconUrl: iconTrack
+    }, function(callback) {
+        timer = setTimeout(function() {
+            chrome.notifications.clear("YandexMusicControl");
+        }, 7000);
 
-    }); {
-
-    }
+    });
 }
+let isPrevNextNotify = true;
+let isPlayPuaseNotify = true;
 
-//analytics
-
-var _gaq = _gaq || [];
-_gaq.push(['_setAccount', 'UA-150296887-1']);
-_gaq.push(['_trackPageview']);
-
-(function() {
-    var ga = document.createElement('script');
-    ga.type = 'text/javascript';
-    ga.async = true;
-    ga.src = 'https://ssl.google-analytics.com/ga.js';
-    var s = document.getElementsByTagName('script')[0];
-    s.parentNode.insertBefore(ga, s);
-})();
-let pushEvent = (target) => {
-    _gaq.push(['_trackEvent', target, 'background']);
+function getKey() {
+    return new Promise(function(resolve, reject) {
+        chrome.storage.local.get(['key1'], function(result) {
+            isPlayPuaseNotify = result.key1
+        });
+        chrome.storage.local.get(['key2'], function(result) {
+            isPrevNextNotify = result.key2
+            resolve("resolve");
+        });
+    });
 
 }

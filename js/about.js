@@ -10,6 +10,5 @@ donationAlerts.onclick = () => {
     window.open("https://www.donationalerts.com/r/nightsoftware");
 }
 if (language == "ru") {
-    console.log("language " + language);
     title.innerHTML = chrome.i18n.getMessage("title");
 }

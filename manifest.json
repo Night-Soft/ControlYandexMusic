@@ -4,7 +4,8 @@
     "description": "__MSG_appDesc__",
     "short_name": "__MSG_shortName__",
     "default_locale": "en",
-    "version": "1.1",
+    "version": "1.4.1",
+    "web_accessible_resources": ["js/injected.js"],
     "icons": {
         "128": "img/iconY.png"
     },
@@ -30,7 +31,7 @@
                 "mac": "Command+Shift+9"
             }
         },
-        "play-key": {
+        "togglePause-key": {
             "description": "Play/Pause",
             "global": true,
             "suggested_key": {
@@ -45,13 +46,25 @@
                 "default": "Ctrl+Shift+7",
                 "mac": "Command+Shift+7"
             }
+        },
+        "toggleLike-key": {
+            "description": "Set Like",
+            "global": true,
+            "suggested_key": {
+                "default": "Ctrl+Shift+0",
+                "mac": "Command+Shift+0"
+            }
         }
+    },
+    "externally_connectable": {
+        "matches": ["https://music.yandex.ua/*", "https://music.yandex.ru/*", "https://music.yandex.by/*"]
     },
     "content_security_policy": "script-src 'self' https://ssl.google-analytics.com; object-src 'self'",
 
     "permissions": [
         "tabs",
         "notifications",
+        "storage",
         "https://music.yandex.ua/*",
         "https://music.yandex.ru/*",
         "https://music.yandex.by/*",

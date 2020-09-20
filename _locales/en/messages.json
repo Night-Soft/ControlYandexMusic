@@ -1,9 +1,9 @@
 {
     "appName": {
-        "message": "Yandex music control"
+        "message": "Yandex Music control"
     },
     "appDesc": {
-        "message": "Yandex music control"
+        "message": "Yandex Music control"
     },
     "shortName": {
         "message": "Yandex Music"
@@ -31,6 +31,48 @@
     },
     "writeLetter": {
         "message": "Any questions write to "
+    },
+    "yes": {
+        "message": "Yes"
+    },
+    "no": {
+        "message": "No"
+    },
+    "new": {
+        "message": "New 'Yandex Music' tab"
+    },
+    "appDetected": {
+        "message": "App detected tab with 'Yandex Music', but can't connect to the tab!"
+    },
+    "appQuestion": {
+        "message": "Reload the tab or open new?"
+    },
+    "appNoDetected": {
+        "message": "App can't find tab with 'Yandex Music'!"
+    },
+    "appNoQuestion": {
+        "message": "Open the new tab of 'Yandex Music'?"
+    },
+    "waitWhilePage": {
+        "message": "Wait while page is loading!"
+    },
+    "liked": {
+        "message": "Added to my favorites!"
+    },
+    "disliked": {
+        "message": "Removed from my favorites!"
+    },
+    "settings": {
+        "message": "Settings"
+    },
+    "showNotify": {
+        "message": "Show notifications when control from keyboard: "
+    },
+    "playPauseNotify": {
+        "message": "Notification when play / pause."
+    },
+    "prevNextNotify": {
+        "message": "Notification when previous / next track."
     }
 
 }
