@@ -33,7 +33,98 @@ let noConnect = document.getElementsByClassName("no-connect")[0];
 let loaderContainer = document.getElementsByClassName("loader-container")[0];
 let yesNoNew = document.getElementsByClassName("yes-no-new")[0];
 let settingsClass = document.getElementsByClassName("settings")[0];
+let transition = document.getElementsByClassName("transition");
 
+let isMenuOpen = false;
+let newOrReload = true;
+
+let Extension = {
+    onload: function() {
+        openingExtension("extensionIsLoad");
+        getTab().then(function(value) {
+            if (value == false) {
+                appDetected.innerHTML = chrome.i18n.getMessage("appNoDetected");
+                appQuestion.innerHTML = chrome.i18n.getMessage("appNoQuestion");
+                btnNew.style.display = "none";
+                noConnect.style.display = "flex";
+            } else {
+                appDetected.innerHTML = chrome.i18n.getMessage("appDetected");
+                appQuestion.innerHTML = chrome.i18n.getMessage("appQuestion");
+            }
+        });
+        addTransition();
+    }
+};
+
+chrome.runtime.onMessage.addListener(
+    function(request, sender, sendResponse) {
+        if (request.uploaded == true) {
+            chrome.tabs.update(request.activeTab, {
+                active: true
+            });
+        }
+    });
+
+chrome.runtime.onMessageExternal.addListener(
+    function(request, sender, sendResponse) {
+        switch (request.data) {
+            case 'currentTrack':
+                let artists = request.api.artists;
+                let nameArtists = "";
+                for (let i = 0; i < artists.length; i++) {
+                    nameArtists += artists[i].title + ", ";
+                    if (i + 1 == artists.length) {
+                        nameArtists = nameArtists.slice(-nameArtists.length, -2);
+                    }
+                }
+                setMediaData(request.api.title, nameArtists, request.api.cover);
+                changeState(request.isPlaying);
+                toggleLike(request.api.liked);
+                break;
+            case 'togglePause':
+                changeState(request.isPlaying);
+                break;
+            case 'toggleLike':
+                toggleLike(request.isLiked.liked);
+                break;
+            default:
+                break;
+        }
+
+    });
+
+function openingExtension(event) {
+    let activeTab;
+    chrome.tabs.query({
+        windowType: "normal"
+    }, function(tabs) {
+        for (let i = tabs.length - 1; i >= 0; i--) {
+            if (tabs[i].url.startsWith("https://music.yandex")) {
+                activeTab = tabs[i].id;
+                break;
+            }
+        }
+        if (activeTab != undefined) {
+            chrome.tabs.sendMessage(activeTab, {
+                data: event,
+            }, function(response) {
+                try {
+                    response.isConnect;
+                } catch (error) {
+                    console.log(error);
+                    getConnect()
+                }
+
+            });
+        }
+
+    });
+}
+let addTransition = () => {
+    transition[0].style.transition = "1.4s"
+    transition[1].style.transition = "1.4s"
+    transition[2].style.transition = "1.4s"
+}
 settingsClass.onmouseenter = () => {
     listSettings.classList.remove("scale-from-top-out");
     listSettings.className += " scale-from-top";
@@ -53,28 +144,6 @@ function endAnimationList() {
     listSettings.style.display = "none";
     listSettings.removeEventListener("animationend", endAnimationList);
 }
-
-let i = 0;
-let tabId = 0;
-let tabIs = 0;
-let isPlay = false;
-let isMenuOpen = false;
-let isConnected = false;
-let newOrReload = true;
-
-chrome.runtime.onMessage.addListener(
-    function(request, sender, sendResponse) {
-        if (request.uploaded == true) {
-            chrome.tabs.update(request.activeTab, {
-                active: true
-            });
-        }
-        if (request.isConnect == true) {
-            isConnected = true;
-            noConnect.style.display = "none";
-        }
-    });
-
 
 btnYes.onclick = () => {
     if (newOrReload == true) {
@@ -113,11 +182,9 @@ btnNew.onclick = () => {
 }
 
 let getConnect = () => {
-    if (isConnected == false) {
-        noConnect.style.display = "flex";
-        noConnect.classList.add("puff-in-center");
-        newOrReload = false;
-    }
+    noConnect.style.display = "flex";
+    noConnect.classList.add("puff-in-center");
+    newOrReload = false;
 }
 let currentTab;
 let getCurrentTab = () => {
@@ -146,80 +213,30 @@ let openNewTab = () => {
     appQuestion.style.display = "none";
     yesNoNew.style.display = "none";
 }
-document.addEventListener('DOMContentLoaded', function() {
-    sendEvent("extensionIsLoad");
-    getTab().then(function(value) {
-        if (value == false) {
-            appDetected.innerHTML = chrome.i18n.getMessage("appNoDetected");
-            appQuestion.innerHTML = chrome.i18n.getMessage("appNoQuestion");
-            noConnect.style.display = "flex";
-            btnNew.style.display = "none";
-        } else {
-            appDetected.innerHTML = chrome.i18n.getMessage("appDetected");
-            appQuestion.innerHTML = chrome.i18n.getMessage("appQuestion");
-            getConnect();
-        }
-    });
 
-
-});
-let isPlaying;
-chrome.runtime.onMessageExternal.addListener(
-    function(request, sender, sendResponse) {
-        switch (request.data) {
-            case 'currentTrack':
-                let artists = request.api.artists;
-                let nameArtists = "";
-                for (let i = 0; i < artists.length; i++) {
-                    nameArtists += artists[i].title + ", ";
-                    if (i + 1 == artists.length) {
-                        nameArtists = nameArtists.slice(-nameArtists.length, -2);
-                    }
-                }
-                let nameTrack = request.api.title;
-                let iconTrack = request.api.cover;
-                let isLike = request.api.liked;
-                isPlaying = request.isPlaying;
-                setMediaData(nameTrack, nameArtists, iconTrack);
-                changeState(isPlaying);
-                toggleLike(isLike);
-                break;
-            case 'togglePause':
-                isPlaying = request.isPlaying;
-                changeState(isPlaying);
-                break;
-            case 'toggleLike':
-                let is = request.isLiked.liked;
-                toggleLike(is);
-                break;
-            default:
-                break;
-        }
-
-    });
 container.onclick = function() {
     toggleMenu();
 }
 
 previous[0].addEventListener('click', function() {
     sendEvent("previous");
-    //pushEvent(previous[0].className, "clicked")
+    pushEvent(previous[0].className, "clicked")
 });
 
 pause[0].addEventListener('click', function() {
     sendEvent("togglePause");
-    //pushEvent(pause[0].className, "clicked")
+    pushEvent(pause[0].className, "clicked")
 
 });
 
 next[0].addEventListener('click', function() {
     sendEvent("next");
-    //pushEvent(next[0].className, "clicked")
+    pushEvent(next[0].className, "clicked")
 
 });
 like[0].onclick = function() {
     sendEvent("toggleLike");
-    //pushEvent(like[0].className, "clicked")
+    pushEvent(like[0].className, "clicked")
 
 }
 
@@ -316,12 +333,9 @@ function getTab() {
         }, function(tabs) {
             for (let i = tabs.length - 1; i >= 0; i--) {
                 if (tabs[i].url.startsWith("https://music.yandex")) {
-                    tabId = tabs[i].id;
-                    tabId = tabs[i].id;
-                    tabIs = true;
                     resolve(tabs[i].id);
-                } else if (tabIs != true && i == 0) {
-                    tabIs = false;
+                    break;
+                } else if (i == 0) {
                     resolve(false);
                 }
             }
@@ -378,10 +392,11 @@ let urlCover;
 function setMediaData(trackTitle, trackArtists, iconTrack) {
     aritstName[0].innerHTML = trackArtists;
     trackName[0].innerHTML = trackTitle;
-    iconTrack = "https://" + iconTrack
-    if (iconTrack.endsWith(".svg")) {
-        iconTrack = "img/icon.svg"
+
+    if (iconTrack == undefined) {
+        iconTrack = "img/icon.png"
     } else {
+        iconTrack = "https://" + iconTrack
         iconTrack = iconTrack.slice(0, -2);
         iconTrack += "200x200";
         urlCover = iconTrack;
@@ -436,10 +451,6 @@ function openCover() {
     };
 }
 
-
-
-
-
 let pushEvent = (target, event) => {
-    _gaq.push(['_trackEvent', target, event]);
+    // _gaq.push(['_trackEvent', target, event]);
 }

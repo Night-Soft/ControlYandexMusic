@@ -14,7 +14,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
             toggleLike();
             break;
         case 'extensionIsLoad':
-            sendConncet();
+            sendResponse({ isConnect: true })
             getCurrentTrack();
             break;
         default:
@@ -66,10 +66,6 @@ let next = () => {
 }
 let toggleLike = () => {
     window.postMessage({ function: "toggleLike" })
-}
-
-function sendConncet() {
-    chrome.runtime.sendMessage({ isConnect: true });
 }
 
 let nameTrack = "isEmpty";

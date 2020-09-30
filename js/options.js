@@ -1,5 +1,11 @@
 var playPauseNotify = document.getElementById('n1');
 var prevNextNotify = document.getElementById('n2');
+let Options = {
+    onload: function() {
+        checkStorage();
+        setkey();
+    }
+};
 
 playPauseNotify.onclick = () => {
     chrome.storage.local.set({ key1: playPauseNotify.checked });
@@ -52,7 +58,3 @@ function setkey() {
 
     });
 }
-document.addEventListener('DOMContentLoaded', function() {
-    checkStorage();
-    setkey();
-});

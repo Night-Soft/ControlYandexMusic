@@ -29,10 +29,10 @@ chrome.runtime.onMessageExternal.addListener(
             let nameTrack = request.currentTrack.title;
             let iconTrack = request.currentTrack.cover;
             let isLike = request.currentTrack.liked;
-            iconTrack = "https://" + iconTrack
-            if (iconTrack.endsWith(".svg")) {
-                iconTrack = "img/iconY.svg"
+            if (iconTrack == undefined) {
+                iconTrack = "img/icon.png"
             } else {
+                iconTrack = "https://" + iconTrack
                 iconTrack = iconTrack.slice(0, -2);
                 iconTrack += "200x200";
                 urlCover = iconTrack;
@@ -148,11 +148,10 @@ function sendEvent(event, isKey) {
 
 function setNotifications(trackTitle, trackArtists, iconTrack) {
     if (iconTrack == undefined) {
-        iconTrack = "img/iconY.png"
+        iconTrack = "img/icon.png"
     }
     chrome.notifications.create("YandexMusicControl", {
         type: "basic",
-        eventTime: 700.0,
         title: trackTitle,
         message: trackArtists,
         iconUrl: iconTrack
@@ -163,6 +162,7 @@ function setNotifications(trackTitle, trackArtists, iconTrack) {
 
     });
 }
+
 let isPrevNextNotify = true;
 let isPlayPuaseNotify = true;
 
