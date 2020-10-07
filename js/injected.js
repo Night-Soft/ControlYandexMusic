@@ -62,12 +62,12 @@ if ('mediaSession' in navigator) {
 let setMediaSession = () => {
     let current = externalAPI.getCurrentTrack();
     let iconTrack = current.cover;
-    iconTrack = iconTrack.slice(0, -2);
-    iconTrack = "https://" + iconTrack; // + "400x400"
-    if (iconTrack.endsWith(".svg")) {
-        iconTrack = "img/iconY.svg"
+    if (iconTrack == undefined) {
+        iconTrack = "img/icon.png"
+    } else {
+        iconTrack = iconTrack.slice(0, -2);
+        iconTrack = "https://" + iconTrack; // + "400x400"
     }
-    navigator.mediaSession.artwork = iconTrack;
     navigator.mediaSession.metadata = new MediaMetadata({
         title: current.title,
         artist: current.artists[0].title,

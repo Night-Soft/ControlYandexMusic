@@ -174,6 +174,24 @@ a {
     cursor: pointer;
 }
 
+.modal-background {
+    animation: modal-background 0.5s;
+}
+
+.modal-background-reverse {
+    animation: modal-background 0.5s reverse;
+    animation-delay: 200ms;
+}
+
+@keyframes modal-background {
+    0% {
+        background-color: rgba(0, 0, 0, 0.0);
+    }
+    100% {
+        background-color: rgba(0, 0, 0, 0.4);
+    }
+}
+
 .modal-cover {
     margin: auto;
     border-radius: 20px;
@@ -388,7 +406,24 @@ label {
     background-color: rgb(0, 0, 0);
     background-color: rgba(0, 0, 0, 0.4);
     cursor: pointer;
-    transition: all 0.5s ease 1s;
+}
+
+.opacity {
+    animation: opacity 0.7s linear;
+}
+
+.opacity-reverse {
+    animation: opacity 0.5s reverse;
+    animation-delay: 250ms;
+}
+
+@keyframes opacity {
+    0% {
+        background-color: rgba(0, 0, 0, 0);
+    }
+    100% {
+        background-color: rgba(0, 0, 0, 0.4);
+    }
 }
 
 .body-about {
@@ -745,13 +780,13 @@ label {
 }
 
 .slide-right {
-    -webkit-animation: slide-right 1.5s cubic-bezier(0.680, -0.550, 0.265, 1.550) both;
-    animation: slide-right 1.5s cubic-bezier(0.680, -0.550, 0.265, 1.550) both;
+    -webkit-animation: slide-right 0.7s cubic-bezier(.3, .4, .3, .8) both;
+    animation: slide-right 0.7s cubic-bezier(.3, .4, .3, .8) both;
 }
 
 .slide-out {
-    -webkit-animation: slide-out 1.5s cubic-bezier(0.680, -0.550, 0.265, 1.550) both;
-    animation: slide-out 1.5s cubic-bezier(0.680, -0.550, 0.265, 1.550) both;
+    -webkit-animation: slide-out 0.7s cubic-bezier(.3, .4, .3, .8) both;
+    animation: slide-out 0.7s cubic-bezier(.3, .4, .3, .8) both;
 }
 
 @-webkit-keyframes slide-right {
@@ -798,6 +833,9 @@ label {
     }
 }
 
+
+/* scale-in-center now not uses */
+
 .scale-in-center {
     -webkit-animation: scale-in-center 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
     animation: scale-in-center 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
@@ -827,6 +865,34 @@ label {
         transform: scale(1);
         opacity: 1;
     }
+}
+
+.scale-shift-in-center {
+    -webkit-animation: scale-shift-in-center 0.7s cubic-bezier(.85, .2, 1, 1) both;
+    animation: scale-shift-in-center 0.7s cubic-bezier(.85, .2, 1, 1) both;
+}
+
+.scale-shift-in-center-reverse {
+    -webkit-animation: scale-shift-in-center 0.7s cubic-bezier(.85, .2, 1, 1) both reverse;
+    animation: scale-shift-in-center 0.7s cubic-bezier(.85, .2, 1, 1) both reverse;
+}
+
+@-webkit-keyframes scale-shift-in-center {
+    0% {
+        width: 150px;
+        height: 150px;
+        transform: translate(-100px, -27px);
+    }
+    100% {}
+}
+
+@keyframes scale-shift-in-center {
+    0% {
+        width: 150px;
+        height: 150px;
+        transform: translate(-100px, -27px);
+    }
+    100% {}
 }
 
 .puff-in-center {
