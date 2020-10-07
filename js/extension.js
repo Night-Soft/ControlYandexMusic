@@ -52,8 +52,13 @@ let Extension = {
                 appQuestion.innerHTML = chrome.i18n.getMessage("appQuestion");
             }
         });
-        addTransition();
+    },
+    addTransition: () => {
+        transition[0].style.transition = "0.7s"
+        transition[1].style.transition = "0.7s"
+        transition[2].style.transition = "0.7s"
     }
+
 };
 
 chrome.runtime.onMessage.addListener(
@@ -119,11 +124,6 @@ function openingExtension(event) {
         }
 
     });
-}
-let addTransition = () => {
-    transition[0].style.transition = "1.4s"
-    transition[1].style.transition = "1.4s"
-    transition[2].style.transition = "1.4s"
 }
 settingsClass.onmouseenter = () => {
     listSettings.classList.remove("scale-from-top-out");
@@ -250,11 +250,30 @@ function toggleLike(is) {
 }
 
 trackImage[0].addEventListener('click', function() {
+    function removeClass() {
+        modalCover[0].classList.remove("scale-shift-in-center");
+        modal[0].classList.remove("modal-background");
+        modalCover[0].removeEventListener("animationend", removeClass);
+    }
+    modalCover[0].addEventListener("animationend", removeClass);
+    modalCover[0].classList.add("scale-shift-in-center");
+    modal[0].classList.add("modal-background");
     openCover();
+    pushEvent("Cover open", "clicked")
+
+
 });
 
 modal[0].onclick = function() {
-    modal[0].style.display = "none";
+    function removeClass() {
+        modalCover[0].classList.remove("scale-shift-in-center-reverse");
+        modal[0].classList.remove("modal-background-reverse");
+        modal[0].style.display = "none";
+        modal[0].removeEventListener("animationend", removeClass);
+    }
+    modal[0].addEventListener("animationend", removeClass);
+    modalCover[0].classList.add("scale-shift-in-center-reverse");
+    modal[0].classList.add("modal-background-reverse");
 }
 
 shortCuts.onclick = () => {
@@ -305,25 +324,38 @@ let addAnimListener = () => {
         containerMenu.addEventListener("animationend", endAnimation);
     }
 }
-let endAnimation = () => {
-    modalSide.style.display = "none"
+let endAnimation = (ev) => {
+    ev.stopPropagation();
     isMenuOpen = false;
     containerMenu.removeEventListener("animationend", endAnimation);
     // groove.style.zIndex = "0";
 }
 let toggleMenu = () => {
     container.classList.toggle("change");
-    if (isMenuOpen == false) {
+    let removeOpacity = () => {
+        modalSide.classList.remove("opacity");
+        modalSide.removeEventListener("animationend", removeOpacity);
+    }
+    let removeOpacityReverse = () => { // run aferr 0.7s
+        modalSide.classList.remove("opacity-reverse");
+        modalSide.style.display = "none"
+        modalSide.removeEventListener("animationend", removeOpacityReverse);
+    }
+    if (isMenuOpen == false) { // Menu is open! Why is exactly so that? I don't know, it just happened!
+        modalSide.addEventListener("animationend", removeOpacity);
+        modalSide.classList.add("opacity");
         containerMenu.style.display = "flex";
         modalSide.style.display = "block"
-        modalSide.style.opacity = "1";
         containerMenu.className = containerMenu.className.replace(" slide-out", " slide-right");
         isMenuOpen = true;
     } else {
+        modalSide.classList.add("opacity-reverse");
+        modalSide.addEventListener("animationend", removeOpacityReverse);
         containerMenu.className = containerMenu.className.replace(" slide-right", " slide-out");
-        modalSide.style.opacity = "0";
         addAnimListener();
     }
+
+
 }
 
 function getTab() {
@@ -419,38 +451,36 @@ function changeState(isPlaying) {
 
 function openCover() {
     let px = 400;
-    var xhttp = new XMLHttpRequest();
-    getStatus();
+    urlCover = urlCover.slice(0, -7);
+    urlCover += px + "x" + px;
 
-    function getStatus() {
-        urlCover = urlCover.slice(0, -7);
-        urlCover += px + "x" + px;
-        xhttp.onload = function() {
-            if (this.readyState == 4 && this.status == 200) {
-                modalCover[0].style.backgroundImage = "url(" + urlCover + ")";
-                modalCover[0].src = urlCover;
-                modalCover[0].onload = () => {
-                    modal[0].style.display = "flex";
-                }
-            } else {
+    function testImage() {
+        try {
+            urlCover = urlCover.slice(0, -7);
+            urlCover += px + "x" + px;
+            modalCover[0].style.backgroundImage = "url(" + urlCover + ")";
+            modalCover[0].onerror = function() {
                 if (px > 100) {
                     if (px == 100) {
                         px += -50;
-                        getStatus();
+                        testImage()
                     }
                     px += -100;
-                    getStatus();
-                } else {
-                    console.error(this.status);
+                    testImage();
                 }
-
+            };
+            modalCover[0].onload = () => {
+                modal[0].style.display = "flex";
             }
-        };
-        xhttp.open("GET", urlCover, true);
-        xhttp.send();
-    };
+            modalCover[0].src = urlCover;
+
+        } catch (error) {
+            console.log(error);
+        }
+    }
+    testImage();
 }
 
 let pushEvent = (target, event) => {
-    // _gaq.push(['_trackEvent', target, event]);
+    _gaq.push(['_trackEvent', target, event]);
 }

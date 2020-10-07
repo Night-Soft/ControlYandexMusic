@@ -1,6 +1,5 @@
-console.time("load time");
-var start = window.performance.now();
-var time;
+// var start = window.performance.now();
+// var time;
 let ms = 10;
 
 let getExtensionLoad = () => {
@@ -31,10 +30,9 @@ let getTranslateLoaded = () => {
 
         } else {
             Translate.onload();
-            // console.timeEnd("load time");
+            Extension.addTransition();
             // var end = window.performance.now();
             // time = end - start;
-            // console.log("time " + time);
             // title[1].innerHTML = Number.parseFloat(time).toPrecision(5);
         }
     }, ms);
