@@ -4,10 +4,10 @@
     "description": "__MSG_appDesc__",
     "short_name": "__MSG_shortName__",
     "default_locale": "en",
-    "version": "1.4.1",
+    "version": "1.4.2",
     "web_accessible_resources": ["js/injected.js"],
     "icons": {
-        "128": "img/iconY.png"
+        "200": "img/icon.png"
     },
     "background": {
         "scripts": ["js/background.js"],
@@ -19,7 +19,7 @@
         "js": ["js/contentScript.js"]
     }],
     "browser_action": {
-        "default_icon": "img/iconY.png",
+        "default_icon": "img/icon.png",
         "default_popup": "popup.html"
     },
     "commands": {
