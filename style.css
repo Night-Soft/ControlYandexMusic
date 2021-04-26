@@ -614,11 +614,9 @@ label {
 
 .donationalerts-menu {
     display: none;
+    justify-content: space-around;
     transition: 0.5s;
     background: #172334;
-    background-image: url(img/donationalerts.png);
-    background-repeat: no-repeat, repeat;
-    background-position: center 30px;
     width: 65%;
     height: 65%;
     background-size: 40px;
@@ -637,6 +635,23 @@ label {
     background-position: center 30px;
     width: 100%;
     font-size: 1.5rem;
+}
+
+.donationalerts-image {
+    display: block;
+    transition: 0.5s;
+    background-image: url(img/donationalerts.png);
+    background-repeat: no-repeat, repeat;
+    background-position: center;
+    width: 25%;
+    height: 100%;
+    background-size: 25px;
+    /* margin: auto; */
+    cursor: pointer;
+}
+
+.donationalerts-title {
+    align-self: center;
 }
 
 .paypal {

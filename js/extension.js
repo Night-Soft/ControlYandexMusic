@@ -317,7 +317,7 @@ donationAlerts.onclick = () => {
 }
 sideHelp.onmouseenter = (event) => {
     //payPal.style.display = "block";
-    donationAlerts.style.display = "block";
+    donationAlerts.style.display = "flex";
     sideHelp.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
 
 }
