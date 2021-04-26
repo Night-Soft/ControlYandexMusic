@@ -13,10 +13,17 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
         case 'toggleLike':
             toggleLike();
             break;
+        case 'setTime':
+            window.postMessage({ function: "setTime", time: request.time }, "*");
+            // console.log(request.time);
+            break;
         case 'extensionIsLoad':
             sendResponse({ isConnect: true })
             getCurrentTrack();
             break;
+            // case 'getCurrentTrack':
+            //         getCurrentTrack();
+            //     break;
         default:
             break;
     }

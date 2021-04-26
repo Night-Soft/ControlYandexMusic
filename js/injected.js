@@ -18,6 +18,9 @@ window.addEventListener("message", function(event) {
         case 'next':
             next();
             break;
+        case 'setTime':
+            externalAPI.setPosition(event.data.time)
+            break;
         case 'toggleLike':
             toggleLike();
             break;
@@ -94,6 +97,8 @@ function getTracks() {
         data: "currentTrack",
         api: externalAPI.getCurrentTrack(),
         isPlaying: externalAPI.isPlaying(),
+        progress: externalAPI.getProgress(),
+
     }, );
 }
 

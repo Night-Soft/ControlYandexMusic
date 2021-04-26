@@ -85,9 +85,15 @@ chrome.runtime.onMessageExternal.addListener(
                 setMediaData(request.api.title, nameArtists, request.api.cover);
                 changeState(request.isPlaying);
                 toggleLike(request.api.liked);
+                getDuration(request.api.duration);
+                getProgress(request.progress.position);
+                getIsPlay(request.isPlaying);
+                setTrackProgress();
+                trackUpdater()
                 break;
             case 'togglePause':
                 changeState(request.isPlaying);
+                trackUpdater(getDuration(), getProgress(), getIsPlay(request.isPlaying));
                 break;
             case 'toggleLike':
                 toggleLike(request.isLiked.liked);
