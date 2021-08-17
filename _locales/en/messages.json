@@ -3,10 +3,13 @@
         "message": "Yandex Music control"
     },
     "appDesc": {
-        "message": "Yandex Music control"
+        "message": "Control your music from any app! Integrates with Windows and Linux operating systems."
     },
     "shortName": {
         "message": "Yandex Music"
+    },
+    "version": {
+        "message": "Version"
     },
     "title": {
         "message": "Yandex Music"
@@ -73,6 +76,9 @@
     },
     "prevNextNotify": {
         "message": "Notification when previous / next track."
+    },
+    "inNewVersion": {
+        "message": "You can now tap on the notification to switch the next track!"
     }
 
 }

@@ -4,7 +4,7 @@
     "description": "__MSG_appDesc__",
     "short_name": "__MSG_shortName__",
     "default_locale": "en",
-    "version": "1.5.0",
+    "version": "1.5.5",
     "web_accessible_resources": ["js/injected.js"],
     "icons": {
         "200": "img/icon.png"
