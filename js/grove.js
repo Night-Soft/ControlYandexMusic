@@ -5,6 +5,10 @@ let moveTime = document.getElementsByClassName("move-time")[0];
 let timeProcent = document.getElementById("Time");
 let currentTime = document.querySelector(".current-time");
 let durationSpan = document.querySelector(".duration");
+let moveTimeCurrent = document.querySelector(".move-time-current");
+let currentMoveTime = document.getElementById("CurrentMoveTime");
+
+
 
 var updater;
 let duration = 0;
@@ -23,6 +27,26 @@ let getIsPlay = (isP) => {
     if (isP != undefined) { isPlay = isP; }
     //console.log("isp " + isP)
     return isPlay;
+}
+
+let mouseMove = (event) => {
+    var x = event.clientX;
+    x += -25;
+    moveTimeCurrent.style.left = "calc(" + x + "px - " + "20px)";
+    //var y = event.clientY;
+    //console.log("X coords: " + x);
+    moveTimeCurrent.style.display = "block";
+    console.log("set block " + moveTimeCurrent.offsetLeft);
+
+    currentMoveTime.innerHTML = countTimeHelper();
+}
+
+groove.onmousemove = mouseMove;
+
+groove.onmouseout = (event) => {
+    moveTimeCurrent.style.display = "none";
+    console.log("set None");
+
 }
 
 groove.onmousedown = function(event) {
@@ -74,7 +98,7 @@ groove.onmousedown = function(event) {
 
 }
 groove.onmouseup = function() {
-    groove.onmousemove = null;
+    groove.onmousemove = mouseMove;
     document.onmousemove = null;
     setTimeout(() => {
         moveTime.style.display = "none";
@@ -84,13 +108,13 @@ groove.onmouseup = function() {
 
 let countProcent = (currentGrove) => {
     let grooveWidth = groove.offsetWidth;
-    currentGrove = grooveCurrent.offsetWidth;
+    //currentGrove = grooveCurrent.offsetWidth;
     return Math.round(currentGrove * 100 / grooveWidth);
     //return countTime();
 }
 
 function setTime(currentSeconds) {
-    sendTime("setTime", currentSeconds);
+    //sendTime("setTime", currentSeconds);
 }
 
 function setTrackProgress(duration = getDuration(), progress = getProgress(), isPlaying = getIsPlay()) {
@@ -193,7 +217,21 @@ let countTime = (duration = getDuration()) => {
         seconds = Math.round(currentSeconds);
     }
     time = twoDigits(seconds, minutes);
-    currentTime.innerHTML = time
+    currentTime.innerHTML = time; // below image
+    return time;
+}
+
+let countTimeHelper = (duration = getDuration(), currentPosition = moveTimeCurrent.offsetLeft + 20) => {
+    let currentSeconds = countProcent(currentPosition) * duration / 100;
+    let minutes = 0;
+    let seconds = 0;
+    if (currentSeconds > 60) {
+        minutes = Math.floor(currentSeconds / 60);
+        seconds = Math.round(currentSeconds - minutes * 60);
+    } else {
+        seconds = Math.round(currentSeconds);
+    }
+    let time = twoDigits(seconds, minutes);
     return time;
 }
 
