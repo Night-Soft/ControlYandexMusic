@@ -146,6 +146,8 @@ function sendEvent(event, isKey) {
     });
 }
 
+let timer;
+
 function setNotifications(trackTitle, trackArtists, iconTrack) {
     if (iconTrack == undefined) {
         iconTrack = "img/icon.png"
@@ -156,12 +158,21 @@ function setNotifications(trackTitle, trackArtists, iconTrack) {
         message: trackArtists,
         iconUrl: iconTrack
     }, function(callback) {
-        timer = setTimeout(function() {
-            chrome.notifications.clear("YandexMusicControl");
-        }, 7000);
+        function out() {
+            timer = setTimeout(function() {
+                chrome.notifications.clear("YandexMusicControl");
+            }, 7000);
+        }
+        clearTimeout(timer);
+        out();
 
     });
 }
+
+chrome.notifications.onClicked.addListener((YandexMusicControl) => {
+    sendEvent('next-key', true);
+
+});
 
 let isPrevNextNotify = true;
 let isPlayPuaseNotify = true;
