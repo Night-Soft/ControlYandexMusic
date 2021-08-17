@@ -31,6 +31,7 @@ let getTranslateLoaded = () => {
         } else {
             Translate.onload();
             Extension.addTransition();
+            if (Extension.isNew) { Extension.yesNews(); }
             //var end = window.performance.now();
             time = window.performance.now() - start;
             // title[1].innerHTML = Number.parseFloat(time).toPrecision(5);

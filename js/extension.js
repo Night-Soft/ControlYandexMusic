@@ -18,6 +18,10 @@ let shortCuts = document.getElementById("shortCuts");
 let settings = document.getElementById("settings");
 let showNotify = document.getElementById("showNotify");
 let listSettings = document.getElementById("listSettings");
+let yesNews = document.getElementById("YesNews");
+// let timer = document.getElementById("Timer");
+
+
 
 let container = document.getElementsByClassName("container")[0];
 let containerMenu = document.getElementsByClassName("content-menu")[0];
@@ -34,9 +38,11 @@ let loaderContainer = document.getElementsByClassName("loader-container")[0];
 let yesNoNew = document.getElementsByClassName("yes-no-new")[0];
 let settingsClass = document.getElementsByClassName("settings")[0];
 let transition = document.getElementsByClassName("transition");
+let modalNews = document.querySelector(".modal-news");
 
 let isMenuOpen = false;
 let newOrReload = true;
+//let isNew = true;
 
 let Extension = {
     onload: function() {
@@ -57,6 +63,30 @@ let Extension = {
         transition[0].style.transition = "0.7s"
         transition[1].style.transition = "0.7s"
         transition[2].style.transition = "0.7s"
+    },
+    isNew: false,
+    yesNews: () => {
+        modalNews.style.display = "flex";
+        let i = 9;
+        yesNews.innerHTML += " " + i;
+        yesNews.disabled = true;
+        let setTimer = () => {
+            if (i > 0) { i--; }
+            yesNews.innerHTML = yesNews.innerHTML.slice(0, -1);
+            yesNews.innerHTML += i;
+            if (i == 0) {
+                setTimeout(function() { // need for delete "0"
+                    yesNews.innerHTML = yesNews.innerHTML.slice(0, -2);
+                    yesNews.disabled = false;
+                    yesNews.classList.remove("yesNews-disable")
+                    yesNews.onclick = () => { modalNews.style.display = "none"; }
+                }, 1000);
+                clearInterval(delay);
+
+            }
+        }
+        let delay = setInterval(setTimer, 1000);
+
     }
 
 };
@@ -186,6 +216,8 @@ bntNo.onclick = () => {
 btnNew.onclick = () => {
     openNewTab();
 }
+
+
 
 let getConnect = () => {
     noConnect.style.display = "flex";
@@ -424,13 +456,30 @@ function sendFirstLoad() {
     });
 }
 
+let setRightFontSize = (fontSize = 1.4) => {
+    let heightArtist = aritstName[0].offsetHeight;
+    let heightTrack = trackName[0].offsetHeight;
+    console.log(heightArtist + heightTrack);
+
+    if (heightArtist + heightTrack > 150) {
+        fontSize = fontSize - 0.05;
+        fontSize = fontSize.toFixed(2);
+        aritstName[0].style.fontSize = fontSize + "rem";
+        trackName[0].style.fontSize = fontSize + "rem";
+        setRightFontSize(fontSize);
+        console.log(fontSize);
+    }
+}
 
 let urlCover;
 
 function setMediaData(trackTitle, trackArtists, iconTrack) {
     aritstName[0].innerHTML = trackArtists;
     trackName[0].innerHTML = trackTitle;
-
+    aritstName[0].style.fontSize = "";
+    trackName[0].style.fontSize = "";
+    setRightFontSize();
+    //fontSize = 1.4;
     if (iconTrack == undefined) {
         iconTrack = "img/icon.png"
     } else {

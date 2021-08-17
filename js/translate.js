@@ -22,5 +22,13 @@ let Translate = {
         showNotify.innerHTML = chrome.i18n.getMessage("showNotify");
         playPauseNotify.labels[0].innerHTML = chrome.i18n.getMessage("playPauseNotify");
         prevNextNotify.labels[0].innerHTML = chrome.i18n.getMessage("prevNextNotify");
+        let version = document.getElementById("Version");
+        var manifestData = chrome.runtime.getManifest();
+        version.innerHTML = chrome.i18n.getMessage("shortName");
+        version.innerHTML += " " + manifestData.version;
+        let yesNews = document.getElementById("YesNews");
+        yesNews.innerHTML = chrome.i18n.getMessage("yes");
+        let whatNew = document.getElementById("whatNew");
+        whatNew.innerHTML = chrome.i18n.getMessage("inNewVersion");
     }
 }
