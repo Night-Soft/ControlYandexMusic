@@ -31,11 +31,18 @@ let checkStorage = () => {
         }
     });
     getVersion().then((value) => {
-        var manifestData = chrome.runtime.getManifest();
-        if (value != manifestData.version) {
-            chrome.storage.local.set({ version: manifestData.version });
-            Extension.isNew = true;
-        }
+        let manifestData = chrome.runtime.getManifest();
+        let inCurrentVersion = chrome.i18n.getMessage("inNewVersion");
+        getInNewVersion().then((inNewValue) => {
+            if (value != manifestData.version && inNewValue != inCurrentVersion) {
+                chrome.storage.local.set({ version: manifestData.version });
+                chrome.storage.local.set({ innewversion: inCurrentVersion });
+                Extension.isNew = true;
+                Extension.yesNews();
+
+            }
+            //isChecked = true;
+        });
     });
 
 }
@@ -61,6 +68,14 @@ function getVersion() {
     return new Promise(function(resolve, reject) {
         chrome.storage.local.get(['version'], function(result) {
             resolve(result.version)
+        });
+    });
+}
+
+function getInNewVersion() {
+    return new Promise(function(resolve, reject) {
+        chrome.storage.local.get(['innewversion'], function(result) {
+            resolve(result.innewversion)
         });
     });
 }
