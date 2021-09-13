@@ -78,7 +78,7 @@
         "message": "Notification when previous / next track."
     },
     "inNewVersion": {
-        "message": "You can now tap on the notification to switch the next track!"
+        "message": "Improved rewind!"
     }
 
 }

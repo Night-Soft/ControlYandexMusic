@@ -1,14 +1,10 @@
 let groove = document.getElementsByClassName("groove-all")[0];
 let grooveCurrent = document.getElementsByClassName("groove-current")[0];
 let handle = document.getElementsByClassName("handle")[0];
-let moveTime = document.getElementsByClassName("move-time")[0];
-let timeProcent = document.getElementById("Time");
 let currentTime = document.querySelector(".current-time");
 let durationSpan = document.querySelector(".duration");
 let moveTimeCurrent = document.querySelector(".move-time-current");
 let currentMoveTime = document.getElementById("CurrentMoveTime");
-
-
 
 var updater;
 let duration = 0;
@@ -25,7 +21,6 @@ let getProgress = (p) => {
 }
 let getIsPlay = (isP) => {
     if (isP != undefined) { isPlay = isP; }
-    //console.log("isp " + isP)
     return isPlay;
 }
 
@@ -33,19 +28,17 @@ let mouseMove = (event) => {
     var x = event.clientX;
     x += -25;
     moveTimeCurrent.style.left = "calc(" + x + "px - " + "20px)";
-    //var y = event.clientY;
-    //console.log("X coords: " + x);
-    moveTimeCurrent.style.display = "block";
-    console.log("set block " + moveTimeCurrent.offsetLeft);
-
+    moveTimeCurrent.style.display = "flex";
+    //console.log("set block " + moveTimeCurrent.offsetLeft);
     currentMoveTime.innerHTML = countTimeHelper();
+
 }
 
 groove.onmousemove = mouseMove;
 
 groove.onmouseout = (event) => {
     moveTimeCurrent.style.display = "none";
-    console.log("set None");
+    //console.log("set None");
 
 }
 
@@ -54,67 +47,39 @@ groove.onmousedown = function(event) {
     x += -25;
     grooveCurrent.style.width = x + "px";
     handle.style.left = "calc(" + x + "px - " + "10px)";
-    //var y = event.clientY;
-    //console.log("X coords: " + x);
-    moveTime.style.display = "flex";
-    timeProcent.innerHTML = countTime();
-    // console.log("groove width = " + groove.offsetWidth);
-    // console.log("grooveCurrent width = " + grooveCurrent.offsetWidth);
-    //moveTime.style.display = "flex";
-    //countProcent(grooveCurrent.offsetWidth);
-
+    countTime();
     groove.onmousemove = function(event) {
         var x = event.clientX;
         x += -25;
         grooveCurrent.style.width = x + "px";
         handle.style.left = "calc(" + x + "px - " + "10px)";
-        //console.log("X coords: " + x);
-        timeProcent.innerHTML = countTime();
-        //timeProcent.innerHTML = "324";
-
-        //console.log(timeProcent.textContent);
-
+        countTime();
         if (grooveCurrent.offsetWidth >= groove.offsetWidth) {
             groove.onmousemove = null;
             grooveCurrent.style.width = groove.offsetWidth + "px";
-            // console.log("groove width = " + groove.offsetWidth);
-            // console.log("grooveCurrent width = " + grooveCurrent.offsetWidth);
+
         }
         if (x <= 0) {
             groove.onmousemove = null;
             handle.style.left = "calc(" + "0" + "px - " + "10px)";
             grooveCurrent.style.width = "0px";
-            //  console.log("grooveCurrent width = " + grooveCurrent.offsetWidth);
         }
     }
-
-    // groove.onmouseleave = () => {
-    //     groove.onmousemove = null;
-    //     document.onmousemove = null;
-    //     setTimeout(() => {
-    //         moveTime.style.display = "none";                
-    //     }, 1000);
-    // }
 
 }
 groove.onmouseup = function() {
     groove.onmousemove = mouseMove;
     document.onmousemove = null;
-    setTimeout(() => {
-        moveTime.style.display = "none";
-    }, 1500);
 
 }
 
 let countProcent = (currentGrove) => {
     let grooveWidth = groove.offsetWidth;
-    //currentGrove = grooveCurrent.offsetWidth;
     return Math.round(currentGrove * 100 / grooveWidth);
-    //return countTime();
 }
 
 function setTime(currentSeconds) {
-    //sendTime("setTime", currentSeconds);
+    sendTime("setTime", currentSeconds);
 }
 
 function setTrackProgress(duration = getDuration(), progress = getProgress(), isPlaying = getIsPlay()) {
@@ -251,8 +216,6 @@ function sendTime(event, currentSeconds) {
                 data: event,
                 time: currentSeconds,
             });
-            //  console.log("must send time " +currentSeconds)
-
         }
 
     });
