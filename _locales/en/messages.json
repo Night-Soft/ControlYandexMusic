@@ -77,6 +77,9 @@
     "prevNextNotify": {
         "message": "Notification when previous / next track."
     },
+    "whatNew": {
+        "message": "What's new?"
+    },
     "inNewVersion": {
         "message": "Improved rewind!"
     }
