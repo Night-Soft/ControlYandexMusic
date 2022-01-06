@@ -179,8 +179,17 @@ a {
 }
 
 .modal-background-reverse {
-    animation: modal-background 0.5s reverse;
+    animation: modal-background-reverse 0.5s;
     animation-delay: 200ms;
+}
+
+@keyframes modal-background-reverse {
+    0% {
+        background-color: rgba(0, 0, 0, 0.4);
+    }
+    100% {
+        background-color: rgba(0, 0, 0, 0.0);
+    }
 }
 
 @keyframes modal-background {
