@@ -32,16 +32,15 @@ let checkStorage = () => {
     });
     getVersion().then((value) => {
         let manifestData = chrome.runtime.getManifest();
-        let inCurrentVersion = chrome.i18n.getMessage("inNewVersion");
+        let inCurrentVersion = WhatNew.getWhatNew(); // get json
+        inCurrentVersion = inCurrentVersion["versions"][0][1].messageEn;
         getInNewVersion().then((inNewValue) => {
             if (value != manifestData.version && inNewValue != inCurrentVersion) {
-                chrome.storage.local.set({ version: manifestData.version });
-                chrome.storage.local.set({ innewversion: inCurrentVersion });
-                Extension.isNew = true;
-                Extension.yesNews();
+                chrome.storage.local.set({ version: manifestData.version }); // set new version
+                chrome.storage.local.set({ innewversion: inCurrentVersion }); // set text what new
+                WhatNew.openNews(true); // true - for open with timer
 
             }
-            //isChecked = true;
         });
     });
 
