@@ -19,6 +19,7 @@ let settings = document.getElementById("settings");
 let showNotify = document.getElementById("showNotify");
 let listSettings = document.getElementById("listSettings");
 let yesNews = document.getElementById("YesNews");
+let whatNew = document.getElementById("whatNew");
 // let timer = document.getElementById("Timer");
 
 
@@ -64,31 +65,6 @@ let Extension = {
         transition[1].style.transition = "0.7s"
         transition[2].style.transition = "0.7s"
     },
-    isNew: false,
-    yesNews: () => {
-        modalNews.style.display = "flex";
-        let i = 9;
-        yesNews.innerHTML += " " + i;
-        yesNews.disabled = true;
-        let setTimer = () => {
-            if (i > 0) { i--; }
-            yesNews.innerHTML = yesNews.innerHTML.slice(0, -1);
-            yesNews.innerHTML += i;
-            if (i == 0) {
-                setTimeout(function() { // need for delete "0"
-                    yesNews.innerHTML = yesNews.innerHTML.slice(0, -2);
-                    yesNews.disabled = false;
-                    yesNews.classList.remove("yesNews-disable")
-                    yesNews.onclick = () => { modalNews.style.display = "none"; }
-                }, 1000);
-                clearInterval(delay);
-
-            }
-        }
-        let delay = setInterval(setTimer, 1000);
-
-    }
-
 };
 
 chrome.runtime.onMessage.addListener(
@@ -103,7 +79,7 @@ chrome.runtime.onMessage.addListener(
 chrome.runtime.onMessageExternal.addListener(
     function(request, sender, sendResponse) {
         switch (request.data) {
-            case 'currentTrack':
+            case 'currentTrack': // get from the key
                 let artists = request.api.artists;
                 let nameArtists = "";
                 for (let i = 0; i < artists.length; i++) {
@@ -119,7 +95,7 @@ chrome.runtime.onMessageExternal.addListener(
                 getProgress(request.progress.position);
                 getIsPlay(request.isPlaying);
                 setTrackProgress();
-                trackUpdater()
+                trackUpdater();
                 break;
             case 'togglePause':
                 changeState(request.isPlaying);
@@ -162,6 +138,7 @@ function openingExtension(event) {
     });
 }
 settingsClass.onmouseenter = () => {
+    listSettings.removeEventListener("animationend", endAnimationList);
     listSettings.classList.remove("scale-from-top-out");
     listSettings.className += " scale-from-top";
     listSettings.style.display = "flex";
@@ -178,7 +155,6 @@ function endAnimationList() {
     listSettings.classList.remove("scale-from-top-out");
     listSettings.classList.remove("scale-from-top");
     listSettings.style.display = "none";
-    listSettings.removeEventListener("animationend", endAnimationList);
 }
 
 btnYes.onclick = () => {
@@ -216,6 +192,7 @@ bntNo.onclick = () => {
 btnNew.onclick = () => {
     openNewTab();
 }
+
 
 
 
@@ -306,8 +283,8 @@ modal[0].onclick = function() {
     function removeClass() {
         modalCover[0].classList.remove("scale-shift-in-center-reverse");
         modal[0].classList.remove("modal-background-reverse");
-        modal[0].style.display = "none";
         modal[0].removeEventListener("animationend", removeClass);
+        modal[0].style.display = "none";
     }
     modal[0].addEventListener("animationend", removeClass);
     modalCover[0].classList.add("scale-shift-in-center-reverse");
@@ -324,6 +301,10 @@ contactMe.onclick = () => {
 }
 aMenu.onclick = () => {
     window.open("mailto:nightsoftware@outlook.com");
+}
+
+whatNew.onclick = () => {
+    WhatNew.openNews();
 }
 
 closeSide.onclick = () => {
@@ -459,7 +440,7 @@ function sendFirstLoad() {
 let setRightFontSize = (fontSize = 1.4) => {
     let heightArtist = aritstName[0].offsetHeight;
     let heightTrack = trackName[0].offsetHeight;
-    console.log(heightArtist + heightTrack);
+    //console.log(heightArtist + heightTrack);
 
     if (heightArtist + heightTrack > 150) {
         fontSize = fontSize - 0.05;
