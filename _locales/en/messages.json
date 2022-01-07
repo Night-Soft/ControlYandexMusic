@@ -11,6 +11,9 @@
     "version": {
         "message": "Version"
     },
+    "locale": {
+        "message": "EN"
+    },
     "title": {
         "message": "Yandex Music"
     },
@@ -79,9 +82,6 @@
     },
     "whatNew": {
         "message": "What's new?"
-    },
-    "inNewVersion": {
-        "message": "Improved rewind!"
     }
 
 }

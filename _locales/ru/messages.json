@@ -11,6 +11,9 @@
     "version": {
         "message": "Версия"
     },
+    "locale": {
+        "message": "RU"
+    },
     "title": {
         "message": "Яндекс Музыка"
     },
@@ -79,9 +82,6 @@
     },
     "whatNew": {
         "message": "Что нового?"
-    },
-    "inNewVersion": {
-        "message": "Улучшена перемотка!"
     }
 
 }
