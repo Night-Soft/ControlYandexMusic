@@ -1,0 +1,25 @@
+{
+    "mainVersion": "1.5.6",
+    "versions": [
+        ["1.5.6", {
+            "messageEn": "Improved rewind!",
+            "messageRu": "Улучшена перемотка!"
+        }],
+        ["1.5", {
+            "messageEn": "• You can now rewind the track.<br>• Click on the notification to skip to the next track!",
+            "messageRu": "• Теперь вы можете перемотать трек.<br>• Нажмите на уведомление, чтобы перейти к следующему треку!"
+        }],
+        ["1.4", {
+            "messageEn": "• Added Integrate with Windows and Linux operating systems, tested on: Windows 10, Kubuntu 20.04.<br>• Added settings for control show notifications.",
+            "messageRu": "• Добавлена интеграция с операционными системами Windows и Linux, протестировано на: Windows 10, Kubuntu 20.04.<br>• Добавлены настройки для управления отображением уведомлений."
+        }],
+        ["1.3", {
+            "messageEn": "• Added shortcut button to add to favorites.",
+            "messageRu": " Добавлена клавиша быстрого доступа, чтобы добавить в избранное."
+        }],
+        ["1.2", {
+            "messageEn": "• Fixed translates.<br>• Graphical improvements.",
+            "messageRu": "• Исправлены переводы.<br>• Графические улучшения."
+        }]
+    ]
+}

@@ -20,7 +20,7 @@
     <div class="modal-side">
         <div class="content-menu slide-out">
             <div class="title title-menu ">Control Yandex Music</div>
-            <div class="list-menu">
+            <div id="listMenu" class="list-menu">
                 <div class="side ">About</div>
                 <div class="side settings">
                     <span id="settings" class="title-span">Say thanks to the developer</span>
@@ -41,6 +41,7 @@
 
                 </div>
                 <div id="contactMe" class="side ">Contact Me</div>
+                <div id="whatNew" class="side ">What's new?</div>
                 <div id="shortCuts" class="side ">Open keyboard shortcuts</div>
                 <div class="side-help ">
                     <span id="help" class="title-help title-help-menu">Say thanks to the developer</span>
@@ -113,18 +114,21 @@
         </div>
 
     </div>
-    <div class="modal-news">
+    <div id="scroll-bar" class="modal-news">
         <div class="content-news">
             <div>
                 <h2 id="Version">Version </h2>
                 <h2 class="versions">What's new?</h2>
             </div>
-            <h2 id="whatNew" class="versions"></h2>
+            <!-- <h2 id="whatNew" class="versions"></h2> -->
+            <div class="list-changes-coontent"></div>
+            <div class="filter"></div>
             <button id="YesNews" class="yesNews yesNews-disable no-conect-btn">Yes</button>
         </div>
 
     </div>
     <script async src="js/extension.js "></script>
+    <script async src="js/whatNew.js"></script>
     <script async src="js/options.js "></script>
     <script async src="js/translate.js"></script>
     <script src="js/grove.js"></script>
