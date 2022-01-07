@@ -31,6 +31,7 @@ let getTranslateLoaded = () => {
         } else {
             Translate.onload();
             Extension.addTransition();
+            //WhatNew.openNews();
             // if (Extension.isNew) { Extension.yesNews(); }
             // var end = window.performance.now();
             time = window.performance.now() - start;

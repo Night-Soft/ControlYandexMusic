@@ -29,8 +29,10 @@ let Translate = {
         let yesNews = document.getElementById("YesNews");
         yesNews.innerHTML = chrome.i18n.getMessage("yes");
         let whatNew = document.getElementById("whatNew");
-        whatNew.innerHTML = chrome.i18n.getMessage("inNewVersion");
         let versions = document.getElementsByClassName("versions")[0];
         versions.innerHTML = chrome.i18n.getMessage("whatNew");
+        //WhatNew.setLocale(); // dont need
+
+
     }
 }
