@@ -158,6 +158,7 @@ a {
     flex-direction: column;
     justify-content: space-around;
     width: 50%;
+    padding: 3px 0px 3px;
 }
 
 .modal {
@@ -417,6 +418,7 @@ a {
 
 label {
     margin-left: 10px;
+    cursor: pointer;
 }
 
 .list-menu {
@@ -435,6 +437,7 @@ label {
     display: none;
     flex-direction: column;
     justify-content: center;
+    cursor: default;
     font-size: 1rem;
     overflow: hidden;
     background-color: #FF6666;
