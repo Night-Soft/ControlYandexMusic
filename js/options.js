@@ -32,16 +32,19 @@ let checkStorage = () => {
     });
     getVersion().then((value) => {
         let manifestData = chrome.runtime.getManifest();
-        let inCurrentVersion = WhatNew.getWhatNew(); // get json
-        inCurrentVersion = inCurrentVersion["versions"][0][1].messageEn;
-        getInNewVersion().then((inNewValue) => {
-            if (value != manifestData.version && inNewValue != inCurrentVersion) {
-                chrome.storage.local.set({ version: manifestData.version }); // set new version
-                chrome.storage.local.set({ innewversion: inCurrentVersion }); // set text what new
-                WhatNew.openNews(true); // true - for open with timer
+        let inCurrentVersion = WhatNew.getWhatNew().then((value) => {
+            if (!value["success"]) { return; }
+            inCurrentVersion = value;
+            inCurrentVersion = inCurrentVersion["versions"][0][1].messageEn;
+            getInNewVersion().then((inNewValue) => {
+                if (value != manifestData.version && inNewValue != inCurrentVersion) {
+                    chrome.storage.local.set({ version: manifestData.version }); // set new version
+                    chrome.storage.local.set({ innewversion: inCurrentVersion }); // set text what new
+                    WhatNew.openNews(true); // true - for open with timer
 
-            }
-        });
+                }
+            });
+        }); // get json
     });
 
 }
