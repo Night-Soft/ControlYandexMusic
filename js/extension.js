@@ -155,6 +155,8 @@ function endAnimationList() {
     listSettings.classList.remove("scale-from-top-out");
     listSettings.classList.remove("scale-from-top");
     listSettings.style.display = "none";
+    listSettings.removeEventListener("animationend", endAnimationList);
+
 }
 
 btnYes.onclick = () => {
@@ -448,7 +450,7 @@ let setRightFontSize = (fontSize = 1.4) => {
         aritstName[0].style.fontSize = fontSize + "rem";
         trackName[0].style.fontSize = fontSize + "rem";
         setRightFontSize(fontSize);
-        console.log(fontSize);
+        //console.log(fontSize);
     }
 }
 

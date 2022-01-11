@@ -131,6 +131,7 @@ let twoDigits = (seconds, minutes) => {
 }
 
 function trackUpdater(duration = getDuration(), progress = getProgress(), isPlay = getIsPlay()) {
+    if (!isPlay) return;
     try {
         clearInterval(updater)
     } catch (error) {

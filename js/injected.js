@@ -88,8 +88,7 @@ let setMediaSession = () => {
 externalAPI.on(externalAPI.EVENT_TRACK, function(event) {
     setMediaSession();
     getTracks();
-})
-
+});
 
 function getTracks() {
 
