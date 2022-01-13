@@ -1,6 +1,10 @@
 {
-    "mainVersion": "1.5.6",
+    "mainVersion": "1.5.8",
     "versions": [
+        ["1.5.7-8", {
+            "messageEn": "Bugs fixed.",
+            "messageRu": "Исправлены ошибки."
+        }],
         ["1.5.6", {
             "messageEn": "Improved rewind!",
             "messageRu": "Улучшена перемотка!"
