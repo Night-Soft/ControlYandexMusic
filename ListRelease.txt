@@ -1,0 +1,9 @@
+ControlYandexMusic
+./_locales/*/*
+./fonts/*
+./img/*
+./js/*
+*.html
+*.json
+*.css
+./Readme.txt
