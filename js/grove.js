@@ -84,7 +84,6 @@ function setTime(currentSeconds) {
 
 function setTrackProgress(duration = getDuration(), progress = getProgress(), isPlaying = getIsPlay()) {
     //set duration time progress
-    if (!isPlaying) return;
     let minutes = 0;
     let seconds = 0;
     if (duration > 60) {
