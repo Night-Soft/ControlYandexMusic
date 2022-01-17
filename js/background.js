@@ -106,8 +106,6 @@ chrome.runtime.onMessageExternal.addListener(
                     }
                 }
             });
-
-
         }
     });
 chrome.runtime.onMessage.addListener(
@@ -117,6 +115,10 @@ chrome.runtime.onMessage.addListener(
         }
         if (request.loading == true) {
             firstLoad(request.activeTab);
+        }
+        if (request.getId === "getId") {
+            let extId = chrome.runtime.id;
+            sendResponse({ id: extId });
         }
     });
 

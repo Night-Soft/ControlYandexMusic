@@ -1,5 +1,4 @@
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-    if (request.key == true) { isKey = true }
     switch (request.data) {
         case 'previous':
             previous();
@@ -15,15 +14,11 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
             break;
         case 'setTime':
             window.postMessage({ function: "setTime", time: request.time }, "*");
-            // console.log(request.time);
             break;
         case 'extensionIsLoad':
             sendResponse({ isConnect: true })
             getCurrentTrack();
             break;
-            // case 'getCurrentTrack':
-            //         getCurrentTrack();
-            //     break;
         default:
             break;
     }
@@ -41,9 +36,22 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
             window.postMessage({ commandKey: "toggleLike-key" }, "*");
             break;
     }
+    if (request.data.play) {
+        window.postMessage({ play: request.data.play }, "*");
+    }
 });
 
-let injectJS = () => {
+let injectJS = (id) => {
+    var injectCode =
+        `
+        let getId = (id = "${ id }") => {
+        return id;
+    }`;
+    var script = document.createElement('script');
+    script.textContent = injectCode;
+    (document.head || document.documentElement).appendChild(script);
+    script.remove();
+
     var s = document.createElement('script');
     s.src = chrome.runtime.getURL('js/injected.js');
     s.onload = function() {
@@ -53,7 +61,13 @@ let injectJS = () => {
     //console.log("js injected");
 
 }
-injectJS();
+
+let getId = () => {
+    chrome.runtime.sendMessage({ getId: "getId" }, function(response) {
+        injectJS(response.id);
+    });
+}
+getId();
 
 let getCurrentTrack = () => {
     window.postMessage({ function: "getCurrentTrack" }, "*");
@@ -74,12 +88,3 @@ let next = () => {
 let toggleLike = () => {
     window.postMessage({ function: "toggleLike" })
 }
-
-let nameTrack = "isEmpty";
-let nameArtists = ""
-let trackTitleNext = document.getElementsByClassName("track__title");
-let progressLeft = document.getElementsByClassName("progress__left");
-let i = 0;
-let isKey = false;
-let isBtn = false;
-let likes = false;
