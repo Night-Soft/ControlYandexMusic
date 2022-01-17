@@ -62,6 +62,10 @@ let WhatNew = {
         let whatNewJson = WhatNew.getWhatNew().then((value) => {
             if (!value["success"]) { return; }
             whatNewJson = value;
+            let version = document.getElementById("Version");
+            var manifestData = chrome.runtime.getManifest();
+            version.innerHTML = chrome.i18n.getMessage("shortName");
+            //version.innerHTML += " " + manifestData.version;
             let listChangesCoontent = document.getElementsByClassName("list-changes-coontent")[0];
             listChangesCoontent.innerHTML = "";
             for (let i = 0; i < whatNewJson["versions"].length; i++) {
