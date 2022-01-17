@@ -6,7 +6,7 @@ let durationSpan = document.querySelector(".duration");
 let moveTimeCurrent = document.querySelector(".move-time-current");
 let currentMoveTime = document.getElementById("CurrentMoveTime");
 
-var updater;
+let updater;
 let duration = 0;
 let progress = 0;
 let isPlay = false;
@@ -25,11 +25,10 @@ let getIsPlay = (isP) => {
 }
 
 let mouseMove = (event) => {
-    var x = event.clientX;
+    let x = event.clientX;
     x += -25;
     moveTimeCurrent.style.left = "calc(" + x + "px - " + "20px)";
     moveTimeCurrent.style.display = "flex";
-    //console.log("set block " + moveTimeCurrent.offsetLeft);
     currentMoveTime.innerHTML = countTimeHelper();
 
 }
@@ -38,18 +37,17 @@ groove.onmousemove = mouseMove;
 
 groove.onmouseout = (event) => {
     moveTimeCurrent.style.display = "none";
-    //console.log("set None");
 
 }
 
 groove.onmousedown = function(event) {
-    var x = event.clientX;
+    let x = event.clientX;
     x += -25;
     grooveCurrent.style.width = x + "px";
     handle.style.left = "calc(" + x + "px - " + "10px)";
     countTime();
     groove.onmousemove = function(event) {
-        var x = event.clientX;
+        let x = event.clientX;
         x += -25;
         grooveCurrent.style.width = x + "px";
         handle.style.left = "calc(" + x + "px - " + "10px)";
@@ -130,12 +128,13 @@ let twoDigits = (seconds, minutes) => {
 }
 
 function trackUpdater(duration = getDuration(), progress = getProgress(), isPlay = getIsPlay()) {
-    if (!isPlay) return;
     try {
         clearInterval(updater)
     } catch (error) {
         console.log(error)
     }
+    if (!isPlay) return;
+
     let minutes = 0;
     let seconds = 0;
     if (isPlay) updater = setInterval(updaterTime, 1000);
