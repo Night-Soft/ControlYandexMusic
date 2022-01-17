@@ -1,4 +1,3 @@
- 
 #!/bin/bash
 function getVersion () {
 echo "getVersion()"
@@ -43,6 +42,7 @@ commaPos=$((commaPos + 2)) # +2 correct cute
 localVersion=$(echo "$localVersion" | cut -c $commaPos-$lastCommaPos)
 version=$localVersion
 }
+
 notify-send --urgency=normal --expire-time=5000 "Start building"
 listRelease="./ListRelease.txt"
 list=""
