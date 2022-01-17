@@ -20,13 +20,9 @@ let showNotify = document.getElementById("showNotify");
 let listSettings = document.getElementById("listSettings");
 let yesNews = document.getElementById("YesNews");
 let whatNew = document.getElementById("whatNew");
-// let timer = document.getElementById("Timer");
-
-
 
 let container = document.getElementsByClassName("container")[0];
 let containerMenu = document.getElementsByClassName("content-menu")[0];
-let modalSide = document.getElementsByClassName("modal-side")[0];
 let about = document.getElementsByClassName("side")[0];
 let supportMenu = document.getElementsByClassName("support-menu")[0];
 let closeSide = document.getElementsByClassName("close-side")[0];
@@ -39,11 +35,15 @@ let loaderContainer = document.getElementsByClassName("loader-container")[0];
 let yesNoNew = document.getElementsByClassName("yes-no-new")[0];
 let settingsClass = document.getElementsByClassName("settings")[0];
 let transition = document.getElementsByClassName("transition");
+let hamburgerMenuList = document.getElementsByClassName("hamburger-menu-list")[0];
 let modalNews = document.querySelector(".modal-news");
 
+let contentListMenu = document.getElementsByClassName("content-list-menu")[0];
+let modalListMenu = document.getElementsByClassName("modal-list-menu")[0];
+
+let isMenuListOpen = false;
 let isMenuOpen = false;
 let newOrReload = true;
-//let isNew = true;
 
 let Extension = {
     onload: function() {
@@ -64,6 +64,9 @@ let Extension = {
         transition[0].style.transition = "0.7s"
         transition[1].style.transition = "0.7s"
         transition[2].style.transition = "0.7s"
+        transition[3].style.transition = "0.7s"
+        transition[4].style.transition = "0.7s"
+        transition[5].style.transition = "0.7s"
     },
 };
 
@@ -107,7 +110,9 @@ chrome.runtime.onMessageExternal.addListener(
             default:
                 break;
         }
-
+        if (request.trackInfo) {
+            updateTracksList(request.trackInfo);
+        }
     });
 
 function openingExtension(event) {
@@ -195,9 +200,6 @@ btnNew.onclick = () => {
     openNewTab();
 }
 
-
-
-
 let getConnect = () => {
     noConnect.style.display = "flex";
     noConnect.classList.add("puff-in-center");
@@ -233,6 +235,47 @@ let openNewTab = () => {
 
 container.onclick = function() {
     toggleMenu();
+}
+
+let toggleListMenu = () => {
+    hamburgerMenuList.classList.toggle("change-list");
+    let removeOpacity = () => {
+        modalListMenu.classList.remove("opacity");
+        modalListMenu.removeEventListener("animationend", removeOpacity);
+        scrollToSelected();
+    }
+    let removeOpacityReverse = () => { // run after 0.7s
+        modalListMenu.classList.remove("opacity-reverse");
+        modalListMenu.style.display = "none"
+        modalListMenu.removeEventListener("animationend", removeOpacityReverse);
+    }
+    let endListAnimation = (ev) => {
+        modalListMenu.style.display = "none"
+        isMenuListOpen = false;
+        contentListMenu.removeEventListener("animationend", endListAnimation);
+        console.log("endListAnimationg");
+    }
+    if (isMenuListOpen == false) { // open menu
+        modalListMenu.addEventListener("animationend", removeOpacity);
+        modalListMenu.classList.add("opacity");
+        contentListMenu.classList.add("slide-left");
+        modalListMenu.style.display = "block";
+        isMenuListOpen = true;
+    } else {
+        modalListMenu.classList.add("opacity-reverse");
+        modalListMenu.addEventListener("animationend", removeOpacityReverse);
+        contentListMenu.classList.remove("slide-left");
+        contentListMenu.classList.add("slide-left-out");
+        contentListMenu.addEventListener("animationend", endListAnimation);
+
+    }
+}
+modalListMenu.onclick = (e) => {
+    if (e.target !== modalListMenu) { return; }
+    toggleListMenu();
+}
+hamburgerMenuList.onclick = () => {
+    toggleListMenu();
 }
 
 previous[0].addEventListener('click', function() {
@@ -353,6 +396,7 @@ let endAnimation = (ev) => {
 }
 let toggleMenu = () => {
     container.classList.toggle("change");
+    let modalSide = document.getElementsByClassName("modal-side")[0];
     let removeOpacity = () => {
         modalSide.classList.remove("opacity");
         modalSide.removeEventListener("animationend", removeOpacity);

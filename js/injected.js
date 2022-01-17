@@ -1,5 +1,5 @@
-var extensionId = "oanhfnjahgongaakgbccpgkepeopbhmd";
-var port = chrome.runtime.connect(extensionId);
+const extensionId = getId();
+let port = chrome.runtime.connect(extensionId);
 window.addEventListener("message", function(event) {
     if (event.source != window) { return; }
     switch (event.data.function) {
@@ -40,6 +40,9 @@ window.addEventListener("message", function(event) {
         case 'toggleLike-key':
             toggleLikeKey();
             break;
+    }
+    if (event.data.play) {
+        externalAPI.play(parseInt(event.data.play))
     }
 }, false);
 let mediaSession = navigator.mediaSession;
@@ -91,13 +94,17 @@ externalAPI.on(externalAPI.EVENT_TRACK, function(event) {
 });
 
 function getTracks() {
-
+    let trackInfo = {
+        tracksList: externalAPI.getTracksList(),
+        sourceInfo: externalAPI.getSourceInfo(),
+        index: externalAPI.getTrackIndex(),
+    }
     chrome.runtime.sendMessage(extensionId, {
         data: "currentTrack",
         api: externalAPI.getCurrentTrack(),
         isPlaying: externalAPI.isPlaying(),
         progress: externalAPI.getProgress(),
-
+        trackInfo: trackInfo,
     }, );
 }
 
