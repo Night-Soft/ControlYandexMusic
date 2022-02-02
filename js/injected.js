@@ -69,21 +69,21 @@ let setMediaSession = () => {
     let current = externalAPI.getCurrentTrack();
     let iconTrack = current.cover;
     if (iconTrack == undefined) {
-        iconTrack = "img/icon.png"
+        iconTrack = 'img/icon.png'
     } else {
         iconTrack = iconTrack.slice(0, -2);
-        iconTrack = "https://" + iconTrack; // + "400x400"
+        iconTrack = 'https://' + iconTrack; // + "400x400"
     }
     navigator.mediaSession.metadata = new MediaMetadata({
         title: current.title,
         artist: current.artists[0].title,
         artwork: [
-            { src: iconTrack + '50x50', sizes: '50x50', type: 'image/jpeg' },
-            { src: iconTrack + '80x80', sizes: '80x80', type: 'image/jpeg' },
-            { src: iconTrack + '100x100', sizes: '100x100', type: 'image/jpeg' },
-            { src: iconTrack + '200x200', sizes: '200x200', type: 'image/jpeg' },
-            { src: iconTrack + '300x300', sizes: '300x300', type: 'image/jpeg' },
-            { src: iconTrack + '400x400', sizes: '400x400', type: 'image/jpeg' },
+            { src: iconTrack + '50x50', sizes: '50x50', type: 'image/jpg' },
+            { src: iconTrack + '80x80', sizes: '80x80', type: 'image/jpg' },
+            { src: iconTrack + '100x100', sizes: '100x100', type: 'image/jpg' },
+            { src: iconTrack + '200x200', sizes: '200x200', type: 'image/jpg' },
+            { src: iconTrack + '300x300', sizes: '300x300', type: 'image/jpg' },
+            { src: iconTrack + '400x400', sizes: '400x400', type: 'image/jpg' },
 
         ]
     });
@@ -109,25 +109,11 @@ function getTracks() {
 }
 
 function next() {
-    let promise = externalAPI.next();
-    promise.then(function() {
-        getTracks();
-    });
-}
-
-function sendTest() {
-    window.postMessage({
-        type: "FROM_PAGE",
-        text: "Hello from the webpage!"
-    }, "*");
+    externalAPI.next();
 }
 
 function previous() {
-    let promise = externalAPI.prev();
-    promise.then(function() {
-        getTracks();
-    });
-
+    externalAPI.prev();
 }
 
 function togglePause() {
@@ -154,8 +140,6 @@ let previousKey = () => {
                 dataKey: "previous-key",
                 currentTrack: externalAPI.getCurrentTrack()
             });
-            getTracks();
-
         });
 }
 let togglePauseKey = () => {
@@ -166,7 +150,6 @@ let togglePauseKey = () => {
         currentTrack: externalAPI.getCurrentTrack()
     });
     getTracks();
-
 }
 let nextKey = () => {
     let promise = externalAPI.next();
@@ -176,7 +159,6 @@ let nextKey = () => {
             dataKey: "next-key",
             currentTrack: externalAPI.getCurrentTrack()
         });
-        getTracks();
     });
 }
 let toggleLikeKey = () => {
@@ -187,5 +169,4 @@ let toggleLikeKey = () => {
         currentTrack: externalAPI.getCurrentTrack()
     });
     getTracks();
-
 }
