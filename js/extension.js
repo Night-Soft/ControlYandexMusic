@@ -44,6 +44,7 @@ let modalListMenu = document.getElementsByClassName("modal-list-menu")[0];
 let isMenuListOpen = false;
 let isMenuOpen = false;
 let newOrReload = true;
+let urlCover;
 
 let Extension = {
     onload: function() {
@@ -106,6 +107,7 @@ chrome.runtime.onMessageExternal.addListener(
                 break;
             case 'toggleLike':
                 toggleLike(request.isLiked.liked);
+                updateTracksListLike(request.isLiked.liked);
                 break;
             default:
                 break;
@@ -311,14 +313,14 @@ function toggleLike(is) {
 
 trackImage[0].addEventListener('click', function() {
     function removeClass() {
-        modalCover[0].classList.remove("scale-shift-in-center");
+        // modalCover[0].classList.remove("scale-shift-in-center");
         modal[0].classList.remove("modal-background");
         modalCover[0].removeEventListener("animationend", removeClass);
     }
     modalCover[0].addEventListener("animationend", removeClass);
-    modalCover[0].classList.add("scale-shift-in-center");
+    // modalCover[0].classList.add("scale-shift-in-center");
     modal[0].classList.add("modal-background");
-    openCover();
+    openCover(trackImage[0], urlCover);
     pushEvent("Cover open", "clicked")
 
 
@@ -326,14 +328,40 @@ trackImage[0].addEventListener('click', function() {
 
 modal[0].onclick = function() {
     function removeClass() {
-        modalCover[0].classList.remove("scale-shift-in-center-reverse");
+        //modalCover[0].classList.remove("scale-shift-in-center-reverse");
         modal[0].classList.remove("modal-background-reverse");
         modal[0].removeEventListener("animationend", removeClass);
         modal[0].style.display = "none";
     }
     modal[0].addEventListener("animationend", removeClass);
-    modalCover[0].classList.add("scale-shift-in-center-reverse");
+    // modalCover[0].classList.add("scale-shift-in-center-reverse");
     modal[0].classList.add("modal-background-reverse");
+    let options = {
+        duration: 700,
+        direction: 'reverse',
+        //fill: 'both',
+    }
+    if (CurrentAnimation.isFromList) {
+        let offset = (el) => {
+            let rect = el.getBoundingClientRect(),
+                scrollLeft = window.pageXOffset || document.documentElement.scrollLeft,
+                scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            return {
+                top: rect.top + scrollTop,
+                left: rect.left + scrollLeft
+            }
+        }
+        let itemOffset = offset(State.coverItem);
+        let modalCoverOffset = offset(modalCover[0]);
+
+        let left = itemOffset.left - 30 - 130 - 25;
+        let top = itemOffset.top - modalCoverOffset.top - 133 - 10;
+        CurrentAnimation.keyframe.transform = ['translate(' + parseInt(left) + 'px, ' +
+            parseInt(top) + 'px)', 'translate(0px, 0px)'
+        ];
+    }
+
+    modalCover[0].animate(CurrentAnimation.keyframe, options);
 }
 
 shortCuts.onclick = () => {
@@ -498,24 +526,14 @@ let setRightFontSize = (fontSize = 1.4) => {
     }
 }
 
-let urlCover;
-
 function setMediaData(trackTitle, trackArtists, iconTrack) {
     aritstName[0].innerHTML = trackArtists;
     trackName[0].innerHTML = trackTitle;
     aritstName[0].style.fontSize = "";
     trackName[0].style.fontSize = "";
     setRightFontSize();
-    //fontSize = 1.4;
-    if (iconTrack == undefined) {
-        iconTrack = "img/icon.png"
-    } else {
-        iconTrack = "https://" + iconTrack
-        iconTrack = iconTrack.slice(0, -2);
-        iconTrack += "200x200";
-        urlCover = iconTrack;
-    }
-    trackImage[0].style.backgroundImage = "url(" + iconTrack + ")";
+    urlCover = getUrl(iconTrack, 200);
+    trackImage[0].style.backgroundImage = "url(" + urlCover + ")";
 }
 
 function changeState(isPlaying) {
@@ -529,38 +547,68 @@ function changeState(isPlaying) {
         pause[0].style.backgroundSize = "";
     }
 }
-
-
-function openCover() {
-    let px = 400;
-    urlCover = urlCover.slice(0, -7);
-    urlCover += px + "x" + px;
-
-    function testImage() {
-        try {
-            urlCover = urlCover.slice(0, -7);
-            urlCover += px + "x" + px;
-            modalCover[0].style.backgroundImage = "url(" + urlCover + ")";
-            modalCover[0].onerror = function() {
-                if (px > 100) {
-                    if (px == 100) {
-                        px += -50;
-                        testImage()
-                    }
-                    px += -100;
-                    testImage();
-                }
-            };
-            modalCover[0].onload = () => {
-                modal[0].style.display = "flex";
-            }
-            modalCover[0].src = urlCover;
-
-        } catch (error) {
-            console.log(error);
+let getUrl = (url, size = 50) => {
+    if (url == undefined) {
+        url = "img/icon.png"
+        return url;
+    } else {
+        let endSlice = url.lastIndexOf("/") - url.length + 1;
+        if (!url.startsWith("https://")) {
+            url = "https://" + url
         }
+        url = url.slice(0, endSlice); // -
+        url += size + "x" + size;
+        return url;
     }
-    testImage();
+}
+
+function testImage(url, size = 400, callback) {
+    try {
+        modalCover[0].src = getUrl(url, size);
+        modalCover[0].onerror = function() {
+            if (size > 100) {
+                if (size == 100) {
+                    size += -50;
+                    testImage(getUrl(url, size), size)
+                }
+                size += -100;
+                testImage(getUrl(url, size), size);
+            }
+        };
+        modalCover[0].onload = () => {
+            modal[0].style.display = "flex";
+            callback.animate(callback.parameter); // call animation
+
+        }
+
+    } catch (error) {
+        console.log(error);
+    }
+}
+let animateMainImage = (item) => {
+    let width = item.offsetWidth;
+    let height = item.offsetHeight;
+    let left = item.offsetLeft - 130; //modalCover[0].offsetLeft
+    let top = item.offsetTop - 95; //modalCover[0].offsetTop
+    let keyframe = {
+        width: [width + 'px', 80 + '%'],
+        height: [height + 'px', 96 + '%'],
+        transform: ['translate(' + left + 'px, ' + top + 'px)', 'translate(0px, 0px)'],
+        borderRadius: ['15px', '20px'],
+        easing: ['cubic-bezier(.85, .2, 1, 1)']
+    }
+    let options = {
+        duration: 700,
+        fill: 'both'
+    }
+    CurrentAnimation.keyframe = keyframe;
+    CurrentAnimation.options = options;
+    CurrentAnimation.isFromList = false;
+    modalCover[0].animate(keyframe, options);
+}
+
+function openCover(item, url, animate = animateMainImage) {
+    testImage(url, 400, { animate: animate, parameter: item });
 }
 
 let pushEvent = (target, event) => {
