@@ -7,17 +7,14 @@ let selectedItem;
 let likeItem;
 let isFirstScroll = false;
 let t = 1000;
-let resistorsOM = [470, 22, 220, 290, 10, 100, 150, 1000, 47, 330, 510, 270, 680];
-let resistorsKOM = [10, 47, 470, 300, 68, 51, 20, 2.2, 5.1, 1000, 1000, 2, 100, 680, 220, 6.8, 3.3, 57];
-// for (let i = resistorsKOM.length - 1; i >= 0; i--) {
-//     resistorsKOM[i] = resistorsKOM[i] * 1000;
-// }
+// let resistorsOM = [470, 22, 220, 290, 10, 100, 150, 1000, 47, 330, 510, 270, 680];
+// let resistorsKOM = [10, 47, 470, 300, 68, 51, 20, 2.2, 5.1, 1000, 1000, 2, 100, 680, 220, 6.8, 3.3, 57];
 
-resistorsOM.sort(function(a, b) { return a - b });
-resistorsKOM.sort(function(a, b) { return a - b });
-console.log(resistorsOM);
-console.log(resistorsKOM);
-
+// resistorsOM.sort(function(a, b) { return a - b });
+// resistorsKOM.sort(function(a, b) { return a - b });
+// console.log(resistorsOM);
+// console.log(resistorsKOM);
+let imageUrls = [];
 let State = { // current
     track: undefined,
     index: undefined, // number
@@ -75,10 +72,11 @@ let setTracksList = (list, index) => {
 
         let itmeCover = document.createElement("DIV");
         itmeCover.classList.add("item-cover");
+        imageUrls.push(list[i].cover);
         itmeCover.style.backgroundImage = "url(" + getUrl(list[i].cover) + ")";
         itmeCover.onclick = (ev) => {
             State.coverItem = itmeCover;
-            openCOV(itmeCover, getUrl(list[i].cover, 400));
+            openCover(itmeCover, getUrl(list[i].cover, 400), animateListImage);
         }
 
         let contentItemName = document.createElement("DIV");
@@ -87,6 +85,7 @@ let setTracksList = (list, index) => {
         let itemNameTrack = document.createElement("DIV");
         itemNameTrack.classList.add("item-name-track");
         itemNameTrack.innerHTML = list[i].title;
+
         let itemArtists = document.createElement("DIV");
         itemArtists.classList.add("item-artists");
         itemArtists.innerHTML = getArtists(list[i]);
@@ -178,18 +177,6 @@ let updateTracksListLike = (isLike) => {
         State.likeItem.classList.add("list-dislike");
     }
 }
-let getUrl = (url, size = 50) => {
-    if (url == undefined) {
-        url = "img/icon.png"
-        return url;
-    } else {
-        let endSlice = url.lastIndexOf("/") - url.length + 1;
-        url = "https://" + url
-        url = url.slice(0, endSlice); // -
-        url += size + "x" + size;
-        return url;
-    }
-}
 
 const equals = (a, b) => {
     for (let i = 0; i < a.length; i++) {
@@ -235,81 +222,33 @@ let clearList = (list) => {
         list[i].remove();
     }
 }
-
-// function offset(el) {
-//     var rect = el.getBoundingClientRect(),
-//         scrollLeft = window.pageXOffset || document.documentElement.scrollLeft,
-//         scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-//     return { top: rect.top + scrollTop, left: rect.left + scrollLeft }
-// }
-let openCOV = (item, urlCover) => {
+let animateListImage = (item) => {
     function offset(el) {
-        var rect = el.getBoundingClientRect(),
+        let rect = el.getBoundingClientRect(),
             scrollLeft = window.pageXOffset || document.documentElement.scrollLeft,
             scrollTop = window.pageYOffset || document.documentElement.scrollTop;
         return { top: rect.top + scrollTop, left: rect.left + scrollLeft }
     }
-
-    let openImage = (item) => {
-        let width = item.offsetWidth;
-        let height = item.offsetHeight;
-        let itemOffset = offset(item);
-        let modalCoverOffset = offset(modalCover[0]);
-
-        let left = itemOffset.left - 30 - 130 - 25; //modalCover[0].offsetLeft - modalCoverOffset.left - 25;
-        let top = itemOffset.top - modalCoverOffset.top - 133 - 10;
-        //console.log("width ", width, "height ", height);
-        console.log("left ", left, "top ", top);
-        console.log("itemOffset Left ", itemOffset.left, "itemOffset top", itemOffset.top);
-        console.log("modalCover Left Offset", modalCoverOffset.left, "modalCover top Offset", modalCoverOffset.top);
-        let keyframe = {
-            width: [width + 'px', 80 + '%'],
-            height: [height + 'px', 96 + '%'],
-            transform: ['translate(' + left + 'px, ' + top + 'px)', 'translate(0px, 0px)'],
-            borderRadius: ['10px', '20px'],
-            easing: ['cubic-bezier(.85, .2, 1, 1)']
-        };
-        console.log(keyframe);
-        let options = {
-            duration: 700,
-            //fill: 'both',
-        }
-        CurrentAnimation.keyframe = keyframe;
-        CurrentAnimation.options = options;
-        CurrentAnimation.left = left;
-        CurrentAnimation.top = top;
-        CurrentAnimation.isFromList = true;
-        modalCover[0].animate(keyframe, options);
+    let width = item.offsetWidth;
+    let height = item.offsetHeight;
+    let itemOffset = offset(item);
+    let modalCoverOffset = offset(modalCover[0]);
+    let left = itemOffset.left - 30 - 130 - 25; //modalCover[0].offsetLeft - modalCoverOffset.left - 25;
+    let top = itemOffset.top - modalCoverOffset.top - 133 - 10;
+    let keyframe = {
+        width: [width + 'px', 80 + '%'],
+        height: [height + 'px', 96 + '%'],
+        transform: ['translate(' + left + 'px, ' + top + 'px)', 'translate(0px, 0px)'],
+        borderRadius: ['10px', '20px'],
+        easing: ['cubic-bezier(.85, .2, 1, 1)']
+    };
+    let options = {
+        duration: 700,
     }
-    let px = 400;
-
-    function testImage(url) {
-        try {
-            //urlCover = getUrl(urlCover, px) 
-            modalCover[0].style.backgroundImage = "url(" + url + ")";
-            modalCover[0].onerror = function() {
-                if (px > 100) {
-                    if (px == 100) {
-                        px += -50;
-                        testImage(getUrl(url, px))
-                    }
-                    px += -100;
-                    testImage(getUrl(url, px));
-                }
-            };
-            modalCover[0].onload = () => {
-                modal[0].style.display = "flex";
-                let left = modalCover[0].offsetLeft;
-                let top = modalCover[0].offsetTop;
-                console.log("modalCover left ", left, "modalCover top ", top);
-                openImage(item);
-
-            }
-            modalCover[0].src = urlCover;
-
-        } catch (error) {
-            console.log(error);
-        }
-    }
-    testImage(urlCover);
+    CurrentAnimation.keyframe = keyframe;
+    CurrentAnimation.options = options;
+    CurrentAnimation.left = left;
+    CurrentAnimation.top = top;
+    CurrentAnimation.isFromList = true;
+    modalCover[0].animate(keyframe, options);
 }
