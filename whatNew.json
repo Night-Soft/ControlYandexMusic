@@ -1,7 +1,11 @@
 {
     "mainVersion": "1.5.8",
     "versions": [
-        ["1.5.7-8", {
+        ["2.0.0", {
+            "messageEn": "Added a list of tracks of the current playlist. <br> Also you can select track from playlist.",
+            "messageRu": "Добавлен список треков текущего плейлиста. <br> Также вы можете выбрать трек из плейлиста."
+        }],
+        ["1.5.7-9", {
             "messageEn": "Bugs fixed.",
             "messageRu": "Исправлены ошибки."
         }],
