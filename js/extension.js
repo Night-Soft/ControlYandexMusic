@@ -71,12 +71,16 @@ let Extension = {
     },
 };
 
-chrome.runtime.onMessage.addListener(
+chrome.runtime.onMessage.addListener( // get from background
     function(request, sender, sendResponse) {
         if (request.uploaded == true) {
             chrome.tabs.update(request.activeTab, {
                 active: true
             });
+        }
+        if (request.options) {
+            console.log(request.options);
+            setOptions(request.options);
         }
     });
 
@@ -136,7 +140,7 @@ function openingExtension(event) {
                     response.isConnect;
                 } catch (error) {
                     console.log(error);
-                    getConnect()
+                    noConnceted();
                 }
 
             });
@@ -178,7 +182,11 @@ btnYes.onclick = () => {
                 if (tabs[i].url.startsWith("https://music.yandex")) {
                     chrome.tabs.reload(tabs[i].id);
                     setTimeout(function() {
-                        firstLoadMessage(tabs[i].id)
+                        //firstLoadMessage(tabs[i].id);
+                        sendEventBackground({
+                            loading: true,
+                            activeTab: tabs[i].id
+                        });
                     }, 3000);
                     loaderContainer.style.display = "block";
                     appDetected.innerHTML = chrome.i18n.getMessage("waitWhilePage");
@@ -202,7 +210,7 @@ btnNew.onclick = () => {
     openNewTab();
 }
 
-let getConnect = () => {
+let noConnceted = () => {
     noConnect.style.display = "flex";
     noConnect.classList.add("puff-in-center");
     newOrReload = false;
@@ -255,7 +263,7 @@ let toggleListMenu = () => {
         modalListMenu.style.display = "none"
         isMenuListOpen = false;
         contentListMenu.removeEventListener("animationend", endListAnimation);
-        console.log("endListAnimationg");
+        //console.log("endListAnimationg");
     }
     if (isMenuListOpen == false) { // open menu
         modalListMenu.addEventListener("animationend", removeOpacity);
@@ -488,11 +496,27 @@ function sendEvent(event) {
     });
 }
 
-let firstLoadMessage = (activeTab) => {
-    chrome.runtime.sendMessage({
-        loading: true,
-        activeTab: activeTab
+let sendEventBackground = (event) => { // event should be as object
+    chrome.runtime.sendMessage(event, function(response) {
+        if (response.options) {
+            setOptions(response.options); // options.js
+        }
     });
+};
+// let firstLoadMessage = (activeTab) => {
+//     sendEventBackground({
+//         loading: true,
+//         activeTab: activeTab
+//     });
+//     // chrome.runtime.sendMessage({
+//     //     loading: true,
+//     //     activeTab: activeTab
+//     // });
+//    // test();
+// }
+
+let test = () => {
+    sendEventBackground({ getOptions: true });
 
 }
 
@@ -507,7 +531,11 @@ function sendFirstLoad() {
                 break;
             }
         }
-        firstLoadMessage(activeTab);
+        // firstLoadMessage(activeTab);
+        sendEventBackground({
+            loading: true,
+            activeTab: activeTab
+        });
     });
 }
 

@@ -2,21 +2,39 @@ var playPauseNotify = document.getElementById('n1');
 var prevNextNotify = document.getElementById('n2');
 let Options = {
     onload: function() {
-        checkStorage();
-        setkey();
-    }
+        //checkStorage();
+        sendEventBackground({ getOptions: "all" });
+        //setkey();
+    },
+    isPlayPauseNotify: undefined,
+    isPrevNextNotify: undefined,
+    version: undefined,
+    innewversion: undefined
 };
 
 playPauseNotify.onclick = () => {
-    chrome.storage.local.set({ key1: playPauseNotify.checked });
+    sendEventBackground({ writeOptions: true, options: { isPlayPuaseNotify: playPauseNotify.checked } });
+    //sendEventBackground({ getOptions: { response: true, paramter: ["isPlayPauseNotify"] } });
+
+    //chrome.storage.local.set({ key1: playPauseNotify.checked });
+    //sendEventBackground({ getOptions: { getOptions: true } });
+
 
 }
 prevNextNotify.onclick = () => {
-    chrome.storage.local.set({ key2: prevNextNotify.checked });
+    sendEventBackground({ writeOptions: true, options: { isPrevNextNotify: prevNextNotify.checked } });
+    sendEventBackground({ getOptions: { response: true, paramter: ["isPrevNextNotify"] } });
+
+    // chrome.storage.local.set({ key2: prevNextNotify.checked });
 
 }
-
-// check and set to local storage
+let Example = {
+        key1: { playPauseNotify: undefined },
+        key2: { prevNextNotify: undefined },
+        version: { version: undefined },
+        innewversion: { innewversion: undefined }
+    }
+    // check and set to local storage
 let checkStorage = () => {
     getKey1().then(function(value1) {
         if (typeof(value1) != "boolean") {
@@ -83,14 +101,34 @@ function getInNewVersion() {
 }
 
 // get and set key value to frontend
-function setkey() {
-    getKey1().then(function(value) {
-        playPauseNotify.checked = value;
+// function setkey() {
+//     getKey1().then(function(value) {
+//         playPauseNotify.checked = value;
 
-    });
-    getKey2().then((value) => {
-        prevNextNotify.checked = value;
+//     });
+//     getKey2().then((value) => {
+//         prevNextNotify.checked = value;
 
-    });
+//     });
 
+// }
+
+let setOptions = (options) => {
+    console.log("options set ", options);
+    if (options.isPlayPauseNotify != undefined) {
+        playPauseNotify.checked = options.isPlayPuaseNotify;
+        Options.isPlayPauseNotify = options.isPlayPauseNotify;
+    }
+    if (options.isPrevNextNotify != undefined) {
+        prevNextNotify.checked = options.isPrevNextNotify;
+        Options.isPrevNextNotify = options.isPrevNextNotify;
+    }
+    if (options.version != undefined) {
+        Options.version = options.version;
+
+    }
+    if (options.innewversion != undefined) {
+        Options.innewversion = options.innewversion;
+
+    }
 }

@@ -14,7 +14,6 @@ let t = 1000;
 // resistorsKOM.sort(function(a, b) { return a - b });
 // console.log(resistorsOM);
 // console.log(resistorsKOM);
-let imageUrls = [];
 let State = { // current
     track: undefined,
     index: undefined, // number
@@ -72,7 +71,6 @@ let setTracksList = (list, index) => {
 
         let itmeCover = document.createElement("DIV");
         itmeCover.classList.add("item-cover");
-        imageUrls.push(list[i].cover);
         itmeCover.style.backgroundImage = "url(" + getUrl(list[i].cover) + ")";
         itmeCover.onclick = (ev) => {
             State.coverItem = itmeCover;

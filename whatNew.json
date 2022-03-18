@@ -1,6 +1,10 @@
 {
     "mainVersion": "1.5.8",
     "versions": [
+        ["2.1.0", {
+            "messageEn": "The playlist now shows which track has been added to favorites.",
+            "messageRu": "В плейлисте теперь отображается, какой трек был добавлен в избранное."
+        }],
         ["2.0.0", {
             "messageEn": "Added a list of tracks of the current playlist. <br> Also you can select track from playlist.",
             "messageRu": "Добавлен список треков текущего плейлиста. <br> Также вы можете выбрать трек из плейлиста."
