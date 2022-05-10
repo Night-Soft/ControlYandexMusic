@@ -128,7 +128,6 @@ a {
 
 .like {
     cursor: pointer;
-    cursor: pointer;
     background-image: url(img/disliked.png);
     background-repeat: no-repeat, repeat;
     background-position: center;
@@ -138,6 +137,84 @@ a {
 .content-track {
     display: flex;
     height: 150px;
+}
+
+.toggle-shuffle {
+    cursor: pointer;
+    background-image: url(img/toggleShuffle.svg);
+    background-repeat: no-repeat, repeat;
+    background-position: center;
+    background-size: 25px;
+    opacity: 0.7;
+}
+
+.toggle-shuffle:hover {
+    /* filter: invert(0%) sepia(72%) saturate(2%) hue-rotate(123deg) brightness(108%) contrast(100%); */
+    background-color: rgba(85, 82, 99, 0.25);
+    border-radius: 15px;
+    opacity: 1;
+}
+
+.toggle-repeat {
+    cursor: pointer;
+    background-image: url(img/toggleRepeat.svg);
+    background-repeat: no-repeat, repeat;
+    background-position-x: center;
+    background-position-y: -6px;
+    background-size: 25px;
+    opacity: 0.7;
+}
+
+.toggle-repeat:hover {
+    /* filter: invert(0%) sepia(72%) saturate(2%) hue-rotate(123deg) brightness(108%) contrast(100%); */
+    background-color: rgba(85, 82, 99, 0.25);
+    border-radius: 15px;
+    opacity: 1;
+}
+
+.toggle-volume {
+    cursor: pointer;
+    background-image: url(img/setVolume.svg);
+    background-repeat: no-repeat, repeat;
+    background-position: center;
+    background-position-y: -5px;
+    background-size: 25px;
+    opacity: 0.7;
+}
+
+.toggle-volume:hover {
+    /* filter: invert(0%) sepia(72%) saturate(2%) hue-rotate(123deg) brightness(108%) contrast(100%); */
+    background-color: rgba(85, 82, 99, 0.25);
+    border-radius: 15px;
+    opacity: 1;
+}
+
+.control-toggle {
+    width: 40px;
+    height: 20px;
+    align-self: center;
+    background-size: 30px;
+    margin-left: 1px;
+}
+
+.content-groove-volume {
+    display: flex;
+    padding-right: 25px;
+}
+
+.hide-volume {
+    animation: hide-volume 300ms;
+}
+
+@keyframes hide-volume {
+    0% {
+        width: 60px;
+        opacity: 1;
+    }
+    100% {
+        width: 0px;
+        opacity: 0;
+    }
 }
 
 .cover {
@@ -219,6 +296,7 @@ a {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    margin-top: 8px;
 }
 
 .groove-content {
@@ -249,11 +327,14 @@ a {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+    align-items: center;
     color: white;
+    margin-bottom: 8px;
 }
 
 .current-time {
     padding: 0px 20px;
+    padding-right: 0px;
 }
 
 .duration {
@@ -333,12 +414,125 @@ a {
     left: 5px;
 }
 
+.slider-content {
+    align-self: center;
+}
+
+.slider {
+    display: flex;
+    flex-direction: column;
+}
+
+.slider-progress {
+    width: 90%;
+    margin: auto;
+}
+
+.slider-groove {
+    overflow: hidden;
+    border-radius: 10px;
+    width: 60px;
+    height: 5px;
+    background-color: rgb(194, 194, 194);
+    cursor: pointer;
+}
+
+.slider-groove-current {
+    border-radius: 10px;
+    width: 50%;
+    height: 5px;
+    background-color: #ffdd00;
+}
+
+:root {
+    --progress-height: 10px;
+    --progress-handle-size: 24px;
+    --volume-height: 7px;
+}
+
+.slider-groove-progress {
+    margin: auto;
+    width: 100%;
+    height: var(--progress-height);
+}
+
+.slider-groove-current-progress {
+    height: var(--progress-height);
+}
+
+
+/* volume */
+
+.slider-groove-volume {
+    height: var(--volume-height);
+}
+
+.slider-groove-current-volume {
+    height: var(--volume-height);
+}
+
+.slider-handle {
+    position: absolute;
+    align-self: center;
+    margin-top: -5px;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: rgb(255, 255, 255);
+    cursor: pointer;
+    transition: 70ms;
+}
+
+.progress-handle {
+    width: var(--progress-handle-size);
+    height: var(--progress-handle-size);
+    margin-top: calc((var(--progress-handle-size) - var(--progress-height)) / -2);
+}
+
+.slider-helper {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    position: absolute;
+    background: rgb(255, 255, 255);
+    color: #000000;
+    flex-direction: column;
+    justify-content: center;
+    border-radius: 10px;
+    width: 40px;
+    height: 20px;
+    margin-top: -40px;
+}
+
+.slider-helper::before {
+    content: "";
+    position: absolute;
+    color: #ffffff;
+    bottom: -10px;
+    top: initial;
+    margin-left: 5px;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid;
+    border-bottom: 0;
+    border-top-color: inherit;
+    left: 5px;
+}
+
 .container {
     position: absolute;
     display: inline-block;
     cursor: pointer;
     z-index: +2;
     top: 0px;
+}
+
+.content-toggle {
+    display: flex;
+    justify-content: space-evenly;
+    flex-direction: row;
+    margin-right: auto;
 }
 
 .hamburger-menu-list {
