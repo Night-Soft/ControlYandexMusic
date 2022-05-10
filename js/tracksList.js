@@ -6,14 +6,7 @@ let previousSelectItem;
 let selectedItem;
 let likeItem;
 let isFirstScroll = false;
-let t = 1000;
-// let resistorsOM = [470, 22, 220, 290, 10, 100, 150, 1000, 47, 330, 510, 270, 680];
-// let resistorsKOM = [10, 47, 470, 300, 68, 51, 20, 2.2, 5.1, 1000, 1000, 2, 100, 680, 220, 6.8, 3.3, 57];
 
-// resistorsOM.sort(function(a, b) { return a - b });
-// resistorsKOM.sort(function(a, b) { return a - b });
-// console.log(resistorsOM);
-// console.log(resistorsKOM);
 let State = { // current
     track: undefined,
     index: undefined, // number
@@ -29,8 +22,16 @@ let CurrentAnimation = {
     top: undefined,
     isFromList: undefined
 }
+
 let updateTracksList = (trackInfo) => {
     setTitle(trackInfo.sourceInfo);
+
+    // remove null object from array
+    for (let i = trackInfo.tracksList.length; i >= 0; i--) {
+        if (trackInfo.tracksList[i] == null) {
+            trackInfo.tracksList.splice(i, 1);
+        }
+    }
     setTracksList(trackInfo.tracksList, trackInfo.index);
 }
 
