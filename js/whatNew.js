@@ -1,33 +1,34 @@
 let WhatNew = {
-    isNew: false, // fro open from translate
-    openNews: (frist = false) => {
-        WhatNew.setLocale(WhatNew.getLocale());
-        modalNews.style.display = "flex";
-        let i = 7;
-        if (frist) {
-            yesNews.innerHTML += " " + i;
-            yesNews.disabled = true;
-            let setTimer = () => {
-                if (i > 0) { i--; }
-                yesNews.innerHTML = yesNews.innerHTML.slice(0, -1);
-                yesNews.innerHTML += i;
-                if (i == 0) {
-                    setTimeout(function() { // need for delete "0"
-                        yesNews.innerHTML = yesNews.innerHTML.slice(0, -2);
-                        yesNews.disabled = false;
-                        yesNews.classList.remove("yesNews-disable")
-                        yesNews.onclick = () => { modalNews.style.display = "none"; }
-                    }, 1000);
-                    clearInterval(delay);
+    openNews: (isTimer = false) => {
+        let showNew = () => {
+            modalNews.style.display = "flex";
+            let i = 7;
+            if (isTimer) {
+                yesNews.innerHTML += " " + i;
+                yesNews.disabled = true;
+                let setTimer = () => {
+                    if (i > 0) { i--; }
+                    yesNews.innerHTML = yesNews.innerHTML.slice(0, -1);
+                    yesNews.innerHTML += i;
+                    if (i == 0) {
+                        setTimeout(function() { // need for delete "0"
+                            yesNews.innerHTML = yesNews.innerHTML.slice(0, -2);
+                            yesNews.disabled = false;
+                            yesNews.classList.remove("yesNews-disable")
+                            yesNews.onclick = () => { modalNews.style.display = "none"; }
+                        }, 1000);
+                        clearInterval(delay);
 
+                    }
                 }
+                let delay = setInterval(setTimer, 1000);
+            } else {
+                yesNews.disabled = false;
+                yesNews.classList.remove("yesNews-disable");
+                yesNews.onclick = () => { modalNews.style.display = "none"; }
             }
-            let delay = setInterval(setTimer, 1000);
-        } else {
-            yesNews.disabled = false;
-            yesNews.classList.remove("yesNews-disable");
-            yesNews.onclick = () => { modalNews.style.display = "none"; }
         }
+        WhatNew.setLocale(WhatNew.getLocale(), showNew);
 
     },
     getLocale: () => {
@@ -58,14 +59,12 @@ let WhatNew = {
 
 
     },
-    setLocale: (locale) => { //whatNewJson["versions"][0][1].messageEn // versoin - whatNewJson["versions"][0][0]
+    setLocale: (locale, callback) => {
         let whatNewJson = WhatNew.getWhatNew().then((value) => {
             if (!value["success"]) { return; }
             whatNewJson = value;
             let version = document.getElementById("Version");
-            var manifestData = chrome.runtime.getManifest();
             version.innerHTML = chrome.i18n.getMessage("shortName");
-            //version.innerHTML += " " + manifestData.version;
             let listChangesCoontent = document.getElementsByClassName("list-changes-coontent")[0];
             listChangesCoontent.innerHTML = "";
             for (let i = 0; i < whatNewJson["versions"].length; i++) {
@@ -88,12 +87,11 @@ let WhatNew = {
                         changes.innerHTML = whatNewJson["versions"][i][1].messageEn;
                         break;
                 }
-
                 versionChanges.appendChild(version);
                 versionChanges.appendChild(changes);
                 listChangesCoontent.appendChild(versionChanges);
-
             }
+            callback();
         });
     }
 }
