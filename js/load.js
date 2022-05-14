@@ -1,5 +1,5 @@
-var start = window.performance.now();
-let time;
+//let start = window.performance.now();
+//let time;
 let ms = 10;
 
 let getExtensionLoad = () => {
@@ -32,9 +32,8 @@ let getTranslateLoaded = () => {
             Translate.onload();
             Extension.addTransition();
             //WhatNew.openNews();
-            // if (Extension.isNew) { Extension.yesNews(); }
             // var end = window.performance.now();
-            time = window.performance.now() - start;
+            // time = window.performance.now() - start;
             // title[1].innerHTML = Number.parseFloat(time).toPrecision(5);
         }
     }, ms);
