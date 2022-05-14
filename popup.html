@@ -28,7 +28,6 @@
                 <div class="title-list">Title</div>
             </div>
         </div>
-        <!-- <div class="deceiver"></div> -->
     </div>
     <div class="modal-side">
         <div class="content-menu slide-out">
@@ -37,7 +36,6 @@
                 <div class="side ">About</div>
                 <div class="side settings">
                     <span id="settings" class="title-span">Say thanks to the developer</span>
-
                     <div id="listSettings" class="list-settings">
                         <span id="showNotify">Show notifications when control from keyboard: </span>
                         <div class="content-label">
@@ -48,17 +46,13 @@
                             <label id="prevNextNotify" for="n2">Notification when previous / next track.</label>
                             <input type="checkbox" id="n2">
                         </div>
-
-
                     </div>
-
                 </div>
                 <div id="contactMe" class="side ">Contact Me</div>
                 <div id="whatNew" class="side ">What's new?</div>
                 <div id="shortCuts" class="side ">Open keyboard shortcuts</div>
                 <div class="side-help ">
                     <span id="help" class="title-help title-help-menu">Say thanks to the developer</span>
-
                     <!-- <div class="paypal-menu">
                         <span class="paypal-title">PayPal</span>
                     </div> -->
@@ -91,19 +85,34 @@
         <div class="groove-content">
             <div class="content-time">
                 <span class="current-time">0:0</span>
+                <div class="content-toggle">
+                    <div class="toggle-shuffle control-toggle"> </div>
+                    <div class="toggle-repeat control-toggle"> </div>
+                    <div class="content-groove-volume">
+                        <div class="toggle-volume control-toggle"> </div>
+                        <div class="slider-content">
+                            <div class="slider">
+                                <div class="slider-helper"></div>
+                                <div class="slider-groove slider-groove-volume">
+                                    <div class="slider-groove-current slider-groove-current-volume"></div>
+                                </div>
+                                <div class="slider-handle"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <span class="duration">0:0</span>
-
             </div>
-
-            <div class="groove-all ">
-                <div class="groove-current "></div>
-                <div class="handle"></div>
-                <div class="move-time-current ">
-                    <span id="CurrentMoveTime">2:11</span>
+            <div class="slider-content">
+                <div class="slider  slider-progress">
+                    <div class="slider-helper"></div>
+                    <div class="slider-groove slider-groove-progress">
+                        <div class="slider-groove-current slider-groove-current-progress"></div>
+                    </div>
+                    <div class="slider-handle progress-handle"></div>
                 </div>
             </div>
         </div>
-
     </div>
 
     <div class="content ">
@@ -133,7 +142,6 @@
                 <h2 id="Version">Version </h2>
                 <h2 class="versions">What's new?</h2>
             </div>
-            <!-- <h2 id="whatNew" class="versions"></h2> -->
             <div class="list-changes-coontent"></div>
             <div class="filter"></div>
             <button id="YesNews" class="yesNews yesNews-disable no-conect-btn">Yes</button>
@@ -145,9 +153,7 @@
     <script async src="js/options.js "></script>
     <script async src="js/translate.js"></script>
     <script async src="js/tracksList.js"></script>
-    <script src="js/grove.js"></script>
-
-
+    <script src="js/slider.js"></script>
 </body>
 
 </html>

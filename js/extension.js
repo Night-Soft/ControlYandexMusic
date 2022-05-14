@@ -49,7 +49,7 @@ let urlCover;
 let Extension = {
     onload: function() {
         openingExtension("extensionIsLoad");
-        getTab().then(function(value) {
+        getYandexMusicTab().then(function(value) {
             if (value == false) {
                 appDetected.innerHTML = chrome.i18n.getMessage("appNoDetected");
                 appQuestion.innerHTML = chrome.i18n.getMessage("appNoQuestion");
@@ -71,20 +71,21 @@ let Extension = {
     },
 };
 
-chrome.runtime.onMessage.addListener( // get from background
+chrome.runtime.onMessage.addListener( // background, content script
     function(request, sender, sendResponse) {
-        if (request.uploaded == true) {
-            chrome.tabs.update(request.activeTab, {
-                active: true
+        if (request.onload == true) {
+            getYandexMusicTab().then((id) => {
+                chrome.tabs.update(id, {
+                    active: true
+                });
             });
         }
         if (request.options) {
-            console.log(request.options);
             setOptions(request.options);
         }
     });
 
-chrome.runtime.onMessageExternal.addListener(
+chrome.runtime.onMessageExternal.addListener( // injected script
     function(request, sender, sendResponse) {
         switch (request.data) {
             case 'currentTrack': // get from the key
@@ -116,8 +117,22 @@ chrome.runtime.onMessageExternal.addListener(
             default:
                 break;
         }
+
         if (request.trackInfo) {
             updateTracksList(request.trackInfo);
+        }
+        if (request.hasOwnProperty('controls')) {
+            updateRepeat(request.controls.repeat);
+            updateShuffle(request.controls.shuffle);
+        }
+        if (request.hasOwnProperty('volume')) {
+            updateVolume(request.volume);
+        }
+        if (request.hasOwnProperty('repeat')) {
+            updateRepeat(request.repeat);
+        }
+        if (request.hasOwnProperty('shuffle')) {
+            updateShuffle(request.shuffle);
         }
     });
 
@@ -173,7 +188,6 @@ function endAnimationList() {
 btnYes.onclick = () => {
     if (newOrReload == true) {
         openNewTab();
-
     } else {
         chrome.tabs.query({
             windowType: "normal"
@@ -181,13 +195,6 @@ btnYes.onclick = () => {
             for (let i = tabs.length - 1; i >= 0; i--) {
                 if (tabs[i].url.startsWith("https://music.yandex")) {
                     chrome.tabs.reload(tabs[i].id);
-                    setTimeout(function() {
-                        //firstLoadMessage(tabs[i].id);
-                        sendEventBackground({
-                            loading: true,
-                            activeTab: tabs[i].id
-                        });
-                    }, 3000);
                     loaderContainer.style.display = "block";
                     appDetected.innerHTML = chrome.i18n.getMessage("waitWhilePage");
                     appQuestion.style.display = "none";
@@ -234,9 +241,6 @@ let openNewTab = () => {
         url: "https://music.yandex.ru/home",
         active: false
     });
-    setTimeout(function() {
-        sendFirstLoad();
-    }, 3000);
     loaderContainer.style.display = "block";
     appDetected.innerHTML = chrome.i18n.getMessage("waitWhilePage");
     appQuestion.style.display = "none";
@@ -263,7 +267,6 @@ let toggleListMenu = () => {
         modalListMenu.style.display = "none"
         isMenuListOpen = false;
         contentListMenu.removeEventListener("animationend", endListAnimation);
-        //console.log("endListAnimationg");
     }
     if (isMenuListOpen == false) { // open menu
         modalListMenu.addEventListener("animationend", removeOpacity);
@@ -321,12 +324,10 @@ function toggleLike(is) {
 
 trackImage[0].addEventListener('click', function() {
     function removeClass() {
-        // modalCover[0].classList.remove("scale-shift-in-center");
         modal[0].classList.remove("modal-background");
         modalCover[0].removeEventListener("animationend", removeClass);
     }
     modalCover[0].addEventListener("animationend", removeClass);
-    // modalCover[0].classList.add("scale-shift-in-center");
     modal[0].classList.add("modal-background");
     openCover(trackImage[0], urlCover);
     pushEvent("Cover open", "clicked")
@@ -336,18 +337,15 @@ trackImage[0].addEventListener('click', function() {
 
 modal[0].onclick = function() {
     function removeClass() {
-        //modalCover[0].classList.remove("scale-shift-in-center-reverse");
         modal[0].classList.remove("modal-background-reverse");
         modal[0].removeEventListener("animationend", removeClass);
         modal[0].style.display = "none";
     }
     modal[0].addEventListener("animationend", removeClass);
-    // modalCover[0].classList.add("scale-shift-in-center-reverse");
     modal[0].classList.add("modal-background-reverse");
     let options = {
         duration: 700,
         direction: 'reverse',
-        //fill: 'both',
     }
     if (CurrentAnimation.isFromList) {
         let offset = (el) => {
@@ -428,7 +426,6 @@ let endAnimation = (ev) => {
     ev.stopPropagation();
     isMenuOpen = false;
     containerMenu.removeEventListener("animationend", endAnimation);
-    // groove.style.zIndex = "0";
 }
 let toggleMenu = () => {
     container.classList.toggle("change");
@@ -455,11 +452,9 @@ let toggleMenu = () => {
         containerMenu.className = containerMenu.className.replace(" slide-right", " slide-out");
         addAnimListener();
     }
-
-
 }
 
-function getTab() {
+function getYandexMusicTab() {
     return new Promise(function(resolve, reject) {
         chrome.tabs.query({
             windowType: "normal"
@@ -496,53 +491,20 @@ function sendEvent(event) {
     });
 }
 
-let sendEventBackground = (event) => { // event should be as object
+let sendEventBackground = (event, callback) => { // event should be as object
     chrome.runtime.sendMessage(event, function(response) {
         if (response.options) {
             setOptions(response.options); // options.js
+            if (callback != undefined) {
+                callback();
+            }
         }
     });
 };
-// let firstLoadMessage = (activeTab) => {
-//     sendEventBackground({
-//         loading: true,
-//         activeTab: activeTab
-//     });
-//     // chrome.runtime.sendMessage({
-//     //     loading: true,
-//     //     activeTab: activeTab
-//     // });
-//    // test();
-// }
-
-let test = () => {
-    sendEventBackground({ getOptions: true });
-
-}
-
-function sendFirstLoad() {
-    let activeTab;
-    chrome.tabs.query({
-        windowType: "normal"
-    }, function(tabs) {
-        for (let i = tabs.length - 1; i >= 0; i--) {
-            if (tabs[i].url.startsWith("https://music.yandex")) {
-                activeTab = tabs[i].id;
-                break;
-            }
-        }
-        // firstLoadMessage(activeTab);
-        sendEventBackground({
-            loading: true,
-            activeTab: activeTab
-        });
-    });
-}
 
 let setRightFontSize = (fontSize = 1.4) => {
     let heightArtist = aritstName[0].offsetHeight;
     let heightTrack = trackName[0].offsetHeight;
-    //console.log(heightArtist + heightTrack);
 
     if (heightArtist + heightTrack > 150) {
         fontSize = fontSize - 0.05;
@@ -550,7 +512,6 @@ let setRightFontSize = (fontSize = 1.4) => {
         aritstName[0].style.fontSize = fontSize + "rem";
         trackName[0].style.fontSize = fontSize + "rem";
         setRightFontSize(fontSize);
-        //console.log(fontSize);
     }
 }
 

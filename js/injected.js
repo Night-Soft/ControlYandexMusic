@@ -44,6 +44,25 @@ window.addEventListener("message", function(event) {
     if (event.data.play) {
         externalAPI.play(parseInt(event.data.play))
     }
+    if (event.data.toggleVolume) {
+        externalAPI.toggleMute();
+        chrome.runtime.sendMessage(extensionId, {
+            volume: externalAPI.getVolume(),
+        }, );
+    }
+    if (event.data.toggleRepeat) {
+        chrome.runtime.sendMessage(extensionId, {
+            repeat: externalAPI.toggleRepeat(),
+        });
+    }
+    if (event.data.toggleShuffle) {
+        chrome.runtime.sendMessage(extensionId, {
+            shuffle: externalAPI.toggleShuffle(),
+        });
+    }
+    if (event.data.hasOwnProperty('setVolume')) {
+        externalAPI.setVolume(event.data.setVolume);
+    }
 }, false);
 let mediaSession = navigator.mediaSession;
 if ('mediaSession' in navigator) {
@@ -105,6 +124,8 @@ function getTracks() {
         isPlaying: externalAPI.isPlaying(),
         progress: externalAPI.getProgress(),
         trackInfo: trackInfo,
+        controls: externalAPI.getControls(),
+        volume: externalAPI.getVolume(),
     }, );
 }
 

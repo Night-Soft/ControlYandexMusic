@@ -418,6 +418,11 @@ a {
     align-self: center;
 }
 
+.slider-content-list {
+    width: 100%;
+    margin: 5px 0px;
+}
+
 .slider {
     display: flex;
     flex-direction: column;
@@ -557,12 +562,10 @@ a {
     height: 40px;
     background-size: contain;
     align-self: center;
-    margin-right: 10px;
+    margin-left: auto;
     border-radius: 10px;
     transition: 1s;
     transition-property: background-image;
-    position: absolute;
-    right: 0px;
     filter: drop-shadow(0px 0px 3px rgb(0 0 0 / 70%));
 }
 
@@ -574,12 +577,10 @@ a {
     height: 40px;
     background-size: contain;
     align-self: center;
-    margin-right: 10px;
+    margin-left: auto;
     border-radius: 10px;
     transition: 1s;
     transition-property: background-image;
-    position: absolute;
-    right: 0px;
     filter: drop-shadow(0px 0px 3px rgb(0 0 0 / 70%));
 }
 
@@ -615,6 +616,7 @@ a {
 
 .item-track {
     display: flex;
+    flex-wrap: wrap;
     padding: 5px;
     margin: 5px 0px 5px 0px;
     font-size: 1.1rem;
