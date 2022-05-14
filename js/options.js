@@ -2,133 +2,54 @@ var playPauseNotify = document.getElementById('n1');
 var prevNextNotify = document.getElementById('n2');
 let Options = {
     onload: function() {
-        //checkStorage();
-        sendEventBackground({ getOptions: "all" });
-        //setkey();
+        sendEventBackground({ getOptions: "all" }, checkNew);
     },
     isPlayPauseNotify: undefined,
     isPrevNextNotify: undefined,
+    isShowWhatNew: undefined,
     version: undefined,
-    innewversion: undefined
+    oldVersionDescription: undefined
 };
 
 playPauseNotify.onclick = () => {
-    sendEventBackground({ writeOptions: true, options: { isPlayPuaseNotify: playPauseNotify.checked } });
-    //sendEventBackground({ getOptions: { response: true, paramter: ["isPlayPauseNotify"] } });
-
-    //chrome.storage.local.set({ key1: playPauseNotify.checked });
-    //sendEventBackground({ getOptions: { getOptions: true } });
-
-
+    sendEventBackground({ writeOptions: true, options: { isPlayPauseNotify: playPauseNotify.checked } });
+    setOptions({ isPlayPauseNotify: playPauseNotify.checked });
 }
+
 prevNextNotify.onclick = () => {
     sendEventBackground({ writeOptions: true, options: { isPrevNextNotify: prevNextNotify.checked } });
-    sendEventBackground({ getOptions: { response: true, paramter: ["isPrevNextNotify"] } });
-
-    // chrome.storage.local.set({ key2: prevNextNotify.checked });
-
+    setOptions({ isPrevNextNotify: prevNextNotify.checked });
 }
-let Example = {
-        key1: { playPauseNotify: undefined },
-        key2: { prevNextNotify: undefined },
-        version: { version: undefined },
-        innewversion: { innewversion: undefined }
-    }
-    // check and set to local storage
-let checkStorage = () => {
-    getKey1().then(function(value1) {
-        if (typeof(value1) != "boolean") {
-            playPauseNotify.checked = true;
-            chrome.storage.local.set({ key1: playPauseNotify.checked });
+
+// check new version and show what new
+let checkNew = () => {
+    if (Options.isShowWhatNew == false || Options.isShowWhatNew == undefined) { return };
+    WhatNew.openNews(true); // true - for open with timer
+    Options.isShowWhatNew = false;
+    sendEventBackground({
+        writeOptions: true,
+        options: {
+            isShowWhatNew: false
         }
     });
-    getKey2().then((value2) => {
-        if (typeof(value2) != "boolean") {
-            prevNextNotify.checked = true;
-            chrome.storage.local.set({ key2: prevNextNotify.checked });
-        }
-    });
-    getVersion().then((value) => {
-        let manifestData = chrome.runtime.getManifest();
-        let inCurrentVersion = WhatNew.getWhatNew().then((value) => {
-            if (!value["success"]) { return; }
-            inCurrentVersion = value;
-            inCurrentVersion = inCurrentVersion["versions"][0][1].messageEn;
-            getInNewVersion().then((inNewValue) => {
-                if (value != manifestData.version && inNewValue != inCurrentVersion) {
-                    chrome.storage.local.set({ version: manifestData.version }); // set new version
-                    chrome.storage.local.set({ innewversion: inCurrentVersion }); // set text what new
-                    WhatNew.openNews(true); // true - for open with timer
-
-                }
-            });
-        }); // get json
-    });
-
 }
-
-function getKey1() {
-    return new Promise(function(resolve, reject) {
-        chrome.storage.local.get(['key1'], function(result) {
-            resolve(result.key1)
-        });
-    });
-
-}
-
-function getKey2() {
-    return new Promise(function(resolve, reject) {
-        chrome.storage.local.get(['key2'], function(result) {
-            resolve(result.key2)
-        });
-    });
-}
-
-function getVersion() {
-    return new Promise(function(resolve, reject) {
-        chrome.storage.local.get(['version'], function(result) {
-            resolve(result.version)
-        });
-    });
-}
-
-function getInNewVersion() {
-    return new Promise(function(resolve, reject) {
-        chrome.storage.local.get(['innewversion'], function(result) {
-            resolve(result.innewversion)
-        });
-    });
-}
-
-// get and set key value to frontend
-// function setkey() {
-//     getKey1().then(function(value) {
-//         playPauseNotify.checked = value;
-
-//     });
-//     getKey2().then((value) => {
-//         prevNextNotify.checked = value;
-
-//     });
-
-// }
 
 let setOptions = (options) => {
-    console.log("options set ", options);
     if (options.isPlayPauseNotify != undefined) {
-        playPauseNotify.checked = options.isPlayPuaseNotify;
+        playPauseNotify.checked = options.isPlayPauseNotify;
         Options.isPlayPauseNotify = options.isPlayPauseNotify;
     }
     if (options.isPrevNextNotify != undefined) {
         prevNextNotify.checked = options.isPrevNextNotify;
         Options.isPrevNextNotify = options.isPrevNextNotify;
     }
+    if (options.isShowWhatNew != undefined) {
+        Options.isShowWhatNew = options.isShowWhatNew;
+    }
     if (options.version != undefined) {
         Options.version = options.version;
-
     }
-    if (options.innewversion != undefined) {
-        Options.innewversion = options.innewversion;
-
+    if (options.oldVersionDescription != undefined) {
+        Options.oldVersionDescription = options.oldVersionDescription;
     }
 }

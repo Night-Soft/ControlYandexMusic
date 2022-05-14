@@ -15,6 +15,7 @@ chrome.commands.onCommand.addListener(function(command) {
             break;
     }
 });
+
 chrome.runtime.onMessageExternal.addListener(
     function(request, sender, sendResponse) {
         if (request.key == "key") {
@@ -106,48 +107,33 @@ chrome.runtime.onMessageExternal.addListener(
             }
         }
     });
-let send;
+
 chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
-        console.log(request);
-
         if (request.backgroundMessage == "background") {
             setNotifications(request.name, request.artists, request.imageUrl);
         }
-        if (request.loading != undefined) {
-            firstLoad(request.activeTab);
-        }
         if (request.getId != undefined) {
-            let extId = chrome.runtime.id;
-            sendResponse({ id: extId });
+            sendResponse({
+                id: chrome.runtime.id
+            });
         }
         if (request.getOptions == "all") {
-            sendResponse({ options: Options });
+            sendResponse({
+                options: Options
+            });
             return;
-        }
-        if (request.getOptions != undefined) {
+        } else if (request.getOptions != undefined) {
             getOptions(request.getOptions);
         }
         if (request.writeOptions != undefined) {
             writeOptions(request.options);
-            //updateOptions(request.options);
-            //sendResponse(Options);
         }
-        sendResponse({ connect: true });
+        sendResponse({
+            connect: true
+        });
     });
 
-let firstLoad = (activeTab) => {
-    chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-        if (changeInfo.status == 'complete') {
-            sendFirstLoad(tab.id);
-        }
-    });
-}
-
-function sendFirstLoad(activeTab) {
-    chrome.runtime.sendMessage({ uploaded: true, activeTab: activeTab });
-
-}
 let sendMessage = (event) => {
     chrome.runtime.sendMessage(event);
 }
@@ -192,33 +178,36 @@ chrome.notifications.onClicked.addListener((YandexMusicControl) => {
     sendEvent('next-key', true);
 
 });
-let readOptions = (option) => {
-    return new Promise((resolve, reject) => {
-        //let Options = {}
-        chrome.storage.local.get(['key1'], function(result) {
-            Options.isPlayPauseNotify = result.key1;
 
-        });
-        chrome.storage.local.get(['key2'], function(result) {
-            Options.isPrevNextNotify = result.key2;
-        });
-        chrome.storage.local.get(['version'], function(result) {
-            Options.version = result.version;
-        });
-        chrome.storage.local.get(['innewversion'], function(result) {
-            Options.innewversion = result.innewversion;
-            resolve(Options);
-            //setOptions(Options);
-            //Options = Object.assign(options);
-
-        });
-    });
-}
 let Options = {
     isPlayPauseNotify: undefined,
     isPrevNextNotify: undefined,
+    isShowWhatNew: undefined,
     version: undefined,
-    innewversion: undefined
+    oldVersionDescription: undefined
+}
+
+let getWhatNew = async() => {
+    let request = new XMLHttpRequest();
+    let whatNewJson = {};
+    try {
+        request.open("GET", "./whatNew.json", true);
+        request.send(null);
+    } catch (error) {
+        console.log(error);
+
+    }
+    return new Promise(function(resolve, reject) {
+        request.onload = () => {
+            whatNewJson = JSON.parse(request.responseText);
+            whatNewJson["success"] = true;
+            resolve(whatNewJson);
+        }
+        request.onerror = () => {
+            whatNewJson["success"] = false;
+            reject(whatNewJson);
+        }
+    });
 }
 
 let readOption = (option) => {
@@ -258,54 +247,58 @@ let readOption = (option) => {
 
         });
     }
-
 }
+
 let writeOptions = (option) => {
+    console.log(option);
     if (option.isPlayPauseNotify != undefined) {
-        chrome.storage.local.set({
-            //[option.isPlayPauseNotify]: option.isPlayPauseNotify
-        });
+        chrome.storage.local.set({ isPlayPauseNotify: option.isPlayPauseNotify });
+        Options.isPlayPauseNotify = option.isPlayPauseNotify;
     }
     if (option.isPrevNextNotify != undefined) {
-        chrome.storage.local.set({
-            isPrevNextNotify: option.isPrevNextNotify
-        });
+        chrome.storage.local.set({ isPrevNextNotify: option.isPrevNextNotify });
+        Options.isPrevNextNotify = option.isPrevNextNotify;
+    }
+    if (option.isShowWhatNew != undefined) {
+        chrome.storage.local.set({ isShowWhatNew: option.isShowWhatNew });
+        Options.isShowWhatNew = option.isShowWhatNew;
     }
     if (option.version != undefined) {
-        chrome.storage.local.set({
-            version: manifestData.version
-                //Options.version
-        });
+        chrome.storage.local.set({ version: option.version });
+        Options.version = option.version;
     }
-    if (option.innewversion != undefined) {
-        chrome.storage.local.set({
-            innewversion: inCurrentVersion
-                //Options.innewversion
-        });
+    if (option.oldVersionDescription != undefined) {
+        chrome.storage.local.set({ oldVersionDescription: option.oldVersionDescription });
+        Options.oldVersionDescription = option.oldVersionDescription;
     }
-    // chrome.storage.local.set({ key1: playPauseNotify.checked });
-    // chrome.storage.local.set({ key2: prevNextNotify.checked });
-    // chrome.storage.local.set({ version: manifestData.version }); // set new version
-    // chrome.storage.local.set({ innewversion: inCurrentVersion }); // set text what new
 }
-let setOptions = (options) => {
-    // console.log("assign ", Options);
-}
+
+const manifestVersion = chrome.runtime.getManifest().version;
 
 function getOptions(option = { all: true }) { // read and send
     readOption(option).then((result) => { // read from parameter
-        console.log("parameter readed", result);
-        //console.log("Object.keys", Object.keys(result));
-        if (option.response) {
-            sendMessage({ options: result });
+        let date = new Date();
+        console.log("parameter readed", result, "time:", date.getHours(), ":", date.getMinutes(), ":", date.getSeconds());
+        sendMessage({ options: result });
+        if (manifestVersion != Options.version) {
+            getWhatNew().then((value) => {
+                if (!value["success"]) { return; }
+                let currentVersionDescription = value.versions[0][0];
+                if (Options.oldVersionDescription != currentVersionDescription) {
+                    writeOptions({
+                        version: manifestVersion,
+                        oldVersionDescription: currentVersionDescription,
+                        isShowWhatNew: true
+                    });
+                    sendMessage({ options: Options });
+                }
+            });
         }
-        //sendMessage({ options: result });
+
     }, (reject) => {
-        console.log("Settings readed error.", reject);
+        console.log("Read settings error.", reject);
     });
 }
+
+//getOptions({ paramter: ["innewversion", "version"] });
 getOptions();
-// writeOptions({
-//     isPlayPauseNotify: false,
-//     isPrevNextNotify: true,
-// });
