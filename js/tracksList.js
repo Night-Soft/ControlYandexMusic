@@ -3,6 +3,7 @@ let listTracks = document.getElementsByClassName("list-track")[0];
 let requestSourceInfo;
 let requestTracksList;
 let previousSelectItem;
+let previousSlider;
 let selectedItem;
 let likeItem;
 let isFirstScroll = false;
@@ -205,10 +206,40 @@ let selectItem = (item) => {
     } catch (error) {}
     if (previousSelectItem != undefined) {
         previousSelectItem.classList.remove("selected-item");
+        //previousSelectItem.removeChild(previousSlider);
     }
+    // add slider
+    // let sliderContent = document.createElement("DIV");
+    // sliderContent.classList.add("slider-content", "slider-content-list");
+    // let sliderProgress = document.createElement("DIV");
+    // sliderProgress.classList.add("slider");
+    // let sliderHelper = document.createElement("DIV");
+    // sliderHelper.classList.add("slider-helper");
+    // let sliderGrooveProgress = document.createElement("DIV");
+    // sliderGrooveProgress.classList.add("slider-groove", "slider-groove-progress");
+    // let sliderGrooveCurrentProgress = document.createElement("DIV");
+    // sliderGrooveCurrentProgress.classList.add("slider-groove-current", "slider-groove-current-progress");
+    // let progressHandle = document.createElement("DIV");
+    // progressHandle.classList.add("slider-handle", "progress-handle");
+
+    // sliderGrooveProgress.appendChild(sliderGrooveCurrentProgress);
+    // sliderProgress.appendChild(sliderHelper);
+    // sliderProgress.appendChild(sliderGrooveProgress);
+    // sliderProgress.appendChild(progressHandle);
+    // sliderContent.appendChild(sliderProgress);
+
+    // // let ss = document.createElement("DIV");
+    // // ss.appendChild(sliderContent);
+
+    // item.appendChild(sliderContent);
+    // let sliderPrgress = new Slider(sliderProgress, sliderGrooveCurrentProgress, progressHandle, sliderHelper);
+
     item.classList.add("selected-item");
     previousSelectItem = item;
+    // previousSlider = sliderContent;
     selectedItem = item;
+
+
 }
 let scrollToSelected = () => {
     if (!isFirstScroll) {
