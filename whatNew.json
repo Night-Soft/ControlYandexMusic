@@ -1,21 +1,24 @@
 {
-    "mainVersion": "1.5.8",
     "versions": [
+        ["2.2.0", {
+            "messageEn": "•Toggles available! <br> Now you can control the volume, repeat and shuffle the music. <br> • You can also increase or decrease the volume and rewind the track with the mouse wheel!",
+            "messageRu": "• Доступны переключатели! <br> Теперь вы можете регулировать громкость, повторять и перемешивать музыку. <br> • Вы также можете увеличивать или уменьшать громкость и перематывать трек колесиком мыши!"
+        }],
         ["2.1.0", {
-            "messageEn": "The playlist now shows which track has been added to favorites.",
-            "messageRu": "В плейлисте теперь отображается, какой трек был добавлен в избранное."
+            "messageEn": "• The playlist now shows which track has been added to favorites.",
+            "messageRu": "• В плейлисте теперь отображается, какой трек был добавлен в избранное."
         }],
         ["2.0.0", {
-            "messageEn": "Added a list of tracks of the current playlist. <br> Also you can select track from playlist.",
-            "messageRu": "Добавлен список треков текущего плейлиста. <br> Также вы можете выбрать трек из плейлиста."
+            "messageEn": "• Added a list of tracks of the current playlist. <br> Also you can select track from playlist.",
+            "messageRu": "• Добавлен список треков текущего плейлиста. <br> Также вы можете выбрать трек из плейлиста."
         }],
         ["1.5.7-9", {
-            "messageEn": "Bugs fixed.",
-            "messageRu": "Исправлены ошибки."
+            "messageEn": "• Bugs fixed.",
+            "messageRu": "• Исправлены ошибки."
         }],
         ["1.5.6", {
-            "messageEn": "Improved rewind!",
-            "messageRu": "Улучшена перемотка!"
+            "messageEn": "• Improved rewind!",
+            "messageRu": "• Улучшена перемотка!"
         }],
         ["1.5", {
             "messageEn": "• You can now rewind the track.<br>• Click on the notification to skip to the next track!",
