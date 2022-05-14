@@ -70,7 +70,3 @@ echo "Start building"
 zip "${name}" ${list}
 echo "End building"
 notify-send --urgency=normal --expire-time=5000 "End building"
-
-
-
-
