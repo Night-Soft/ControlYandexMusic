@@ -2,8 +2,6 @@ let Translate = {
     onload: function() {
         title[0].innerHTML = chrome.i18n.getMessage("title");
         title[1].innerHTML = chrome.i18n.getMessage("title");
-        //aritstName[0].innerHTML = chrome.i18n.getMessage("artistName");
-        //trackName[0].innerHTML = chrome.i18n.getMessage("trackName");
         about.innerHTML = chrome.i18n.getMessage("about");
         contactMe.innerHTML = chrome.i18n.getMessage("contactMe");
         shortCuts.innerHTML = chrome.i18n.getMessage("openShortcuts");
@@ -15,7 +13,11 @@ let Translate = {
         aMail.innerHTML = "NightSoftware@outlook.com";
         writeLettr.innerHTML = chrome.i18n.getMessage("writeLetter");
         writeLettr.appendChild(aMail);
-        btnYes.innerHTML = chrome.i18n.getMessage("yes");
+        if (newOrReload == false) {
+            btnYes.innerHTML = chrome.i18n.getMessage("reload");
+        } else {
+            btnYes.innerHTML = chrome.i18n.getMessage("yes");
+        }
         bntNo.innerHTML = chrome.i18n.getMessage("no");
         btnNew.innerHTML = chrome.i18n.getMessage("new");
         settings.innerText = chrome.i18n.getMessage("settings");

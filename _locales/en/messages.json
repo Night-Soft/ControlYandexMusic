@@ -44,6 +44,9 @@
     "no": {
         "message": "No"
     },
+    "reload": {
+        "message": "Reload"
+    },
     "new": {
         "message": "New 'Yandex Music' tab"
     },
@@ -51,7 +54,7 @@
         "message": "App detected tab with 'Yandex Music', but can't connect to the tab!"
     },
     "appQuestion": {
-        "message": "Reload the tab or open new?"
+        "message": "The app needs to reload the tab or open a new one."
     },
     "appNoDetected": {
         "message": "App can't find tab with 'Yandex Music'!"
