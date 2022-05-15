@@ -71,12 +71,12 @@ let setTracksList = (list, index) => {
         let itemTrack = document.createElement("DIV");
         itemTrack.classList.add("item-track");
 
-        let itmeCover = document.createElement("DIV");
-        itmeCover.classList.add("item-cover");
-        itmeCover.style.backgroundImage = "url(" + getUrl(list[i].cover) + ")";
-        itmeCover.onclick = (ev) => {
-            State.coverItem = itmeCover;
-            openCover(itmeCover, getUrl(list[i].cover, 400), animateListImage);
+        let itemCover = document.createElement("DIV");
+        itemCover.classList.add("item-cover");
+        itemCover.style.backgroundImage = "url(" + getUrl(list[i].cover) + ")";
+        itemCover.onclick = (ev) => {
+            State.coverItem = itemCover;
+            openCover(itemCover, getUrl(list[i].cover, 400), animateListImage);
         }
 
         let contentItemName = document.createElement("DIV");
@@ -93,7 +93,7 @@ let setTracksList = (list, index) => {
         contentItemName.appendChild(itemNameTrack);
         contentItemName.appendChild(itemArtists);
 
-        itemTrack.appendChild(itmeCover);
+        itemTrack.appendChild(itemCover);
         itemTrack.appendChild(contentItemName);
 
         let listLike = document.createElement("DIV");
@@ -259,12 +259,13 @@ let animateListImage = (item) => {
             scrollTop = window.pageYOffset || document.documentElement.scrollTop;
         return { top: rect.top + scrollTop, left: rect.left + scrollLeft }
     }
+
     let width = item.offsetWidth;
     let height = item.offsetHeight;
     let itemOffset = offset(item);
-    let modalCoverOffset = offset(modalCover[0]);
-    let left = itemOffset.left - 30 - 130 - 25; //modalCover[0].offsetLeft - modalCoverOffset.left - 25;
-    let top = itemOffset.top - modalCoverOffset.top - 133 - 10;
+    let left = -(window.innerWidth / 2 - width / 2 - itemOffset.left);
+    let top = -(window.innerHeight / 2 - height / 2 - itemOffset.top);
+
     let keyframe = {
         width: [width + 'px', 80 + '%'],
         height: [height + 'px', 96 + '%'],

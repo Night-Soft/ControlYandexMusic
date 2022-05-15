@@ -358,10 +358,8 @@ modal[0].onclick = function() {
             }
         }
         let itemOffset = offset(State.coverItem);
-        let modalCoverOffset = offset(modalCover[0]);
-
-        let left = itemOffset.left - 30 - 130 - 25;
-        let top = itemOffset.top - modalCoverOffset.top - 133 - 10;
+        let left = -(window.innerWidth / 2 - State.coverItem.offsetWidth / 2 - itemOffset.left);
+        let top = -(window.innerHeight / 2 - State.coverItem.offsetHeight / 2 - itemOffset.top);
         CurrentAnimation.keyframe.transform = ['translate(' + parseInt(left) + 'px, ' +
             parseInt(top) + 'px)', 'translate(0px, 0px)'
         ];
@@ -577,8 +575,9 @@ function testImage(url, size = 400, callback) {
 let animateMainImage = (item) => {
     let width = item.offsetWidth;
     let height = item.offsetHeight;
-    let left = item.offsetLeft - 130; //modalCover[0].offsetLeft
-    let top = item.offsetTop - 95; //modalCover[0].offsetTop
+    let left = -(window.innerWidth / 2 - width / 2 - item.offsetLeft);
+    let top = -(window.innerHeight / 2 - height / 2 - item.offsetTop);
+
     let keyframe = {
         width: [width + 'px', 80 + '%'],
         height: [height + 'px', 96 + '%'],
@@ -590,6 +589,7 @@ let animateMainImage = (item) => {
         duration: 700,
         fill: 'both'
     }
+
     CurrentAnimation.keyframe = keyframe;
     CurrentAnimation.options = options;
     CurrentAnimation.isFromList = false;
