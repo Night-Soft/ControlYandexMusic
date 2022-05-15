@@ -426,12 +426,14 @@ function trackUpdater(duration = getDuration(), progress = getProgress(), isPlay
         console.log(error)
     }
     if (!isPlay) return;
-
+    if (progress == 0) {
+        sendEvent({ getProgress: true });
+        return;
+    }
     if (isPlay) progressUpdater = setInterval(updaterTimer, 500);
     sliderPrgress.maxScale = duration;
 
     function updaterTimer() {
-        progress += 0.5;
         getProgress(progress); // set progress value
         if (progress >= duration) {
             clearInterval(progressUpdater);
@@ -440,6 +442,8 @@ function trackUpdater(duration = getDuration(), progress = getProgress(), isPlay
         //set current time progress
         currentTime.innerHTML = twoDigits(splitSeconds(progress).seconds, splitSeconds(progress).minutes);
         sliderPrgress.setPosition({ scale: progress });
+        progress += 0.5;
+
     }
 }
 

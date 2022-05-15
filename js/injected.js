@@ -63,6 +63,11 @@ window.addEventListener("message", function(event) {
     if (event.data.hasOwnProperty('setVolume')) {
         externalAPI.setVolume(event.data.setVolume);
     }
+    if (event.data.hasOwnProperty('getProgress')) {
+        chrome.runtime.sendMessage(extensionId, {
+            progress: externalAPI.getProgress(),
+        });
+    }
 }, false);
 let mediaSession = navigator.mediaSession;
 if ('mediaSession' in navigator) {

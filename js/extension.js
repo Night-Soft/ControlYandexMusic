@@ -134,6 +134,18 @@ chrome.runtime.onMessageExternal.addListener( // injected script
         if (request.hasOwnProperty('shuffle')) {
             updateShuffle(request.shuffle);
         }
+        if (request.hasOwnProperty('progress')) {
+            if (Object.keys(request).length == 1) {
+                getProgress(request.progress.position);
+                if (request.progress.position == 0) {
+                    setTimeout(() => {
+                        trackUpdater();
+                    }, 500);
+                } else {
+                    trackUpdater();
+                }
+            }
+        }
     });
 
 function openingExtension(event) {
@@ -218,6 +230,8 @@ btnNew.onclick = () => {
 }
 
 let noConnceted = () => {
+    bntNo.style.display = "none";
+    btnYes.innerHTML = chrome.i18n.getMessage("reload");
     noConnect.style.display = "flex";
     noConnect.classList.add("puff-in-center");
     newOrReload = false;

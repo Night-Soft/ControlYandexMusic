@@ -50,7 +50,9 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     }
     if (request.data.hasOwnProperty('setVolume')) {
         window.postMessage({ setVolume: request.data.setVolume }, "*");
-
+    }
+    if (request.data.hasOwnProperty('getProgress')) {
+        window.postMessage({ getProgress: request.data.getProgress }, "*");
     }
 });
 
