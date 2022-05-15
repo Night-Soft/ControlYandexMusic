@@ -1195,6 +1195,12 @@ label {
     transition: 0.4s;
 }
 
+.no-connect-content {
+    display: flex;
+    flex-direction: column;
+    margin: 0px 10px;
+}
+
 .modal-news {
     display: none;
     flex-direction: column;
@@ -1278,7 +1284,7 @@ label {
 }
 
 .no-conect-btn {
-    width: 30%;
+    width: 35%;
     font-size: 15px;
     color: white;
     background-color: #ff3333;
@@ -1290,9 +1296,7 @@ label {
 }
 
 .no-conect-btn:hover {
-    border: white;
-    border-style: solid;
-    border-width: 1px;
+    outline: 1px solid white;
 }
 
 .no-conect-btn:active {
@@ -1306,7 +1310,7 @@ label {
 }
 
 .yesNews-disable {
-    background-color: #8E8E8E;
+    background-color: #8e8e8e;
     color: rgb(200, 200, 200);
     cursor: default;
 }
