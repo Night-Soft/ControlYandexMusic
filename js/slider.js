@@ -130,6 +130,9 @@ let Slider = class {
         if (event.hasOwnProperty("scale")) {
             if (this.isHelper) {
                 let x = event.scale * this.groove.offsetWidth / this.maxScale;
+                if (x >= 0 && x <= this.groove.offsetWidth) {
+                    this.helper.style.left = x + this.groove.offsetLeft - this.helper.offsetWidth + this.helper.offsetWidth / 2 + "px";
+                }
                 let percent = this.counter(x);
                 this.scaleOnMouseMove = percent;
                 if (this.isOwnDataHelper) return;
@@ -157,7 +160,7 @@ let Slider = class {
     }
     display(bool) {
         if (bool) {
-            this.groove.style.display = "block";
+            this.groove.style.display = "flex";
             this.currentGroove.style.display = "block";
             this.handle.style.display = "block";
             this.helper.style.display = "block";
@@ -330,8 +333,6 @@ toggleVolume.onwheel = (event) => {
             sliderVolume.setPositionHelper({ scale: sliderVolume.scale });
             sendEvent({ setVolume: sliderVolume.scale / 100 });
             updateToggleVolumeIcon(sliderVolume.scale);
-
-
         }
     }
 }
