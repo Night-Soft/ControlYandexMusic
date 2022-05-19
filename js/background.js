@@ -106,6 +106,7 @@ chrome.runtime.onMessageExternal.addListener(
                 }
             }
         }
+        return true;
     });
 
 chrome.runtime.onMessage.addListener(
@@ -114,8 +115,14 @@ chrome.runtime.onMessage.addListener(
             setNotifications(request.name, request.artists, request.imageUrl);
         }
         if (request.getId != undefined) {
-            sendResponse({
-                id: chrome.runtime.id
+            chrome.tabs.query({ windowType: "normal" }, function(tabs) {
+                for (let i = tabs.length - 1; i >= 0; i--) {
+                    if (tabs[i].url.startsWith("https://music.yandex")) {
+                        activeTab = tabs[i].id;
+                        chrome.tabs.sendMessage(tabs[i].id, { id: chrome.runtime.id });
+                        break;
+                    }
+                }
             });
         }
         if (request.getOptions == "all") {
@@ -129,16 +136,14 @@ chrome.runtime.onMessage.addListener(
         if (request.writeOptions != undefined) {
             writeOptions(request.options);
         }
-        sendResponse({
-            connect: true
-        });
+        return true; // 
     });
 
 let sendMessage = (event) => {
     chrome.runtime.sendMessage(event);
 }
 
-function sendEvent(event, isKey) {
+function sendEvent(event, isKey) { // to content script
     let activeTab;
     chrome.tabs.query({ windowType: "normal" }, function(tabs) {
         for (let i = tabs.length - 1; i >= 0; i--) {
@@ -188,27 +193,21 @@ let Options = {
 }
 
 let getWhatNew = async() => {
-    let request = new XMLHttpRequest();
-    let whatNewJson = {};
-    try {
-        request.open("GET", "./whatNew.json", true);
-        request.send(null);
-    } catch (error) {
-        console.log(error);
-
-    }
+    let response = fetch("../whatNew.json");
     return new Promise(function(resolve, reject) {
-        request.onload = () => {
-            whatNewJson = JSON.parse(request.responseText);
-            whatNewJson["success"] = true;
-            resolve(whatNewJson);
-        }
-        request.onerror = () => {
-            whatNewJson["success"] = false;
-            reject(whatNewJson);
-        }
+        response.then((data) => {
+            data.json().then((value) => {
+                value["success"] = true;
+                resolve(value);
+            });
+        }, (data) => {
+            console.log("error", data);
+            data["success"] = false;
+            reject(data)
+        });
     });
 }
+
 
 let readOption = (option) => {
     if (option.all) {
@@ -250,7 +249,6 @@ let readOption = (option) => {
 }
 
 let writeOptions = (option) => {
-    console.log(option);
     if (option.isPlayPauseNotify != undefined) {
         chrome.storage.local.set({ isPlayPauseNotify: option.isPlayPauseNotify });
         Options.isPlayPauseNotify = option.isPlayPauseNotify;
@@ -279,10 +277,10 @@ function getOptions(option = { all: true }) { // read and send
     readOption(option).then((result) => { // read from parameter
         let date = new Date();
         console.log("parameter readed", result, "time:", date.getHours(), ":", date.getMinutes(), ":", date.getSeconds());
-        sendMessage({ options: result });
+        //sendMessage({ options: result });
         if (manifestVersion != Options.version) {
             getWhatNew().then((value) => {
-                if (!value["success"]) { return; }
+                if (!value.success) { return; }
                 let currentVersionDescription = value.versions[0][0];
                 if (Options.oldVersionDescription != currentVersionDescription) {
                     writeOptions({
