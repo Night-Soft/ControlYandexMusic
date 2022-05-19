@@ -48,7 +48,7 @@ let urlCover;
 
 let Extension = {
     onload: function() {
-        openingExtension("extensionIsLoad");
+        sendEvent("extensionIsLoad", true);
         getYandexMusicTab().then(function(value) {
             if (value == false) {
                 appDetected.innerHTML = chrome.i18n.getMessage("appNoDetected");
@@ -146,35 +146,9 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 }
             }
         }
+        return true;
     });
 
-function openingExtension(event) {
-    let activeTab;
-    chrome.tabs.query({
-        windowType: "normal"
-    }, function(tabs) {
-        for (let i = tabs.length - 1; i >= 0; i--) {
-            if (tabs[i].url.startsWith("https://music.yandex")) {
-                activeTab = tabs[i].id;
-                break;
-            }
-        }
-        if (activeTab != undefined) {
-            chrome.tabs.sendMessage(activeTab, {
-                data: event,
-            }, function(response) {
-                try {
-                    response.isConnect;
-                } catch (error) {
-                    console.log(error);
-                    noConnceted();
-                }
-
-            });
-        }
-
-    });
-}
 settingsClass.onmouseenter = () => {
     listSettings.removeEventListener("animationend", endAnimationList);
     listSettings.classList.remove("scale-from-top-out");
@@ -483,7 +457,7 @@ function getYandexMusicTab() {
     });
 }
 
-function sendEvent(event) {
+function sendEvent(event, isResponse = false) {
     let activeTab;
     chrome.tabs.query({
         windowType: "normal"
@@ -497,6 +471,13 @@ function sendEvent(event) {
         if (activeTab != undefined) {
             chrome.tabs.sendMessage(activeTab, {
                 data: event,
+            }, function(response) {
+                if (isResponse) {
+                    if (event == "extensionIsLoad" && response == undefined) {
+                        noConnceted();
+                        console.log("No connection");
+                    }
+                }
             });
         }
 
@@ -505,7 +486,7 @@ function sendEvent(event) {
 
 let sendEventBackground = (event, callback) => { // event should be as object
     chrome.runtime.sendMessage(event, function(response) {
-        if (response.options) {
+        if (response != undefined) {
             setOptions(response.options); // options.js
             if (callback != undefined) {
                 callback();
