@@ -1,24 +1,27 @@
 {
-    "manifest_version": 2,
+    "manifest_version": 3,
     "name": "__MSG_appName__",
     "description": "__MSG_appDesc__",
     "short_name": "__MSG_shortName__",
     "default_locale": "en",
     "version": "2.2.1",
-    "web_accessible_resources": ["js/injected.js"],
+    "web_accessible_resources": [{
+        "resources": ["js/injected.js", "./whatNew.json"],
+        "matches": ["https://music.yandex.ua/*", "https://music.yandex.ru/*", "https://music.yandex.by/*", "https://avatars.yandex.net/*"]
+
+    }],
     "icons": {
         "200": "img/icon.png"
     },
     "background": {
-        "scripts": ["js/background.js"],
-        "persistent": false
+        "service_worker": "js/background.js"
     },
     "content_scripts": [{
         "matches": ["https://music.yandex.ua/*", "https://music.yandex.ru/*", "https://music.yandex.by/*", "https://avatars.yandex.net/*"],
         "all_frames": false,
         "js": ["js/contentScript.js"]
     }],
-    "browser_action": {
+    "action": {
         "default_icon": "img/icon.png",
         "default_popup": "popup.html"
     },
@@ -59,12 +62,16 @@
     "externally_connectable": {
         "matches": ["https://music.yandex.ua/*", "https://music.yandex.ru/*", "https://music.yandex.by/*"]
     },
-    "content_security_policy": "script-src 'self' https://ssl.google-analytics.com; object-src 'self'",
-
+    "content_security_policy": {
+        "extension_pages": "script-src 'self'; object-src 'self'"
+    },
     "permissions": [
         "tabs",
         "notifications",
         "storage",
+        "scripting"
+    ],
+    "host_permissions": [
         "https://music.yandex.ua/*",
         "https://music.yandex.ru/*",
         "https://music.yandex.by/*",
