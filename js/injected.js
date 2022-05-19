@@ -1,5 +1,6 @@
-const extensionId = getId();
-let port = chrome.runtime.connect(extensionId);
+let extensionId = "UnknowId";
+let port;
+
 window.addEventListener("message", function(event) {
     if (event.source != window) { return; }
     switch (event.data.function) {
@@ -41,6 +42,10 @@ window.addEventListener("message", function(event) {
             toggleLikeKey();
             break;
     }
+    if (event.data.id) {
+        extensionId = event.data.id;
+        port = chrome.runtime.connect(extensionId);
+    }
     if (event.data.play) {
         externalAPI.play(parseInt(event.data.play))
     }
@@ -69,6 +74,7 @@ window.addEventListener("message", function(event) {
         });
     }
 }, false);
+
 let mediaSession = navigator.mediaSession;
 if ('mediaSession' in navigator) {
     navigator.mediaSession.setActionHandler('play', function() {
@@ -81,14 +87,12 @@ if ('mediaSession' in navigator) {
     });
     navigator.mediaSession.setActionHandler('previoustrack', function() {
         previousKey();
-        //setMediaSession();
-
     });
     navigator.mediaSession.setActionHandler('nexttrack', function() {
         nextKey();
-        //setMediaSession();
     });
 }
+
 let setMediaSession = () => {
     let current = externalAPI.getCurrentTrack();
     let iconTrack = current.cover;
@@ -112,6 +116,7 @@ let setMediaSession = () => {
         ]
     });
 }
+
 externalAPI.on(externalAPI.EVENT_TRACK, function(event) {
     setMediaSession();
     getTracks();

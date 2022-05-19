@@ -36,10 +36,14 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
             window.postMessage({ commandKey: "toggleLike-key" }, "*");
             break;
     }
-    if (request.data.play) {
+    if (request.hasOwnProperty('id')) {
+        injectJS(request.id);
+        return;
+    }
+    if (request.data.hasOwnProperty('play')) {
         window.postMessage({ play: request.data.play }, "*");
     }
-    if (request.data.toggleVolume) {
+    if (request.data.hasOwnProperty('toggleVolume')) {
         window.postMessage({ toggleVolume: request.data.toggleVolume }, "*");
     }
     if (request.data.hasOwnProperty('toggleRepeat')) {
@@ -54,6 +58,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     if (request.data.hasOwnProperty('getProgress')) {
         window.postMessage({ getProgress: request.data.getProgress }, "*");
     }
+    sendResponse({});
 });
 
 let getCurrentTrack = () => {
@@ -76,27 +81,16 @@ let toggleLike = () => {
     window.postMessage({ function: "toggleLike" })
 }
 let injectJS = (id) => {
-    var injectCode =
-        `
-        let getId = (id = "${ id }") => {
-        return id;
-    }`;
-    var script = document.createElement('script');
-    script.textContent = injectCode;
-    (document.head || document.documentElement).appendChild(script);
-    script.remove();
-
-    var s = document.createElement('script');
+    let s = document.createElement('script');
     s.src = chrome.runtime.getURL('js/injected.js');
     s.onload = function() {
+        window.postMessage({ id: id });
         this.remove();
     };
     (document.head || document.documentElement).appendChild(s);
 }
 let getId = () => {
-    chrome.runtime.sendMessage({ getId: "getId" }, function(response) {
-        injectJS(response.id);
-    });
+    chrome.runtime.sendMessage({ getId: "getId" });
     setTimeout(() => {
         chrome.runtime.sendMessage({ onload: true });
     }, 2000);
