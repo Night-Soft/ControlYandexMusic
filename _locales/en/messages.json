@@ -57,10 +57,10 @@
         "message": "The app needs to reload the tab or open a new one."
     },
     "appNoDetected": {
-        "message": "App can't find tab with 'Yandex Music'!"
+        "message": "Tab with 'Yandex.Music' not found!"
     },
     "appNoQuestion": {
-        "message": "Open the new tab of 'Yandex Music'?"
+        "message": "Open the new tab of 'Yandex.Music'?"
     },
     "waitWhilePage": {
         "message": "Wait while page loading!"
