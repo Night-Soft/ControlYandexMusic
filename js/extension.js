@@ -281,6 +281,7 @@ hamburgerMenuList.onclick = () => {
 
 previous[0].addEventListener('click', function() {
     sendEvent("previous");
+    stopUpdater();
     pushEvent(previous[0].className, "clicked")
 });
 
@@ -292,6 +293,7 @@ pause[0].addEventListener('click', function() {
 
 next[0].addEventListener('click', function() {
     sendEvent("next");
+    stopUpdater();
     pushEvent(next[0].className, "clicked")
 
 });
@@ -393,11 +395,13 @@ donationAlerts.onclick = () => {
     pushEvent("donationAlerts");
     window.open("https://www.donationalerts.com/r/nightsoftware");
 }
+donationAlerts.onmouseenter = () => {
+    sideHelp.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
+}
 sideHelp.onmouseenter = (event) => {
     //payPal.style.display = "block";
     donationAlerts.style.display = "flex";
     sideHelp.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
-
 }
 sideHelp.onmouseleave = () => {
     //payPal.style.display = "none";
@@ -581,7 +585,7 @@ let animateMainImage = (item) => {
         easing: ['cubic-bezier(.85, .2, 1, 1)']
     }
     let options = {
-        duration: 700,
+        duration: 500,
         fill: 'both'
     }
 

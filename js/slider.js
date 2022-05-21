@@ -419,13 +419,16 @@ function setTrackProgress(duration = getDuration(), progress = getProgress(), is
     // set progress to slider
     sliderPrgress.setPosition({ scale: progress });
 }
-
-function trackUpdater(duration = getDuration(), progress = getProgress(), isPlay = getIsPlay()) {
+const stopUpdater = () => {
     try {
         clearInterval(progressUpdater)
     } catch (error) {
         console.log(error)
     }
+}
+
+function trackUpdater(duration = getDuration(), progress = getProgress(), isPlay = getIsPlay()) {
+    stopUpdater();
     if (!isPlay) return;
     if (progress == 0) {
         sendEvent({ getProgress: true });
