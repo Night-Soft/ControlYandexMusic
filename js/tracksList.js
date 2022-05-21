@@ -52,15 +52,17 @@ let setTitle = (title) => {
     requestSourceInfo = title;
     tracksListTitle.innerHTML = title.title;
 }
+
 let setTracksList = (list, index) => {
     try {
-        if (index) {
+        if (index >= 0 && State.index != index) {
             State.index = index;
             let allItem = document.querySelectorAll(".item-track");
             selectItem(allItem[index]);
         }
         if (equals(list, requestTracksList)) { return; }
     } catch (error) {}
+
     requestTracksList = list;
     if (requestSourceInfo.type == "radio") {
         setTitle(requestSourceInfo);
@@ -109,11 +111,12 @@ let setTracksList = (list, index) => {
                     State.isLike = list[i];
                     listLike.classList.add("list-dislike");
                     listLike.style.animation = "show-like 1s normal";
-                    let endLikeShow = (ev) => {
+                    State.endShowLike = (ev) => {
                         listLike.style.animation = null;
-                        listLike.removeEventListener("animationend", endLikeShow);
+                        listLike.removeEventListener("animationend", State.endShowLike);
                     }
-                    listLike.addEventListener("animationend", endLikeShow);
+                    listLike.removeEventListener("animationend", State.endShowLikeReverse);
+                    listLike.addEventListener("animationend", State.endShowLike);
                 }
                 if (State.index == i) {
                     listLike.onclick = () => {
@@ -129,13 +132,13 @@ let setTracksList = (list, index) => {
             ev.stopImmediatePropagation();
             if (ev.target == itemTrack) {
                 if (!list[i].liked && State.index == i) {
-                    let endLikeShow = (ev) => {
+                    State.endShowLikeReverse = (ev) => {
                         listLike.classList.remove("list-dislike");
-                        listLike.removeEventListener("animationend", endLikeShow);
+                        listLike.removeEventListener("animationend", State.endShowLikeReverse);
                         listLike.style.animation = null;
                     }
-
-                    listLike.addEventListener("animationend", endLikeShow);
+                    listLike.removeEventListener("animationend", State.endShowLike);
+                    listLike.addEventListener("animationend", State.endShowLikeReverse);
                     listLike.style.animation = "show-like 1s reverse";
 
                 }
@@ -151,9 +154,24 @@ let setTracksList = (list, index) => {
                 if (State.index == i) {
                     sendEvent("togglePause");
                 } else {
-                    sendEvent(play);
+                    sendEvent(play); // send as object
+                    stopUpdater();
                     selectItem(itemTrack);
                     State.index = i;
+                    if (!requestTracksList[i].liked) {
+                        listLike.classList.add("list-dislike");
+                        listLike.style.animation = "show-like 1s normal";
+                        let endShowLike = (ev) => {
+                            listLike.style.animation = null;
+                            listLike.removeEventListener("animationend", endShowLike);
+                        }
+                        listLike.addEventListener("animationend", endShowLike);
+                    }
+                    listLike.onclick = () => {
+                        State.likeItem = listLike;
+                        State.isLike = list[i];
+                        sendEvent("toggleLike");
+                    }
                 }
             }
         }
@@ -206,41 +224,12 @@ let selectItem = (item) => {
     } catch (error) {}
     if (previousSelectItem != undefined) {
         previousSelectItem.classList.remove("selected-item");
-        //previousSelectItem.removeChild(previousSlider);
     }
-    // add slider
-    // let sliderContent = document.createElement("DIV");
-    // sliderContent.classList.add("slider-content", "slider-content-list");
-    // let sliderProgress = document.createElement("DIV");
-    // sliderProgress.classList.add("slider");
-    // let sliderHelper = document.createElement("DIV");
-    // sliderHelper.classList.add("slider-helper");
-    // let sliderGrooveProgress = document.createElement("DIV");
-    // sliderGrooveProgress.classList.add("slider-groove", "slider-groove-progress");
-    // let sliderGrooveCurrentProgress = document.createElement("DIV");
-    // sliderGrooveCurrentProgress.classList.add("slider-groove-current", "slider-groove-current-progress");
-    // let progressHandle = document.createElement("DIV");
-    // progressHandle.classList.add("slider-handle", "progress-handle");
-
-    // sliderGrooveProgress.appendChild(sliderGrooveCurrentProgress);
-    // sliderProgress.appendChild(sliderHelper);
-    // sliderProgress.appendChild(sliderGrooveProgress);
-    // sliderProgress.appendChild(progressHandle);
-    // sliderContent.appendChild(sliderProgress);
-
-    // // let ss = document.createElement("DIV");
-    // // ss.appendChild(sliderContent);
-
-    // item.appendChild(sliderContent);
-    // let sliderPrgress = new Slider(sliderProgress, sliderGrooveCurrentProgress, progressHandle, sliderHelper);
-
     item.classList.add("selected-item");
     previousSelectItem = item;
-    // previousSlider = sliderContent;
     selectedItem = item;
-
-
 }
+
 let scrollToSelected = () => {
     if (!isFirstScroll) {
         selectedItem.scrollIntoView({ block: "center", behavior: "smooth" });
@@ -274,7 +263,7 @@ let animateListImage = (item) => {
         easing: ['cubic-bezier(.85, .2, 1, 1)']
     };
     let options = {
-        duration: 700,
+        duration: 500,
     }
     CurrentAnimation.keyframe = keyframe;
     CurrentAnimation.options = options;
