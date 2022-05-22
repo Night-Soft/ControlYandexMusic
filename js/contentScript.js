@@ -40,23 +40,25 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
         injectJS(request.id);
         return;
     }
-    if (request.data.hasOwnProperty('play')) {
-        window.postMessage({ play: request.data.play }, "*");
-    }
-    if (request.data.hasOwnProperty('toggleVolume')) {
-        window.postMessage({ toggleVolume: request.data.toggleVolume }, "*");
-    }
-    if (request.data.hasOwnProperty('toggleRepeat')) {
-        window.postMessage({ toggleRepeat: request.data.toggleRepeat }, "*");
-    }
-    if (request.data.hasOwnProperty('toggleShuffle')) {
-        window.postMessage({ toggleShuffle: request.data.toggleShuffle }, "*");
-    }
-    if (request.data.hasOwnProperty('setVolume')) {
-        window.postMessage({ setVolume: request.data.setVolume }, "*");
-    }
-    if (request.data.hasOwnProperty('getProgress')) {
-        window.postMessage({ getProgress: request.data.getProgress }, "*");
+    if (request.hasOwnProperty('data')) {
+        if (request.data.hasOwnProperty('play')) {
+            window.postMessage({ play: request.data.play }, "*");
+        }
+        if (request.data.hasOwnProperty('toggleVolume')) {
+            window.postMessage({ toggleVolume: request.data.toggleVolume }, "*");
+        }
+        if (request.data.hasOwnProperty('toggleRepeat')) {
+            window.postMessage({ toggleRepeat: request.data.toggleRepeat }, "*");
+        }
+        if (request.data.hasOwnProperty('toggleShuffle')) {
+            window.postMessage({ toggleShuffle: request.data.toggleShuffle }, "*");
+        }
+        if (request.data.hasOwnProperty('setVolume')) {
+            window.postMessage({ setVolume: request.data.setVolume }, "*");
+        }
+        if (request.data.hasOwnProperty('getProgress')) {
+            window.postMessage({ getProgress: request.data.getProgress }, "*");
+        }
     }
     sendResponse({});
 });
