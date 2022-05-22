@@ -8,7 +8,6 @@
     "web_accessible_resources": [{
         "resources": ["js/injected.js", "./whatNew.json"],
         "matches": ["https://music.yandex.ua/*", "https://music.yandex.ru/*", "https://music.yandex.by/*", "https://avatars.yandex.net/*"]
-
     }],
     "icons": {
         "200": "img/icon.png"
@@ -68,8 +67,7 @@
     "permissions": [
         "tabs",
         "notifications",
-        "storage",
-        "scripting"
+        "storage"
     ],
     "host_permissions": [
         "https://music.yandex.ua/*",
