@@ -184,6 +184,7 @@ let setTracksList = (list, index) => {
     }
 
 }
+
 let updateTracksListLike = (isLike) => {
     if (isLike) {
         State.isLike.liked = isLike;
@@ -204,18 +205,31 @@ const equals = (a, b) => {
     }
     return true;
 };
-let getArtists = (list) => {
-    let artists = "";
-    for (let i = 0; i < 3; i++) {
-        if (list.artists[i] == undefined && i != 0) {
-            artists = artists.slice(0, -2);
-            return artists;
+
+let getArtists = (list, number = 3) => {
+    let getArtistsTitle = (listArtists) => {
+        let artists = "";
+        for (let i = 0; i < number; i++) {
+            if (listArtists[i] == undefined && i != 0) {
+                artists = artists.slice(0, -2);
+                return artists;
+            }
+            artists += listArtists[i].title + "," + " ";
         }
-        artists += list.artists[i].title + "," + " ";
+        artists = artists.slice(0, -2);
+        return artists;
     }
-    artists = artists.slice(0, -2);
-    return artists;
+    if (list.artists.length > 0) {
+        return getArtistsTitle(list.artists);
+    } else {
+        // get from posdcast
+        if (list.album.hasOwnProperty("title")) {
+            return list.album.title;
+        }
+        return "";
+    }
 }
+
 let selectItem = (item) => {
     try {
         if (!State.isLike.liked) {
@@ -236,11 +250,13 @@ let scrollToSelected = () => {
         isFirstScroll = true;
     }
 }
+
 let clearList = (list) => {
     for (let i = 0; i < list.length; i++) {
         list[i].remove();
     }
 }
+
 let animateListImage = (item) => {
     function offset(el) {
         let rect = el.getBoundingClientRect(),

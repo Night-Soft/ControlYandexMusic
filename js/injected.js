@@ -75,6 +75,11 @@ window.addEventListener("message", function(event) {
     }
 }, false);
 
+externalAPI.on(externalAPI.EVENT_TRACK, function(event) {
+    setMediaSession();
+    getTracks();
+});
+
 let mediaSession = navigator.mediaSession;
 if ('mediaSession' in navigator) {
     navigator.mediaSession.setActionHandler('play', function() {
@@ -93,6 +98,30 @@ if ('mediaSession' in navigator) {
     });
 }
 
+let getArtists = (list) => {
+    let getArtistsTitle = (listArtists) => {
+        let artists = "";
+        for (let i = 0; i < 3; i++) {
+            if (listArtists[i] == undefined && i != 0) {
+                artists = artists.slice(0, -2);
+                return artists;
+            }
+            artists += listArtists[i].title + "," + " ";
+        }
+        artists = artists.slice(0, -2);
+        return artists;
+    }
+    if (list.artists.length > 0) {
+        return getArtistsTitle(list.artists);
+    } else {
+        // get from posdcast
+        if (list.album.hasOwnProperty("title")) {
+            return list.album.title;
+        }
+        return "";
+    }
+}
+
 let setMediaSession = () => {
     let current = externalAPI.getCurrentTrack();
     let iconTrack = current.cover;
@@ -104,7 +133,7 @@ let setMediaSession = () => {
     }
     navigator.mediaSession.metadata = new MediaMetadata({
         title: current.title,
-        artist: current.artists[0].title,
+        artist: getArtists(externalAPI.getCurrentTrack()),
         artwork: [
             { src: iconTrack + '50x50', sizes: '50x50', type: 'image/jpg' },
             { src: iconTrack + '80x80', sizes: '80x80', type: 'image/jpg' },
@@ -116,11 +145,6 @@ let setMediaSession = () => {
         ]
     });
 }
-
-externalAPI.on(externalAPI.EVENT_TRACK, function(event) {
-    setMediaSession();
-    getTracks();
-});
 
 function getTracks() {
     let trackInfo = {

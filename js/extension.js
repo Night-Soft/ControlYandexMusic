@@ -82,6 +82,9 @@ chrome.runtime.onMessage.addListener( // background, content script
         }
         if (request.options) {
             setOptions(request.options);
+            if (request.options.isShowWhatNew) {
+                checkNew();
+            }
         }
     });
 
@@ -89,15 +92,7 @@ chrome.runtime.onMessageExternal.addListener( // injected script
     function(request, sender, sendResponse) {
         switch (request.data) {
             case 'currentTrack': // get from the key
-                let artists = request.api.artists;
-                let nameArtists = "";
-                for (let i = 0; i < artists.length; i++) {
-                    nameArtists += artists[i].title + ", ";
-                    if (i + 1 == artists.length) {
-                        nameArtists = nameArtists.slice(-nameArtists.length, -2);
-                    }
-                }
-                setMediaData(request.api.title, nameArtists, request.api.cover);
+                setMediaData(request.api.title, getArtists(request.api, 5), request.api.cover);
                 changeState(request.isPlaying);
                 toggleLike(request.api.liked);
                 getDuration(request.api.duration);
@@ -334,7 +329,7 @@ modal[0].onclick = function() {
     modal[0].addEventListener("animationend", removeClass);
     modal[0].classList.add("modal-background-reverse");
     let options = {
-        duration: 700,
+        duration: 500,
         direction: 'reverse',
     }
     if (CurrentAnimation.isFromList) {
@@ -487,17 +482,6 @@ function sendEvent(event, isResponse = false) {
 
     });
 }
-
-let sendEventBackground = (event, callback) => { // event should be as object
-    chrome.runtime.sendMessage(event, function(response) {
-        if (response != undefined) {
-            setOptions(response.options); // options.js
-            if (callback != undefined) {
-                callback();
-            }
-        }
-    });
-};
 
 let setRightFontSize = (fontSize = 1.4) => {
     let heightArtist = aritstName[0].offsetHeight;

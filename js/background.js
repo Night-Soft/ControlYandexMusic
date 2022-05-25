@@ -1,6 +1,5 @@
 chrome.commands.onCommand.addListener(function(command) {
-    let cmd = command;
-    switch (cmd) {
+    switch (command) {
         case 'next-key':
             sendEvent('next-key', true);
             break;
@@ -19,92 +18,13 @@ chrome.commands.onCommand.addListener(function(command) {
 chrome.runtime.onMessageExternal.addListener(
     function(request, sender, sendResponse) {
         if (request.key == "key") {
-            let artists = request.currentTrack.artists;
-            let nameArtists = "";
-            for (let i = 0; i < artists.length; i++) {
-                nameArtists += artists[i].title + ", ";
-                if (i + 1 == artists.length) {
-                    nameArtists = nameArtists.slice(-nameArtists.length, -2);
-                }
-            }
-            let nameTrack = request.currentTrack.title;
-            let iconTrack = request.currentTrack.cover;
-            let isLike = request.currentTrack.liked;
-            if (iconTrack == undefined) {
-                iconTrack = "img/icon.png"
-            } else {
-                iconTrack = "https://" + iconTrack
-                iconTrack = iconTrack.slice(0, -2);
-                iconTrack += "200x200";
-                urlCover = iconTrack;
-            }
-            if (Options.isPlayPauseNotify == true && Options.isPrevNextNotify == true) {
-                switch (request.dataKey) {
-                    case 'next-key':
-                        setNotifications(nameTrack, nameArtists, iconTrack);
-                        break;
-                    case 'previous-key':
-                        setNotifications(nameTrack, nameArtists, iconTrack);
-                        break;
-                    case 'togglePause-key':
-                        setNotifications(nameTrack, nameArtists, iconTrack)
-                        break;
-                    case 'toggleLike-key':
-                        let liked = chrome.i18n.getMessage("liked");
-                        let disliked = chrome.i18n.getMessage("disliked");
-                        if (isLike) { // noGood
-                            iconTrack = "img/like.png";
-                            nameArtists = liked;
-                        } else {
-                            iconTrack = "img/disliked.png";
-                            nameArtists = disliked;
-
-                        }
-                        setNotifications(nameTrack, nameArtists, iconTrack)
-                        break;
-                }
-            } else if (Options.isPlayPauseNotify == true && Options.isPrevNextNotify == false) {
-                switch (request.dataKey) {
-                    case 'togglePause-key':
-                        setNotifications(nameTrack, nameArtists, iconTrack)
-                        break;
-                    case 'toggleLike-key':
-                        let liked = chrome.i18n.getMessage("liked");
-                        let disliked = chrome.i18n.getMessage("disliked");
-                        if (isLike) { // noGood
-                            iconTrack = "img/like.png";
-                            nameArtists = liked;
-                        } else {
-                            iconTrack = "img/disliked.png";
-                            nameArtists = disliked;
-
-                        }
-                        setNotifications(nameTrack, nameArtists, iconTrack)
-                        break;
-                }
-            } else if (Options.isPlayPauseNotify == false && Options.isPrevNextNotify == true) {
-                switch (request.dataKey) {
-                    case 'next-key':
-                        setNotifications(nameTrack, nameArtists, iconTrack);
-                        break;
-                    case 'previous-key':
-                        setNotifications(nameTrack, nameArtists, iconTrack);
-                        break;
-                    case 'toggleLike-key':
-                        let liked = chrome.i18n.getMessage("liked");
-                        let disliked = chrome.i18n.getMessage("disliked");
-                        if (isLike) { // noGood
-                            iconTrack = "img/like.png";
-                            nameArtists = liked;
-                        } else {
-                            iconTrack = "img/disliked.png";
-                            nameArtists = disliked;
-
-                        }
-                        setNotifications(nameTrack, nameArtists, iconTrack)
-                        break;
-                }
-            }
+            if (isReaded) {
+                showNotification(request);
+            } else(
+                getOptions().then((result) => {
+                    showNotification(request);
+                }, (rejected) => {})
+            )
         }
         return true;
     });
@@ -126,9 +46,15 @@ chrome.runtime.onMessage.addListener(
             });
         }
         if (request.getOptions == "all") {
-            sendResponse({
-                options: Options
-            });
+            if (isReaded) {
+                sendResponse({
+                    options: Options
+                });
+            } else {
+                getOptions().then((result) => {
+                    sendMessage({ options: result });
+                });
+            }
             return;
         } else if (request.getOptions != undefined) {
             getOptions(request.getOptions);
@@ -156,7 +82,76 @@ function sendEvent(event, isKey) { // to content script
     });
 }
 
-let timer;
+let getArtists = (list, number = 3) => {
+    let getArtistsTitle = (listArtists) => {
+        let artists = "";
+        for (let i = 0; i < number; i++) {
+            if (listArtists[i] == undefined && i != 0) {
+                artists = artists.slice(0, -2);
+                return artists;
+            }
+            artists += listArtists[i].title + "," + " ";
+        }
+        artists = artists.slice(0, -2);
+        return artists;
+    }
+    if (list.artists.length > 0) {
+        return getArtistsTitle(list.artists);
+    } else {
+        // get from posdcast
+        if (list.album.hasOwnProperty("title")) {
+            return list.album.title;
+        }
+        return "";
+    }
+}
+
+let showNotification = (request) => {
+    let nameArtists = getArtists(request.currentTrack);
+    let nameTrack = request.currentTrack.title;
+    let iconTrack = request.currentTrack.cover;
+    let isLike = request.currentTrack.liked;
+    if (iconTrack == undefined) {
+        iconTrack = "img/icon.png"
+    } else {
+        iconTrack = "https://" + iconTrack
+        iconTrack = iconTrack.slice(0, -2);
+        iconTrack += "100x100";
+        urlCover = iconTrack;
+    }
+    if (Options.isPlayPauseNotify == true) {
+        switch (request.dataKey) {
+            case 'togglePause-key':
+                setNotifications(nameTrack, nameArtists, iconTrack)
+                break;
+        }
+    }
+    if (Options.isPrevNextNotify == true) {
+        switch (request.dataKey) {
+            case 'next-key':
+                setNotifications(nameTrack, nameArtists, iconTrack);
+                break;
+            case 'previous-key':
+                setNotifications(nameTrack, nameArtists, iconTrack);
+                break;
+        }
+    }
+    switch (request.dataKey) {
+        case 'toggleLike-key':
+            let liked = chrome.i18n.getMessage("liked");
+            let disliked = chrome.i18n.getMessage("disliked");
+            if (isLike) { // noGood
+                iconTrack = "img/like.png";
+                nameArtists = liked;
+            } else {
+                iconTrack = "img/disliked.png";
+                nameArtists = disliked;
+            }
+            setNotifications(nameTrack, nameArtists, iconTrack)
+            break;
+    }
+
+}
 
 function setNotifications(trackTitle, trackArtists, iconTrack) {
     if (iconTrack == undefined) {
@@ -168,14 +163,9 @@ function setNotifications(trackTitle, trackArtists, iconTrack) {
         message: trackArtists,
         iconUrl: iconTrack
     }, function(callback) {
-        function out() {
-            timer = setTimeout(function() {
-                chrome.notifications.clear("YandexMusicControl");
-            }, 7000);
-        }
-        clearTimeout(timer);
-        out();
-
+        setTimeout(function() {
+            chrome.notifications.clear("YandexMusicControl");
+        }, 7000);
     });
 }
 
@@ -183,14 +173,6 @@ chrome.notifications.onClicked.addListener((YandexMusicControl) => {
     sendEvent('next-key', true);
 
 });
-
-let Options = {
-    isPlayPauseNotify: undefined,
-    isPrevNextNotify: undefined,
-    isShowWhatNew: undefined,
-    version: undefined,
-    oldVersionDescription: undefined
-}
 
 let getWhatNew = async() => {
     let response = fetch("../whatNew.json");
@@ -208,6 +190,14 @@ let getWhatNew = async() => {
     });
 }
 
+let isReaded = false;
+let Options = {
+    isPlayPauseNotify: undefined,
+    isPrevNextNotify: undefined,
+    isShowWhatNew: undefined,
+    version: undefined,
+    oldVersionDescription: undefined,
+}
 
 let readOption = (option) => {
     if (option.all) {
@@ -219,6 +209,7 @@ let readOption = (option) => {
                     Options[OptionsKeys[i]] = result[OptionsKeys[i]];
                     obj[OptionsKeys[i]] = result[OptionsKeys[i]];
                     if (OptionsKeys.length - 1 == i) {
+                        isReaded = true;
                         resolve(obj);
                     }
                 });
@@ -236,6 +227,7 @@ let readOption = (option) => {
                             Options[OptionsKeys[i]] = result[OptionsKeys[i]];
                             obj[OptionsKeys[i]] = result[OptionsKeys[i]];
                             if (option.paramter.length == Object.keys(obj).length) {
+                                isReaded = true;
                                 resolve(obj);
                             }
                         });
@@ -271,32 +263,36 @@ let writeOptions = (option) => {
     }
 }
 
-const manifestVersion = chrome.runtime.getManifest().version;
-
-function getOptions(option = { all: true }) { // read and send
-    readOption(option).then((result) => { // read from parameter
-        let date = new Date();
-        console.log("parameter readed", result, "time:", date.getHours(), ":", date.getMinutes(), ":", date.getSeconds());
-        //sendMessage({ options: result });
-        if (manifestVersion != Options.version) {
-            getWhatNew().then((value) => {
-                if (!value.success) { return; }
-                let currentVersionDescription = value.versions[0][0];
-                if (Options.oldVersionDescription != currentVersionDescription) {
-                    writeOptions({
-                        version: manifestVersion,
-                        oldVersionDescription: currentVersionDescription,
-                        isShowWhatNew: true
-                    });
-                    sendMessage({ options: Options });
-                }
-            });
-        }
-
-    }, (reject) => {
-        console.log("Read settings error.", reject);
+/**
+ * option takes parameters.
+ * @param {object} all True for get all options.
+ * @param {object} paramter { paramter: ["innewversion", "version"] }.
+ * @return {object} Result as object.
+ */
+let getOptions = async(option = { all: true }) => { // read and send
+    return new Promise((resolve, reject) => {
+        readOption(option).then((result) => { // read from parameter
+            let date = new Date();
+            console.log("parameter readed", result, "time:", date.getHours(), ":", date.getMinutes(), ":", date.getSeconds());
+            const manifestVersion = chrome.runtime.getManifest().version;
+            if (manifestVersion != Options.version) {
+                getWhatNew().then((value) => {
+                    if (!value.success) { return; }
+                    let currentVersionDescription = value.versions[0][0];
+                    if (Options.oldVersionDescription != currentVersionDescription) {
+                        writeOptions({
+                            version: manifestVersion,
+                            oldVersionDescription: currentVersionDescription,
+                            isShowWhatNew: true
+                        });
+                        sendMessage({ options: Options });
+                    }
+                });
+            }
+            resolve(result);
+        }, (rejected) => {
+            reject(rejected);
+            console.log("Read settings error.", rejected);
+        });
     });
 }
-
-//getOptions({ paramter: ["innewversion", "version"] });
-getOptions();
