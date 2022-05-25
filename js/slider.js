@@ -29,7 +29,6 @@ let Slider = class {
                 }
             }, 150);
             this.ownMouseEnter(event);
-
         }
         this.setPosition({ event: { type: "wheel" }, scale: this.scale });
     }
@@ -40,8 +39,6 @@ let Slider = class {
                 if (this.scale > this.maxScale) this.scale = this.maxScale;
                 this.setPosition({ event: event, scale: this.scale });
                 this.setPositionHelper({ scale: this.scale });
-
-
             }
         } else {
             if (this.scale >= 0) {
@@ -49,7 +46,6 @@ let Slider = class {
                 if (this.scale < 0) this.scale = 0;
                 this.setPosition({ event: event, scale: this.scale });
                 this.setPositionHelper({ scale: this.scale });
-
             }
         }
         this.ownWheel(event);
@@ -394,6 +390,8 @@ sliderPrgress.ownMouseDown = (event) => {
 
 sliderPrgress.ownWheel = (event) => {
     setTime();
+    sliderPrgress.setDataHelper(countTimeHelpers(sliderPrgress.currentGroove.offsetWidth, getDuration())); // -25 = helper.offsetLeft
+
 }
 
 let countTimeHelpers = (currentPosition, duration = getDuration()) => {
@@ -419,6 +417,7 @@ function setTrackProgress(duration = getDuration(), progress = getProgress(), is
     // set progress to slider
     sliderPrgress.setPosition({ scale: progress });
 }
+
 const stopUpdater = () => {
     try {
         clearInterval(progressUpdater)

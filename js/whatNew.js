@@ -36,28 +36,19 @@ let WhatNew = {
         return locale;
     },
     getWhatNew: async() => {
-        let request = new XMLHttpRequest();
-        let whatNewJson = {};
-        try {
-            request.open("GET", "./whatNew.json", true);
-            request.send(null);
-        } catch (error) {
-            console.log(error);
-
-        }
+        let response = fetch("../whatNew.json");
         return new Promise(function(resolve, reject) {
-            request.onload = () => {
-                whatNewJson = JSON.parse(request.responseText);
-                whatNewJson["success"] = true;
-                resolve(whatNewJson);
-            }
-            request.onerror = () => {
-                whatNewJson["success"] = false;
-                reject(whatNewJson);
-            }
+            response.then((data) => {
+                data.json().then((value) => {
+                    value["success"] = true;
+                    resolve(value);
+                });
+            }, (data) => {
+                console.log("error", data);
+                data["success"] = false;
+                reject(data)
+            });
         });
-
-
     },
     setLocale: (locale, callback) => {
         let whatNewJson = WhatNew.getWhatNew().then((value) => {
@@ -68,7 +59,6 @@ let WhatNew = {
             let listChangesCoontent = document.getElementsByClassName("list-changes-coontent")[0];
             listChangesCoontent.innerHTML = "";
             for (let i = 0; i < whatNewJson["versions"].length; i++) {
-                console.log(whatNewJson["versions"][i][0]);
                 let versionChanges = document.createElement("DIV");
                 let version = document.createElement("H2");
                 let changes = document.createElement("H2");

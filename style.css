@@ -257,7 +257,7 @@ a {
 }
 
 .modal-background-reverse {
-    animation: modal-background-reverse 0.5s;
+    animation: modal-background-reverse 0.3s;
     animation-delay: 200ms;
 }
 
@@ -550,8 +550,10 @@ a {
 }
 
 .list-track {
-    background-color: rgb(0 0 0 / 60%);
+    position: inherit;
     min-height: 100%;
+    width: 100%;
+    background-color: rgb(0 0 0 / 60%);
 }
 
 .list-like {

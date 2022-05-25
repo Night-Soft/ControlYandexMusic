@@ -21,6 +21,17 @@ prevNextNotify.onclick = () => {
     setOptions({ isPrevNextNotify: prevNextNotify.checked });
 }
 
+let sendEventBackground = (event, callback) => { // event should be as object.
+    chrome.runtime.sendMessage(event, function(response) {
+        if (response != undefined) {
+            setOptions(response.options); // options.js
+            if (callback != undefined) {
+                callback();
+            }
+        }
+    });
+};
+
 // check new version and show what new
 let checkNew = () => {
     if (Options.isShowWhatNew == false || Options.isShowWhatNew == undefined) { return };
