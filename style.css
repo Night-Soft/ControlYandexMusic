@@ -562,6 +562,8 @@ a {
     background-position: center;
     min-width: 40px;
     height: 40px;
+    position: absolute;
+    right: 5px;
     background-size: contain;
     align-self: center;
     margin-left: auto;
@@ -577,6 +579,8 @@ a {
     background-position: center;
     min-width: 40px;
     height: 40px;
+    position: absolute;
+    right: 5px;
     background-size: contain;
     align-self: center;
     margin-left: auto;
@@ -628,7 +632,7 @@ a {
 
 .item-track:hover {
     background: rgb(0 0 0 / 65%);
-    padding: 15px 5px 15px 5px;
+    padding-left: 25px;
     border-radius: 5px;
 }
 
