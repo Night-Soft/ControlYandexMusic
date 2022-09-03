@@ -15,7 +15,6 @@ let btnNew = document.getElementById("New");
 let appDetected = document.getElementById("AppDetected");
 let appQuestion = document.getElementById("AppQuestion");
 let shortCuts = document.getElementById("shortCuts");
-let settings = document.getElementById("settings");
 let showNotify = document.getElementById("showNotify");
 let listSettings = document.getElementById("listSettings");
 let yesNews = document.getElementById("YesNews");
@@ -33,7 +32,7 @@ let sideHelp = document.getElementsByClassName("side-help")[0];
 let noConnect = document.getElementsByClassName("no-connect")[0];
 let loaderContainer = document.getElementsByClassName("loader-container")[0];
 let yesNoNew = document.getElementsByClassName("yes-no-new")[0];
-let settingsClass = document.getElementsByClassName("settings")[0];
+let settings = document.getElementsByClassName("settings")[0];
 let transition = document.getElementsByClassName("transition");
 let hamburgerMenuList = document.getElementsByClassName("hamburger-menu-list")[0];
 let modalNews = document.querySelector(".modal-news");
@@ -72,7 +71,7 @@ let Extension = {
 };
 
 chrome.runtime.onMessage.addListener( // background, content script
-    function(request, sender, sendResponse) {
+    (request, sender, sendResponse) => {
         if (request.onload == true) {
             getYandexMusicTab().then((id) => {
                 chrome.tabs.update(id, {
@@ -89,7 +88,7 @@ chrome.runtime.onMessage.addListener( // background, content script
     });
 
 chrome.runtime.onMessageExternal.addListener( // injected script
-    function(request, sender, sendResponse) {
+    (request, sender, sendResponse) => {
         switch (request.data) {
             case 'currentTrack': // get from the key
                 setMediaData(request.api.title, getArtists(request.api, 5), request.api.cover);
@@ -144,35 +143,13 @@ chrome.runtime.onMessageExternal.addListener( // injected script
         return true;
     });
 
-settingsClass.onmouseenter = () => {
-    listSettings.removeEventListener("animationend", endAnimationList);
-    listSettings.classList.remove("scale-from-top-out");
-    listSettings.className += " scale-from-top";
-    listSettings.style.display = "flex";
-
-}
-settingsClass.onmouseleave = () => {
-    listSettings.classList.remove("scale-from-top");
-    listSettings.className += " scale-from-top-out";
-    listSettings.addEventListener("animationend", endAnimationList);
-
-}
-
-function endAnimationList() {
-    listSettings.classList.remove("scale-from-top-out");
-    listSettings.classList.remove("scale-from-top");
-    listSettings.style.display = "none";
-    listSettings.removeEventListener("animationend", endAnimationList);
-
-}
-
 btnYes.onclick = () => {
     if (newOrReload == true) {
         openNewTab();
     } else {
         chrome.tabs.query({
             windowType: "normal"
-        }, function(tabs) {
+        }, (tabs) => {
             for (let i = tabs.length - 1; i >= 0; i--) {
                 if (tabs[i].url.startsWith("https://music.yandex")) {
                     chrome.tabs.reload(tabs[i].id);
@@ -181,58 +158,188 @@ btnYes.onclick = () => {
                     appQuestion.style.display = "none";
                     yesNoNew.style.display = "none";
                     break;
-
                 }
             }
         });
     }
 }
+
 bntNo.onclick = () => {
     noConnect.classList.add("puff-out-center");
-    noConnect.addEventListener("animationend", function() {
+    noConnect.addEventListener("animationend", () => {
         noConnect.style.display = "none";
 
     });
 }
+
 btnNew.onclick = () => {
     openNewTab();
 }
 
-let noConnceted = () => {
-    bntNo.style.display = "none";
-    btnYes.innerHTML = chrome.i18n.getMessage("reload");
-    noConnect.style.display = "flex";
-    noConnect.classList.add("puff-in-center");
-    newOrReload = false;
-}
-let currentTab;
-let getCurrentTab = () => {
-    chrome.tabs.query({
-        windowType: "normal",
-        active: true
-    }, function(tabs) {
-        currentTab = tabs[0].id;
-    });
-}
-let goBackTab = () => {
-    chrome.tabs.update(currentTab, {
-        active: true
-    });
-}
-let openNewTab = () => {
-    chrome.tabs.create({
-        url: "https://music.yandex.ru/home",
-        active: false
-    });
-    loaderContainer.style.display = "block";
-    appDetected.innerHTML = chrome.i18n.getMessage("waitWhilePage");
-    appQuestion.style.display = "none";
-    yesNoNew.style.display = "none";
+previous[0].onclick = () => {
+    sendEvent("previous");
+    stopUpdater();
+    pushEvent(previous[0].className, "clicked")
+};
+
+pause[0].onclick = () => {
+    sendEvent("togglePause");
+    pushEvent(pause[0].className, "clicked")
+};
+
+next[0].onclick = () => {
+    sendEvent("next");
+    stopUpdater();
+    pushEvent(next[0].className, "clicked")
+};
+
+like[0].onclick = () => {
+    sendEvent("toggleLike");
+    pushEvent(like[0].className, "clicked")
+
 }
 
-container.onclick = function() {
+trackImage[0].onclick = () => {
+    let removeClass = () => {
+        modal[0].classList.remove("modal-background");
+        modalCover[0].removeEventListener("animationend", removeClass);
+    }
+    modalCover[0].addEventListener("animationend", removeClass);
+    modal[0].classList.add("modal-background");
+    openCover(trackImage[0], urlCover);
+    pushEvent("Cover open", "clicked")
+};
+
+modal[0].onclick = function() {
+    let removeClass = () => {
+        modal[0].classList.remove("modal-background-reverse");
+        modal[0].removeEventListener("animationend", removeClass);
+        modal[0].style.display = "none";
+    }
+    modal[0].addEventListener("animationend", removeClass);
+    modal[0].classList.add("modal-background-reverse");
+    let options = {
+        duration: 500,
+        direction: 'reverse',
+    }
+    if (CurrentAnimation.isFromList) {
+        let offset = (el) => {
+            let rect = el.getBoundingClientRect(),
+                scrollLeft = window.pageXOffset || document.documentElement.scrollLeft,
+                scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            return {
+                top: rect.top + scrollTop,
+                left: rect.left + scrollLeft
+            }
+        }
+        let itemOffset = offset(State.coverItem);
+        let left = -(window.innerWidth / 2 - State.coverItem.offsetWidth / 2 - itemOffset.left);
+        let top = -(window.innerHeight / 2 - State.coverItem.offsetHeight / 2 - itemOffset.top);
+        CurrentAnimation.keyframe.transform = ['translate(' + parseInt(left) + 'px, ' +
+            parseInt(top) + 'px)', 'translate(0px, 0px)'
+        ];
+    }
+    modalCover[0].animate(CurrentAnimation.keyframe, options);
+}
+
+// list settings
+
+container.onclick = () => {
     toggleMenu();
 }
+
+about.onclick = () => {
+    chrome.tabs.create({
+        url: "about.html"
+    })
+    pushEvent(about.className)
+
+}
+
+settings.onmouseenter = () => {
+    listSettings.removeEventListener("animationend", endAnimationList);
+    listSettings.classList.remove("scale-from-top-out");
+    listSettings.className += " scale-from-top";
+    listSettings.style.display = "flex";
+
+}
+
+settings.onmouseleave = () => {
+    listSettings.classList.remove("scale-from-top");
+    listSettings.className += " scale-from-top-out";
+    listSettings.addEventListener("animationend", endAnimationList);
+
+}
+
+let endAnimationList = () => {
+    listSettings.classList.remove("scale-from-top-out");
+    listSettings.classList.remove("scale-from-top");
+    listSettings.style.display = "none";
+    listSettings.removeEventListener("animationend", endAnimationList);
+}
+
+contactMe.onclick = () => {
+    window.open("mailto:nightsoftware@outlook.com");
+}
+
+whatNew.onclick = () => {
+    WhatNew.openNews();
+}
+
+shortCuts.onclick = () => {
+    chrome.tabs.create({
+        url: "chrome://extensions/shortcuts"
+    });
+}
+
+supportMenu.onclick = () => {}
+    // payPal.onclick = () => {
+    //     pushEvent("payPal");
+    //     window.open("https://www.paypal.com/paypalme2/NightSoftware");
+
+// }
+
+donationAlerts.onclick = () => {
+    pushEvent("donationAlerts");
+    window.open("https://www.donationalerts.com/r/nightsoftware");
+}
+
+donationAlerts.onmouseenter = () => {
+    sideHelp.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
+}
+
+sideHelp.onmouseenter = (event) => {
+    //payPal.style.display = "block";
+    donationAlerts.style.display = "flex";
+    sideHelp.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
+}
+
+sideHelp.onmouseleave = () => {
+    //payPal.style.display = "none";
+    donationAlerts.style.display = "none";
+}
+
+aMenu.onclick = () => {
+    window.open("mailto:nightsoftware@outlook.com");
+}
+
+closeSide.onclick = () => {
+    toggleMenu();
+}
+
+modalListMenu.onclick = (e) => {
+    if (e.target !== modalListMenu) {
+        return;
+    }
+    toggleListMenu();
+}
+
+hamburgerMenuList.onclick = () => {
+    toggleListMenu();
+}
+
+
+
 
 let toggleListMenu = () => {
     hamburgerMenuList.classList.toggle("change-list");
@@ -266,152 +373,46 @@ let toggleListMenu = () => {
 
     }
 }
-modalListMenu.onclick = (e) => {
-    if (e.target !== modalListMenu) { return; }
-    toggleListMenu();
-}
-hamburgerMenuList.onclick = () => {
-    toggleListMenu();
-}
 
-previous[0].addEventListener('click', function() {
-    sendEvent("previous");
-    stopUpdater();
-    pushEvent(previous[0].className, "clicked")
-});
-
-pause[0].addEventListener('click', function() {
-    sendEvent("togglePause");
-    pushEvent(pause[0].className, "clicked")
-
-});
-
-next[0].addEventListener('click', function() {
-    sendEvent("next");
-    stopUpdater();
-    pushEvent(next[0].className, "clicked")
-
-});
-like[0].onclick = function() {
-    sendEvent("toggleLike");
-    pushEvent(like[0].className, "clicked")
-
+let noConnceted = () => {
+    bntNo.style.display = "none";
+    btnYes.innerHTML = chrome.i18n.getMessage("reload");
+    noConnect.style.display = "flex";
+    noConnect.classList.add("puff-in-center");
+    newOrReload = false;
 }
 
-function toggleLike(is) {
-    if (is == true) { // noGood
+let openNewTab = () => {
+    chrome.tabs.create({
+        url: "https://music.yandex.ru/home",
+        active: false
+    });
+    loaderContainer.style.display = "block";
+    appDetected.innerHTML = chrome.i18n.getMessage("waitWhilePage");
+    appQuestion.style.display = "none";
+    yesNoNew.style.display = "none";
+}
+
+let toggleLike = (is) => {
+    if (is) {
         like[0].style.backgroundImage = "url(img/like.png)";
     } else {
         like[0].style.backgroundImage = "url(img/disliked.png)";
-
     }
 }
 
-trackImage[0].addEventListener('click', function() {
-    function removeClass() {
-        modal[0].classList.remove("modal-background");
-        modalCover[0].removeEventListener("animationend", removeClass);
-    }
-    modalCover[0].addEventListener("animationend", removeClass);
-    modal[0].classList.add("modal-background");
-    openCover(trackImage[0], urlCover);
-    pushEvent("Cover open", "clicked")
-
-
-});
-
-modal[0].onclick = function() {
-    function removeClass() {
-        modal[0].classList.remove("modal-background-reverse");
-        modal[0].removeEventListener("animationend", removeClass);
-        modal[0].style.display = "none";
-    }
-    modal[0].addEventListener("animationend", removeClass);
-    modal[0].classList.add("modal-background-reverse");
-    let options = {
-        duration: 500,
-        direction: 'reverse',
-    }
-    if (CurrentAnimation.isFromList) {
-        let offset = (el) => {
-            let rect = el.getBoundingClientRect(),
-                scrollLeft = window.pageXOffset || document.documentElement.scrollLeft,
-                scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-            return {
-                top: rect.top + scrollTop,
-                left: rect.left + scrollLeft
-            }
-        }
-        let itemOffset = offset(State.coverItem);
-        let left = -(window.innerWidth / 2 - State.coverItem.offsetWidth / 2 - itemOffset.left);
-        let top = -(window.innerHeight / 2 - State.coverItem.offsetHeight / 2 - itemOffset.top);
-        CurrentAnimation.keyframe.transform = ['translate(' + parseInt(left) + 'px, ' +
-            parseInt(top) + 'px)', 'translate(0px, 0px)'
-        ];
-    }
-
-    modalCover[0].animate(CurrentAnimation.keyframe, options);
-}
-
-shortCuts.onclick = () => {
-    chrome.tabs.create({
-        url: "chrome://extensions/shortcuts"
-    });
-}
-contactMe.onclick = () => {
-    window.open("mailto:nightsoftware@outlook.com");
-}
-aMenu.onclick = () => {
-    window.open("mailto:nightsoftware@outlook.com");
-}
-
-whatNew.onclick = () => {
-    WhatNew.openNews();
-}
-
-closeSide.onclick = () => {
-    toggleMenu();
-}
-
-about.onclick = () => {
-    chrome.tabs.create({
-        url: "about.html"
-    })
-    pushEvent(about.className)
-
-}
-supportMenu.onclick = () => {}
-    // payPal.onclick = () => {
-    //     pushEvent("payPal");
-    //     window.open("https://www.paypal.com/paypalme2/NightSoftware");
-
-// }
-donationAlerts.onclick = () => {
-    pushEvent("donationAlerts");
-    window.open("https://www.donationalerts.com/r/nightsoftware");
-}
-donationAlerts.onmouseenter = () => {
-    sideHelp.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
-}
-sideHelp.onmouseenter = (event) => {
-    //payPal.style.display = "block";
-    donationAlerts.style.display = "flex";
-    sideHelp.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
-}
-sideHelp.onmouseleave = () => {
-    //payPal.style.display = "none";
-    donationAlerts.style.display = "none";
-}
-let addAnimListener = () => {
-    if (isMenuOpen == true) {
-        containerMenu.addEventListener("animationend", endAnimation);
-    }
-}
 let endAnimation = (ev) => {
     ev.stopPropagation();
     isMenuOpen = false;
     containerMenu.removeEventListener("animationend", endAnimation);
 }
+
+let MenuButton = class {
+    constructor(groove, currentGroove, handle, helper) {
+
+    }
+}
+
 let toggleMenu = () => {
     container.classList.toggle("change");
     let modalSide = document.getElementsByClassName("modal-side")[0];
@@ -439,7 +440,13 @@ let toggleMenu = () => {
     }
 }
 
-function getYandexMusicTab() {
+let addAnimListener = () => {
+    if (isMenuOpen == true) {
+        containerMenu.addEventListener("animationend", endAnimation);
+    }
+}
+
+let getYandexMusicTab = () => {
     return new Promise(function(resolve, reject) {
         chrome.tabs.query({
             windowType: "normal"
@@ -456,7 +463,7 @@ function getYandexMusicTab() {
     });
 }
 
-function sendEvent(event, isResponse = false) {
+let sendEvent = (event, isResponse = false) => {
     let activeTab;
     chrome.tabs.query({
         windowType: "normal"
@@ -479,7 +486,6 @@ function sendEvent(event, isResponse = false) {
                 }
             });
         }
-
     });
 }
 
@@ -496,7 +502,7 @@ let setRightFontSize = (fontSize = 1.4) => {
     }
 }
 
-function setMediaData(trackTitle, trackArtists, iconTrack) {
+let setMediaData = (trackTitle, trackArtists, iconTrack) => {
     aritstName[0].innerHTML = trackArtists;
     trackName[0].innerHTML = trackTitle;
     aritstName[0].style.fontSize = "";
@@ -506,7 +512,7 @@ function setMediaData(trackTitle, trackArtists, iconTrack) {
     trackImage[0].style.backgroundImage = "url(" + urlCover + ")";
 }
 
-function changeState(isPlaying) {
+let changeState = (isPlaying) => {
     if (isPlaying == false) {
         pause[0].style.backgroundImage = "url(img/play.png)";
         pause[0].style.backgroundPosition = "26px center";
@@ -517,6 +523,7 @@ function changeState(isPlaying) {
         pause[0].style.backgroundSize = "";
     }
 }
+
 let getUrl = (url, size = 50) => {
     if (url == undefined) {
         url = "img/icon.png"
@@ -532,7 +539,7 @@ let getUrl = (url, size = 50) => {
     }
 }
 
-function testImage(url, size = 400, callback) {
+let testImage = (url, size = 400, callback) => {
     try {
         modalCover[0].src = getUrl(url, size);
         modalCover[0].onerror = function() {
@@ -555,6 +562,7 @@ function testImage(url, size = 400, callback) {
         console.log(error);
     }
 }
+
 let animateMainImage = (item) => {
     let width = item.offsetWidth;
     let height = item.offsetHeight;
@@ -579,7 +587,7 @@ let animateMainImage = (item) => {
     modalCover[0].animate(keyframe, options);
 }
 
-function openCover(item, url, animate = animateMainImage) {
+let openCover = (item, url, animate = animateMainImage) => {
     testImage(url, 400, { animate: animate, parameter: item });
 }
 
