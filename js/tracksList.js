@@ -69,12 +69,16 @@ let setTracksList = (list, index) => {
         let allItem = document.querySelectorAll(".item-track");
         clearList(allItem);
     }
+    createListElement(list, index);
+}
+let createListElement = (list, index) => {
     for (let i = 0; i < list.length; i++) {
         let itemTrack = document.createElement("DIV");
         itemTrack.classList.add("item-track");
 
         let itemCover = document.createElement("DIV");
         itemCover.classList.add("item-cover");
+        itemCover.setAttribute("loading", "lazy");
         itemCover.style.backgroundImage = "url(" + getUrl(list[i].cover) + ")";
         itemCover.onclick = (ev) => {
             State.coverItem = itemCover;
@@ -101,6 +105,7 @@ let setTracksList = (list, index) => {
         let listLike = document.createElement("DIV");
         if (list[i].liked) {
             listLike.classList.add("list-like");
+            contentItemName.style.maxWidth = "200px";
         }
         itemTrack.onmouseenter = (ev) => {
             ev.stopPropagation();
@@ -117,6 +122,8 @@ let setTracksList = (list, index) => {
                     }
                     listLike.removeEventListener("animationend", State.endShowLikeReverse);
                     listLike.addEventListener("animationend", State.endShowLike);
+                    contentItemName.style.maxWidth = "200px";
+
                 }
                 if (State.index == i) {
                     listLike.onclick = () => {
@@ -140,6 +147,8 @@ let setTracksList = (list, index) => {
                     listLike.removeEventListener("animationend", State.endShowLike);
                     listLike.addEventListener("animationend", State.endShowLikeReverse);
                     listLike.style.animation = "show-like 1s reverse";
+                    contentItemName.style.maxWidth = "";
+
 
                 }
                 listLike.onclick = null;
@@ -166,6 +175,8 @@ let setTracksList = (list, index) => {
                             listLike.removeEventListener("animationend", endShowLike);
                         }
                         listLike.addEventListener("animationend", endShowLike);
+                        contentItemName.style.maxWidth = "200px";
+
                     }
                     listLike.onclick = () => {
                         State.likeItem = listLike;
@@ -182,22 +193,26 @@ let setTracksList = (list, index) => {
         listTracks.appendChild(itemTrack);
 
     }
-
 }
 
+// call from extension.js
 let updateTracksListLike = (isLike) => {
+    let contentItemName = document.querySelectorAll(".content-item-name")[State.index];
     if (isLike) {
         State.isLike.liked = isLike;
         State.likeItem.classList.remove("list-dislike");
         State.likeItem.classList.add("list-like");
+        contentItemName.style.maxWidth = "200px";
     } else {
         State.isLike.liked = isLike;
         State.likeItem.classList.remove("list-like");
         State.likeItem.classList.add("list-dislike");
+        contentItemName.style.maxWidth = "200px";
     }
 }
 
 const equals = (a, b) => {
+
     for (let i = 0; i < a.length; i++) {
         if (a[i].title != b[i].title) {
             return false;

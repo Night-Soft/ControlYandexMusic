@@ -20,6 +20,7 @@ let Translate = {
         }
         bntNo.innerHTML = chrome.i18n.getMessage("no");
         btnNew.innerHTML = chrome.i18n.getMessage("new");
+        let settings = document.getElementById("settings");
         settings.innerText = chrome.i18n.getMessage("settings");
         showNotify.innerHTML = chrome.i18n.getMessage("showNotify");
         playPauseNotify.labels[0].innerHTML = chrome.i18n.getMessage("playPauseNotify");

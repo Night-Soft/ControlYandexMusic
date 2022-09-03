@@ -1,5 +1,5 @@
-var playPauseNotify = document.getElementById('n1');
-var prevNextNotify = document.getElementById('n2');
+let playPauseNotify = document.getElementById('n1');
+let prevNextNotify = document.getElementById('n2');
 let Options = {
     onload: function() {
         sendEventBackground({ getOptions: "all" }, checkNew);
@@ -46,6 +46,7 @@ let checkNew = () => {
 }
 
 let setOptions = (options) => {
+    //const [isPlayPauseNotify, isPrevNextNotify, isShowWhatNew, version, oldVersionDescription] = options;
     if (options.isPlayPauseNotify != undefined) {
         playPauseNotify.checked = options.isPlayPauseNotify;
         Options.isPlayPauseNotify = options.isPlayPauseNotify;
@@ -64,3 +65,24 @@ let setOptions = (options) => {
         Options.oldVersionDescription = options.oldVersionDescription;
     }
 }
+
+// let setOptions = (options) => {
+//     const [isPlayPauseNotify, isPrevNextNotify, isShowWhatNew, version, oldVersionDescription] = options;
+//     if (isPlayPauseNotify != undefined) {
+//         playPauseNotify.checked = isPlayPauseNotify;
+//         Options.isPlayPauseNotify = isPlayPauseNotify;
+//     }
+//     if (isPrevNextNotify != undefined) {
+//         prevNextNotify.checked = isPrevNextNotify;
+//         Options.isPrevNextNotify = isPrevNextNotify;
+//     }
+//     if (isShowWhatNew != undefined) {
+//         Options.isShowWhatNew = isShowWhatNew;
+//     }
+//     if (version != undefined) {
+//         Options.version = version;
+//     }
+//     if (oldVersionDescription != undefined) {
+//         Options.oldVersionDescription = oldVersionDescription;
+//     }
+// }
