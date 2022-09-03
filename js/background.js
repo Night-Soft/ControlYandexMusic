@@ -112,7 +112,7 @@ let showNotification = (request) => {
     let iconTrack = request.currentTrack.cover;
     let isLike = request.currentTrack.liked;
     if (iconTrack == undefined) {
-        iconTrack = "img/icon.png"
+        iconTrack = "../img/icon.png"
     } else {
         iconTrack = "https://" + iconTrack
         iconTrack = iconTrack.slice(0, -2);
@@ -141,10 +141,10 @@ let showNotification = (request) => {
             let liked = chrome.i18n.getMessage("liked");
             let disliked = chrome.i18n.getMessage("disliked");
             if (isLike) { // noGood
-                iconTrack = "img/like.png";
+                iconTrack = "../img/like.png";
                 nameArtists = liked;
             } else {
-                iconTrack = "img/disliked.png";
+                iconTrack = "../img/disliked.png";
                 nameArtists = disliked;
             }
             setNotifications(nameTrack, nameArtists, iconTrack)
@@ -155,7 +155,7 @@ let showNotification = (request) => {
 
 function setNotifications(trackTitle, trackArtists, iconTrack) {
     if (iconTrack == undefined) {
-        iconTrack = "img/icon.png"
+        iconTrack = chrome.runtime.getURL("../img/icon.png");
     }
     chrome.notifications.create("YandexMusicControl", {
         type: "basic",
@@ -197,6 +197,7 @@ let Options = {
     isShowWhatNew: undefined,
     version: undefined,
     oldVersionDescription: undefined,
+
 }
 
 let readOption = (option) => {
@@ -272,8 +273,8 @@ let writeOptions = (option) => {
 let getOptions = async(option = { all: true }) => { // read and send
     return new Promise((resolve, reject) => {
         readOption(option).then((result) => { // read from parameter
-            let date = new Date();
-            console.log("parameter readed", result, "time:", date.getHours(), ":", date.getMinutes(), ":", date.getSeconds());
+            //let date = new Date();
+            //console.log("parameter readed", result, "time:", date.getHours(), ":", date.getMinutes(), ":", date.getSeconds());
             const manifestVersion = chrome.runtime.getManifest().version;
             if (manifestVersion != Options.version) {
                 getWhatNew().then((value) => {
