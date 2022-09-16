@@ -143,13 +143,11 @@ let createListElement = (list, index) => {
                         listLike.classList.remove("list-dislike");
                         listLike.removeEventListener("animationend", State.endShowLikeReverse);
                         listLike.style.animation = null;
+                        contentItemName.style.maxWidth = "";
                     }
                     listLike.removeEventListener("animationend", State.endShowLike);
                     listLike.addEventListener("animationend", State.endShowLikeReverse);
                     listLike.style.animation = "show-like 1s reverse";
-                    contentItemName.style.maxWidth = "";
-
-
                 }
                 listLike.onclick = null;
             }
@@ -175,10 +173,11 @@ let createListElement = (list, index) => {
                             listLike.removeEventListener("animationend", endShowLike);
                         }
                         listLike.addEventListener("animationend", endShowLike);
-                        contentItemName.style.maxWidth = "200px";
 
                     }
+                    contentItemName.style.maxWidth = "200px";
                     listLike.onclick = () => {
+                        State.likeFromPlaylist = true;
                         State.likeItem = listLike;
                         State.isLike = list[i];
                         sendEvent("toggleLike");
@@ -196,23 +195,30 @@ let createListElement = (list, index) => {
 }
 
 // call from extension.js
-let updateTracksListLike = (isLike) => {
-    let contentItemName = document.querySelectorAll(".content-item-name")[State.index];
-    if (isLike) {
-        State.isLike.liked = isLike;
-        State.likeItem.classList.remove("list-dislike");
-        State.likeItem.classList.add("list-like");
-        contentItemName.style.maxWidth = "200px";
-    } else {
-        State.isLike.liked = isLike;
-        State.likeItem.classList.remove("list-like");
-        State.likeItem.classList.add("list-dislike");
-        contentItemName.style.maxWidth = "200px";
+let toggleListLike = (isLike) => {
+    if (State.prevLike != isLike) {
+        let contentItemName = document.querySelectorAll(".content-item-name")[State.index];
+        if (isLike) {
+            State.isLike.liked = isLike;
+            State.likeItem.classList.remove("list-dislike");
+            State.likeItem.classList.add("list-like");
+            contentItemName.style.maxWidth = "200px";
+        } else {
+            State.isLike.liked = isLike;
+            State.likeItem.classList.remove("list-like");
+            if (State.likeFromPlaylist == true) {
+                State.likeItem.classList.add("list-dislike");
+                contentItemName.style.maxWidth = "200px";
+                State.likeFromPlaylist = false;
+            } else {
+                contentItemName.style.maxWidth = "";
+            }
+        }
+        State.prevLike = isLike;
     }
 }
 
 const equals = (a, b) => {
-
     for (let i = 0; i < a.length; i++) {
         if (a[i].title != b[i].title) {
             return false;

@@ -656,6 +656,7 @@ a {
 }
 
 .content-item-name {
+    max-width: 235px;
     align-self: center;
     overflow-wrap: anywhere;
 }
