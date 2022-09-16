@@ -106,7 +106,7 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 break;
             case 'toggleLike':
                 toggleLike(request.isLiked.liked);
-                updateTracksListLike(request.isLiked.liked);
+                toggleListLike(request.isLiked.liked);
                 break;
             default:
                 break;
@@ -114,6 +114,11 @@ chrome.runtime.onMessageExternal.addListener( // injected script
 
         if (request.trackInfo) {
             updateTracksList(request.trackInfo);
+            State.isLike = request.trackInfo.tracksList[request.trackInfo.index];
+            State.isLike = request.trackInfo.tracksList[request.trackInfo.index];
+            State.likeItem = document.querySelectorAll(".item-track")[request.trackInfo.index].lastChild;
+            toggleListLike(request.api.liked);
+
         }
         if (request.hasOwnProperty('controls')) {
             updateRepeat(request.controls.repeat);
