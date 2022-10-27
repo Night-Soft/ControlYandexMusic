@@ -6,12 +6,27 @@
 }
 
 body {
+    --bodyOpacity: 0;
+    --transitionDuration: 0s;
     margin: 5px;
     background: black;
     background: linear-gradient(0deg, #FF5555 0%, #ffdd00 100%);
     width: 400px;
     /* height: 315px; */
     border-radius: 5px;
+}
+
+body::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(0deg, #121212 0%, #222222 100%);
+    opacity: var(--bodyOpacity, 0);
+    transition: opacity var(--transitionDuration, 0s);
+    z-index: -1;
 }
 
 ul {
@@ -61,7 +76,7 @@ a {
 
 .content {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
     flex-direction: row;
     color: white;
     font-size: 2rem;
@@ -70,15 +85,15 @@ a {
 }
 
 .control {
-    background-color: rgba(252, 252, 255, 0.17);
+    background-color: var(--backgroundControl);
     border-radius: 50%;
     border-style: solid;
-    border-color: #FF3333;
+    border-color: var(--mainRed);
     text-align: center;
-    width: 70px;
-    height: 70px;
+    width: calc(70px - var(--pixselsForReduce));
+    height: calc(70px - var(--pixselsForReduce));
     align-self: center;
-    background-size: 40px;
+    background-size: var(--coverBackgroundSize);
 }
 
 .control:hover {
@@ -111,8 +126,9 @@ a {
     background-image: url(img/pause.png);
     background-repeat: no-repeat, repeat;
     background-position: center;
-    width: 90px;
-    height: 90px;
+    width: calc(90px - var(--pixselsForReduce));
+    height: calc(90px - var(--pixselsForReduce));
+    background-size: calc(15px + var(--coverBackgroundSize));
 }
 
 .name-track {
@@ -131,7 +147,6 @@ a {
     background-image: url(img/disliked.png);
     background-repeat: no-repeat, repeat;
     background-position: center;
-    background-size: 45px;
 }
 
 .content-track {
@@ -221,14 +236,41 @@ a {
     background-image: url(img/icon.png);
     background-repeat: no-repeat, repeat;
     background-position: center;
-    width: 150px;
-    height: 150px;
+    width: calc(150px + var(--pixselsForReduce));
+    height: calc(150px + var(--pixselsForReduce));
     background-size: contain;
     align-self: center;
     margin: auto;
     border-radius: 15px;
     cursor: pointer;
 }
+
+
+/* .content-cover {
+    display: flex;
+}
+
+.next-cover {
+    background-image: url(https://avatars.yandex.net/get-music-content/4477012/65e76312.a.15482874-1/200x200);
+    -webkit-mask-image: url(/img/RightMask.png);
+    -webkit-mask-repeat: no-repeat;
+    background-image: url(https://avatars.yandex.net/get-music-content/4477012/65e76312.a.15482874-1/200x200);
+    width: 25px;
+    background-position: left;
+    background-size: cover;
+    border-radius: 0px;
+}
+
+.prev-cover {
+    background-image: url(https://avatars.yandex.net/get-music-content/4477012/65e76312.a.15482874-1/200x200);
+    -webkit-mask-image: url(/img/LeftMask.png);
+    -webkit-mask-repeat: no-repeat;
+    background-image: url(https://avatars.yandex.net/get-music-content/4477012/65e76312.a.15482874-1/200x200);
+    width: 25px;
+    background-position: right;
+    background-size: cover;
+    border-radius: 0px;
+} */
 
 .content-track-artist {
     display: flex;
@@ -290,13 +332,13 @@ a {
     cursor: pointer;
 }
 
-.grove-box {
+.groove-box {
     width: 100%;
     height: 30px;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    margin-top: 8px;
+    margin-top: calc(8px + var(--pixselsForReduce));
 }
 
 .groove-content {
@@ -308,7 +350,7 @@ a {
     width: 90%;
     left: 5%;
     height: 6px;
-    background-color: rgb(194, 194, 194);
+    background-color: var(--slider);
     border-radius: 5px;
     position: relative;
     cursor: pointer;
@@ -319,7 +361,7 @@ a {
     margin-top: -6px;
     width: 50%;
     height: 6px;
-    background-color: #ffdd00;
+    background-color: var(--progress);
     border-radius: 5px;
 }
 
@@ -438,7 +480,7 @@ a {
     border-radius: 10px;
     width: 60px;
     height: 5px;
-    background-color: rgb(194, 194, 194);
+    background-color: var(--slider);
     cursor: pointer;
 }
 
@@ -446,13 +488,20 @@ a {
     border-radius: 10px;
     width: 50%;
     height: 5px;
-    background-color: #ffdd00;
+    background-color: var(--progress);
 }
 
 :root {
+    --coverBackgroundSize: 45px;
+    --pixselsForReduce: 0px;
     --progress-height: 10px;
     --progress-handle-size: 24px;
     --volume-height: 7px;
+    --mainRed: #ff3333;
+    --slider: #c2c2c2;
+    --progress: #ffdd00;
+    --handleWhite: #ffffff;
+    --backgroundControl: rgba(252, 252, 255, 0.17);
 }
 
 .slider-groove-progress {
@@ -483,7 +532,7 @@ a {
     width: 15px;
     height: 15px;
     border-radius: 50%;
-    background: rgb(255, 255, 255);
+    background: var(--handleWhite);
     cursor: pointer;
     transition: 70ms;
 }
@@ -500,7 +549,7 @@ a {
     justify-content: center;
     text-align: center;
     position: absolute;
-    background: rgb(255, 255, 255);
+    background: var(--handleWhite);
     color: #000000;
     flex-direction: column;
     justify-content: center;
@@ -513,7 +562,7 @@ a {
 .slider-helper::before {
     content: "";
     position: absolute;
-    color: #ffffff;
+    color: var(--handleWhite);
     bottom: -10px;
     top: initial;
     margin-left: 5px;
@@ -544,7 +593,7 @@ a {
     position: absolute;
     display: inline-block;
     cursor: pointer;
-    z-index: +2;
+    z-index: +3;
     top: 0px;
     right: 5px;
 }
@@ -683,7 +732,7 @@ a {
 
 #listTrack::-webkit-scrollbar-thumb {
     border-radius: 10px;
-    background: linear-gradient(0deg, #FF5555 0%, #ffdd00 100%);
+    background: linear-gradient(0deg, #FF5555 0%, var(--progress) 100%);
 }
 
 .bar1,
@@ -691,7 +740,7 @@ a {
 .bar3 {
     width: 35px;
     height: 5px;
-    background-color: #ff3333;
+    background-color: var(--mainRed);
     margin: 6px 0;
     border-radius: 5px;
 }
@@ -701,7 +750,7 @@ a {
 .bar-list3 {
     width: 30px;
     height: 5px;
-    background-color: #ff3333;
+    background-color: var(--mainRed);
     margin: 6px 0;
     border-radius: 5px;
 }
@@ -709,7 +758,7 @@ a {
 .bar-list1::before {
     content: "";
     position: absolute;
-    background-color: #ff3333;
+    background-color: var(--mainRed);
     border-radius: 5px;
     height: 5px;
     width: 5px;
@@ -719,7 +768,7 @@ a {
 .bar-list2::before {
     content: "";
     position: absolute;
-    background-color: #ff3333;
+    background-color: var(--mainRed);
     border-radius: 5px;
     height: 5px;
     width: 5px;
@@ -729,7 +778,7 @@ a {
 .bar-list3::before {
     content: "";
     position: absolute;
-    background-color: #ff3333;
+    background-color: var(--mainRed);
     border-radius: 5px;
     height: 5px;
     width: 5px;
@@ -747,7 +796,7 @@ a {
     overflow-x: hidden;
     background-color: rgba(0, 0, 0, 0.4);
     cursor: pointer;
-    z-index: +1;
+    z-index: +2;
 }
 
 .transiton {}
@@ -805,6 +854,7 @@ a {
     flex-direction: column;
     justify-content: flex-start;
     cursor: default;
+    transition: 1s;
 }
 
 .side {
@@ -817,7 +867,7 @@ a {
 }
 
 .side:hover {
-    background: #FF3333;
+    background: var(--mainRed);
     padding: 15px;
     color: white;
     border-radius: 5px;
@@ -837,7 +887,7 @@ a {
 }
 
 .side-help:hover {
-    background: #FF3333;
+    background: var(--mainRed);
     padding: 15px;
     height: 130px;
     color: white;
@@ -847,6 +897,11 @@ a {
 label {
     margin-left: 10px;
     cursor: pointer;
+    font-weight: bold;
+}
+
+.subtitle {
+    font-weight: bold;
 }
 
 .list-menu {
@@ -867,9 +922,13 @@ label {
     cursor: default;
     font-size: 1rem;
     overflow: hidden;
-    background-color: #FF6666;
-    border-radius: 4px;
-    padding: 0px 4px;
+}
+
+.setting-item {
+    border-radius: 10px;
+    border: solid 2px var(--mainRed);
+    background-color: rgb(255 255 255 / 25%);
+    padding: 5px;
 }
 
 .title-menu {
@@ -880,6 +939,7 @@ label {
     height: 50px;
     margin: 0px;
     background: white;
+    transition: 1s;
 }
 
 .modal-side {
@@ -916,7 +976,7 @@ label {
 
 .body-about {
     background: black;
-    background: linear-gradient(0deg, #ff3333 0%, #ffdd00 100%);
+    background: linear-gradient(0deg, #ff3333 0%, var(--progress) 100%);
     width: unset;
     min-height: unset;
     height: unset;
@@ -959,7 +1019,7 @@ label {
     font-size: 1.5rem;
     color: white;
     border-width: 10px;
-    background: #FF3333;
+    background: var(--mainRed);
     border-radius: 10px;
 }
 
@@ -969,6 +1029,73 @@ label {
     color: white;
     width: 80%;
     margin: auto;
+}
+
+.control-about {
+    display: flex;
+    background: #FF3333;
+    border-radius: 10px;
+}
+
+
+/*button-about main class*/
+
+.button-about {
+    font-size: 2.1rem;
+    color: white;
+    transition: 1s;
+    height: 45px;
+    width: 100%;
+    background: #BF4C4C;
+    border: none;
+    border-top-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+.button-about:hover {
+    background: #FF6666;
+}
+
+.button-about:active {
+    background: #ff3333;
+}
+
+.button-what-new {
+    border-bottom-right-radius: 0px;
+    border-bottom-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border-top-left-radius: 0px;
+}
+
+.about-what-new {
+    text-align: center;
+    font-size: 0.7rem;
+    color: white;
+    width: 80%;
+    margin: auto;
+}
+
+.flip-vertical-left {
+    -webkit-animation: flip-vertical-left none 1s;
+    animation: flip-vertical-left none 1s;
+}
+
+@-webkit-keyframes flip-vertical-left {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes flip-vertical-left {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
 }
 
 .support {
@@ -992,7 +1119,7 @@ label {
     height: 50px;
     text-align: center;
     bottom: 0px;
-    background: #ff3333;
+    background: var(--mainRed);
     font-size: 1em
 }
 
@@ -1007,7 +1134,7 @@ label {
 }
 
 .btn-web {
-    background: #ff3333;
+    background: var(--mainRed);
 }
 
 .btn-web:hover {
@@ -1184,7 +1311,7 @@ label {
     justify-content: center;
     color: white;
     position: fixed;
-    z-index: 2;
+    z-index: 3;
     left: 0;
     top: 0;
     width: 100%;
@@ -1208,7 +1335,7 @@ label {
     justify-content: center;
     color: white;
     position: fixed;
-    z-index: 2;
+    z-index: 3;
     left: 0;
     top: 0;
     width: 100%;
@@ -1260,7 +1387,7 @@ label {
 
 #scroll-bar::-webkit-scrollbar-thumb {
     border-radius: 10px;
-    background: linear-gradient(0deg, #FF5555 0%, #ffdd00 100%);
+    background: linear-gradient(0deg, #FF5555 0%, var(--progress) 100%);
 }
 
 #listMenu::-webkit-scrollbar {
@@ -1270,7 +1397,7 @@ label {
 
 #listMenu::-webkit-scrollbar-thumb {
     border-radius: 10px;
-    background: linear-gradient(0deg, #FF5555 0%, #ffdd00 100%);
+    background: linear-gradient(0deg, #FF5555 0%, var(--progress) 100%);
 }
 
 #Yes {
@@ -1288,7 +1415,7 @@ label {
     width: 35%;
     font-size: 15px;
     color: white;
-    background-color: #ff3333;
+    background-color: var(--mainRed);
     border: none;
     border-radius: 15px;
     cursor: pointer;
@@ -1335,7 +1462,7 @@ label {
 .loader2 {
     border: 8px solid rgba(62, 61, 132, 0);
     border-radius: 50%;
-    border-bottom: 8px solid #ff3333;
+    border-bottom: 8px solid var(--mainRed);
     width: 30px;
     height: 30px;
     margin: -8px;
@@ -1365,6 +1492,28 @@ label {
     }
     100% {
         transform: rotate(360deg);
+    }
+}
+
+@-webkit-keyframes darkBackround {
+    0% {
+        -webkit-background: linear-gradient(0deg, rgb(18, 18, 18) 0%, rgb(34, 34, 34) 100%);
+        opacity: 1;
+    }
+    100% {
+        -webkit-background: linear-gradient(0deg, #FF5555 0%, #ffdd00 100%);
+        opacity: 0;
+    }
+}
+
+@keyframes darkBackround {
+    0% {
+        background: linear-gradient(0deg, rgb(18, 18, 18) 0%, rgb(34, 34, 34) 100%);
+        opacity: 1;
+    }
+    100% {
+        background: linear-gradient(0deg, #FF5555 0%, #ffdd00 100%);
+        opacity: 0;
     }
 }
 
@@ -1636,7 +1785,7 @@ label {
         opacity: 0.15;
     }
     100% {
-        height: 125px;
+        height: 215px;
         opacity: 1;
     }
 }
@@ -1647,7 +1796,7 @@ label {
         opacity: 0.15;
     }
     100% {
-        height: 125px;
+        height: 215px;
         opacity: 1;
     }
 }
@@ -1659,7 +1808,7 @@ label {
 
 @-webkit-keyframes scale-from-top-out {
     0% {
-        height: 125px;
+        height: 215px;
         opacity: 1;
     }
     100% {
@@ -1670,7 +1819,7 @@ label {
 
 @keyframes scale-from-top-out {
     0% {
-        height: 125px;
+        height: 215px;
         opacity: 1;
     }
     100% {

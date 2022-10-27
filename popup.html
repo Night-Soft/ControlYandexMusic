@@ -7,6 +7,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Yandex Music</title>
     <link rel="stylesheet" href="style.css">
+    <script async src="js/theme.js"></script>
     <script async src="js/load.js"></script>
     <script async src="js/gaq.js"></script>
 </head>
@@ -37,14 +38,26 @@
                 <div class="side settings">
                     <span id="settings" class="title-span">Say thanks to the developer</span>
                     <div id="listSettings" class="list-settings">
-                        <span id="showNotify">Show notifications when control from keyboard: </span>
-                        <div class="content-label">
-                            <label id="playPauseNotify" for="n1">Notification when play / pause.</label>
-                            <input type="checkbox" id="n1">
+                        <div class="setting-item">
+                            <span class="subtitle" id="showNotify">Show notifications when control from keyboard: </span>
+                            <div class="content-label">
+                                <label id="playPauseNotify" for="n1">Notification when play / pause.</label>
+                                <input type="checkbox" id="n1">
+                            </div>
+                            <div class="content-label">
+                                <label id="prevNextNotify" for="n2">Notification when previous / next track.</label>
+                                <input type="checkbox" id="n2">
+                            </div>
                         </div>
-                        <div class="content-label">
-                            <label id="prevNextNotify" for="n2">Notification when previous / next track.</label>
-                            <input type="checkbox" id="n2">
+                        <div class="setting-item">
+                            <div class="content-label">
+                                <label id="checkBoxDarkTheme" for="n3">Enable dark theme.</label>
+                                <input type="checkbox" id="n3">
+                            </div>
+                            <div class="content-label">
+                                <label id="checkBoxIncreaseCover" for="n4">Reduce the control buttons and increase the cover.</label>
+                                <input type="checkbox" id="n4">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -73,6 +86,12 @@
     <div class="title ">Yandex Music</div>
     <div class="content-track ">
         <div class="cover"></div>
+
+        <!-- <div class="content-cover">
+            <div class="prev-cover cover"></div>
+            <div class="cover"></div>
+            <div class="next-cover cover"></div>
+        </div> -->
         <div class="content-track-artist ">
             <div class="title name-track ">Track</div>
             <div class="title name-artists ">Artists</div>
@@ -81,7 +100,7 @@
     <div class="modal ">
         <img class="modal-cover"></img>
     </div>
-    <div class="grove-box">
+    <div class="groove-box">
         <div class="groove-content">
             <div class="content-time">
                 <span class="current-time">0:0</span>

@@ -1,5 +1,8 @@
 let playPauseNotify = document.getElementById('n1');
 let prevNextNotify = document.getElementById('n2');
+let checkBoxDarkTheme = document.getElementById("n3");
+let checkBoxIncreaseCover = document.getElementById("n4");
+let grooveBox = document.querySelector(".groove-box");
 let Options = {
     onload: function() {
         sendEventBackground({ getOptions: "all" }, checkNew);
@@ -8,7 +11,8 @@ let Options = {
     isPrevNextNotify: undefined,
     isShowWhatNew: undefined,
     version: undefined,
-    oldVersionDescription: undefined
+    oldVersionDescription: undefined,
+    isReduce: false
 };
 
 playPauseNotify.onclick = () => {
@@ -19,6 +23,16 @@ playPauseNotify.onclick = () => {
 prevNextNotify.onclick = () => {
     sendEventBackground({ writeOptions: true, options: { isPrevNextNotify: prevNextNotify.checked } });
     setOptions({ isPrevNextNotify: prevNextNotify.checked });
+}
+checkBoxDarkTheme.onclick = () => {
+    document.body.style.setProperty("--transitionDuration", "1s");
+    sendEventBackground({ writeOptions: true, options: { isDarkTheme: checkBoxDarkTheme.checked } });
+    setOptions({ isDarkTheme: checkBoxDarkTheme.checked });
+}
+
+checkBoxIncreaseCover.onclick = function() {
+    sendEventBackground({ writeOptions: true, options: { isCoverIncrease: checkBoxIncreaseCover.checked } });
+    setOptions({ isCoverIncrease: checkBoxIncreaseCover.checked });
 }
 
 let sendEventBackground = (event, callback) => { // event should be as object.
@@ -46,7 +60,6 @@ let checkNew = () => {
 }
 
 let setOptions = (options) => {
-    //const [isPlayPauseNotify, isPrevNextNotify, isShowWhatNew, version, oldVersionDescription] = options;
     if (options.isPlayPauseNotify != undefined) {
         playPauseNotify.checked = options.isPlayPauseNotify;
         Options.isPlayPauseNotify = options.isPlayPauseNotify;
@@ -64,25 +77,22 @@ let setOptions = (options) => {
     if (options.oldVersionDescription != undefined) {
         Options.oldVersionDescription = options.oldVersionDescription;
     }
+    if (options.isDarkTheme != undefined) {
+        Options.isDarkTheme = options.isDarkTheme;
+        checkBoxDarkTheme.checked = options.isDarkTheme;
+        if (options.isDarkTheme) {
+            setDarkTheme();
+        } else {
+            setDarkTheme(false);
+        }
+    }
+    if (options.isCoverIncrease != undefined) {
+        Options.isCoverIncrease = options.isCoverIncrease;
+        checkBoxIncreaseCover.checked = options.isCoverIncrease;
+        if (options.isCoverIncrease) {
+            setIncreaseCover(true)
+        } else {
+            setIncreaseCover(false);
+        }
+    }
 }
-
-// let setOptions = (options) => {
-//     const [isPlayPauseNotify, isPrevNextNotify, isShowWhatNew, version, oldVersionDescription] = options;
-//     if (isPlayPauseNotify != undefined) {
-//         playPauseNotify.checked = isPlayPauseNotify;
-//         Options.isPlayPauseNotify = isPlayPauseNotify;
-//     }
-//     if (isPrevNextNotify != undefined) {
-//         prevNextNotify.checked = isPrevNextNotify;
-//         Options.isPrevNextNotify = isPrevNextNotify;
-//     }
-//     if (isShowWhatNew != undefined) {
-//         Options.isShowWhatNew = isShowWhatNew;
-//     }
-//     if (version != undefined) {
-//         Options.version = version;
-//     }
-//     if (oldVersionDescription != undefined) {
-//         Options.oldVersionDescription = oldVersionDescription;
-//     }
-// }

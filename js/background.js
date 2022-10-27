@@ -57,7 +57,12 @@ chrome.runtime.onMessage.addListener(
             }
             return;
         } else if (request.getOptions != undefined) {
-            getOptions(request.getOptions);
+            if (request.send != undefined) {
+                console.log(request)
+                getOptions(request.getOptions, request.send);
+            } else {
+                getOptions(request.getOptions);
+            }
         }
         if (request.writeOptions != undefined) {
             writeOptions(request.options);
@@ -197,6 +202,8 @@ let Options = {
     isShowWhatNew: undefined,
     version: undefined,
     oldVersionDescription: undefined,
+    isDarkTheme: undefined,
+    isCoverIncrease: undefined
 
 }
 
@@ -262,6 +269,14 @@ let writeOptions = (option) => {
         chrome.storage.local.set({ oldVersionDescription: option.oldVersionDescription });
         Options.oldVersionDescription = option.oldVersionDescription;
     }
+    if (option.isDarkTheme != undefined) {
+        chrome.storage.local.set({ isDarkTheme: option.isDarkTheme });
+        Options.isDarkTheme = option.isDarkTheme;
+    }
+    if (option.isCoverIncrease != undefined) {
+        chrome.storage.local.set({ isCoverIncrease: option.isCoverIncrease });
+        Options.isCoverIncrease = option.isCoverIncrease;
+    }
 }
 
 /**
@@ -270,7 +285,7 @@ let writeOptions = (option) => {
  * @param {object} paramter { paramter: ["innewversion", "version"] }.
  * @return {object} Result as object.
  */
-let getOptions = async(option = { all: true }) => { // read and send
+let getOptions = async(option = { all: true }, send = false) => { // read and send
     return new Promise((resolve, reject) => {
         readOption(option).then((result) => { // read from parameter
             //let date = new Date();
@@ -291,6 +306,9 @@ let getOptions = async(option = { all: true }) => { // read and send
                 });
             }
             resolve(result);
+            if (send) {
+                sendMessage({ options: Options });
+            }
         }, (rejected) => {
             reject(rejected);
             console.log("Read settings error.", rejected);

@@ -19,6 +19,8 @@ let showNotify = document.getElementById("showNotify");
 let listSettings = document.getElementById("listSettings");
 let yesNews = document.getElementById("YesNews");
 let whatNew = document.getElementById("whatNew");
+let sett = document.getElementById("settings");
+
 
 let container = document.getElementsByClassName("container")[0];
 let containerMenu = document.getElementsByClassName("content-menu")[0];
@@ -79,6 +81,8 @@ chrome.runtime.onMessage.addListener( // background, content script
                 });
             });
         }
+        console.log("request.options", request.options);
+
         if (request.options) {
             setOptions(request.options);
             if (request.options.isShowWhatNew) {
@@ -261,19 +265,41 @@ about.onclick = () => {
 
 }
 
-settings.onmouseenter = () => {
-    listSettings.removeEventListener("animationend", endAnimationList);
-    listSettings.classList.remove("scale-from-top-out");
-    listSettings.className += " scale-from-top";
-    listSettings.style.display = "flex";
-
+let isSettingsOpen = false;
+settings.onclick = (event) => {
+    if (event.target == settings || event.target == sett || event.target == listSettings) {
+        if (isSettingsOpen) {
+            listSettings.classList.remove("scale-from-top");
+            listSettings.className += " scale-from-top-out";
+            listSettings.addEventListener("animationend", endAnimationList);
+            isSettingsOpen = false;
+        } else {
+            settings.style.background = "var(--mainRed)";
+            settings.style.padding = "15px";
+            settings.style.color = "white";
+            settings.style.borderRadius = "5px";
+            listSettings.removeEventListener("animationend", endAnimationList);
+            listSettings.classList.remove("scale-from-top-out");
+            listSettings.className += " scale-from-top";
+            listSettings.style.display = "flex";
+            isSettingsOpen = true;
+        }
+    }
 }
 
+let timeToClose;
+let log = (data) => { console.log(data) }
 settings.onmouseleave = () => {
-    listSettings.classList.remove("scale-from-top");
-    listSettings.className += " scale-from-top-out";
-    listSettings.addEventListener("animationend", endAnimationList);
-
+    if (isSettingsOpen) return;
+    settings.style.background = "";
+    settings.style.padding = "";
+    settings.style.color = "";
+    settings.style.borderRadius = "";
+}
+settings.onmouseenter = () => {
+    if (timeToClose != undefined) {
+        clearTimeout(timeToClose);
+    }
 }
 
 let endAnimationList = () => {
@@ -518,10 +544,16 @@ let setMediaData = (trackTitle, trackArtists, iconTrack) => {
 }
 
 let changeState = (isPlaying) => {
+    if (State.isPlay != isPlaying) {
+        State.isPlay = isPlaying;
+    }
     if (isPlaying == false) {
         pause[0].style.backgroundImage = "url(img/play.png)";
-        pause[0].style.backgroundPosition = "26px center";
-        pause[0].style.backgroundSize = "46px";
+        if (Options.isReduce) {
+            pause[0].style.backgroundPosition = "16px center";
+            return;
+        }
+        pause[0].style.backgroundPosition = "20px center";
     } else {
         pause[0].style.backgroundImage = "";
         pause[0].style.backgroundPosition = "";

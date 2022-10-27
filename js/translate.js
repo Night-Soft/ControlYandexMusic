@@ -31,6 +31,9 @@ let Translate = {
         whatNew.innerHTML = chrome.i18n.getMessage("whatNew");
         let versions = document.getElementsByClassName("versions")[0];
         versions.innerHTML = chrome.i18n.getMessage("whatNew");
-
+        let checkBoxDarkTheme = document.getElementById("checkBoxDarkTheme");
+        checkBoxDarkTheme.innerHTML = chrome.i18n.getMessage("setDarkTheme");
+        let checkBoxIncreaseCover = document.getElementById("checkBoxIncreaseCover");
+        checkBoxIncreaseCover.innerHTML = chrome.i18n.getMessage("increaseCover");
     }
 }
