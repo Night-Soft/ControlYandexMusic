@@ -83,6 +83,12 @@
     "prevNextNotify": {
         "message": "Уведомление переключения трека."
     },
+    "setDarkTheme": {
+        "message": "Включить темную тему."
+    },
+    "increaseCover": {
+        "message": "Уменьшить кнопки управления и увеличить обложку."
+    },
     "whatNew": {
         "message": "Что нового?"
     }

@@ -83,6 +83,12 @@
     "prevNextNotify": {
         "message": "Notification when previous / next track."
     },
+    "setDarkTheme": {
+        "message": "Enable dark theme."
+    },
+    "increaseCover": {
+        "message": "Reduce the control buttons and increase the cover."
+    },
     "whatNew": {
         "message": "What's new?"
     }
