@@ -1,6 +1,6 @@
 let extensionId = "UnknowId";
 let port;
-
+let lastCase;
 window.addEventListener("message", function(event) {
     if (event.source != window) { return; }
     switch (event.data.function) {
@@ -12,9 +12,6 @@ window.addEventListener("message", function(event) {
             break;
         case 'previous':
             previous();
-            break;
-        case 'next':
-            next();
             break;
         case 'next':
             next();
@@ -77,6 +74,19 @@ window.addEventListener("message", function(event) {
 
 externalAPI.on(externalAPI.EVENT_TRACK, function(event) {
     setMediaSession();
+    // let promise = externalAPI.getSourceInfo();
+    // if (promise.type == 'radio') {
+    //     setTimeout(() => {
+    //         getTracks();
+    //         console.log("after 1500")
+    //     }, 1500);
+    //     return;
+    // }
+    // console.log("now");
+    getTracks();
+});
+externalAPI.on(externalAPI.EVENT_TRACKS_LIST, function(event) {
+    console.log("EVENT_TRACKS_LIST");
     getTracks();
 });
 
