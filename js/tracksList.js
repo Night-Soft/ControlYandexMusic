@@ -12,6 +12,7 @@ let State = { // current
     track: undefined,
     index: undefined, // number
     isLike: undefined,
+    isPlay: undefined,
     likeItem: undefined,
     coverLink: undefined,
     coverItem: undefined
@@ -37,20 +38,12 @@ let updateTracksList = (trackInfo) => {
 }
 
 let setTitle = (title) => {
-    try {
-        if (title.link == requestSourceInfo.link) { return; }
-        if (requestSourceInfo.type == "radio") {
-            listTracks.innerHTML = "";
-            let tracksTitle = document.createElement("DIV");
-            tracksTitle.classList.add("title-list");
-            tracksTitle.innerHTML = title.title;
-            let firsItemTrack = document.getElementsByClassName("item-track")[0];
-            listTracks.insertBefore(tracksTitle, firsItemTrack);
-            tracksListTitle = document.getElementsByClassName("title-list")[0];
-        }
-    } catch (error) {}
     requestSourceInfo = title;
-    tracksListTitle.innerHTML = title.title;
+    if (title.title != undefined) {
+        tracksListTitle.innerHTML = title.title;
+    } else {
+        tracksListTitle.innerHTML = title.type;
+    }
 }
 
 let setTracksList = (list, index) => {
