@@ -22,6 +22,9 @@ window.addEventListener("message", function(event) {
         case 'toggleLike':
             toggleLike();
             break;
+        case 'toggleDislike':
+            toggleDislike();
+            break;
         default:
             break;
     }
@@ -74,19 +77,9 @@ window.addEventListener("message", function(event) {
 
 externalAPI.on(externalAPI.EVENT_TRACK, function(event) {
     setMediaSession();
-    // let promise = externalAPI.getSourceInfo();
-    // if (promise.type == 'radio') {
-    //     setTimeout(() => {
-    //         getTracks();
-    //         console.log("after 1500")
-    //     }, 1500);
-    //     return;
-    // }
-    // console.log("now");
     getTracks();
 });
 externalAPI.on(externalAPI.EVENT_TRACKS_LIST, function(event) {
-    console.log("EVENT_TRACKS_LIST");
     getTracks();
 });
 
@@ -124,7 +117,7 @@ let getArtists = (list) => {
     if (list.artists.length > 0) {
         return getArtistsTitle(list.artists);
     } else {
-        // get from posdcast
+        // get from podcast
         if (list.album.hasOwnProperty("title")) {
             return list.album.title;
         }
@@ -163,7 +156,7 @@ function getTracks() {
         index: externalAPI.getTrackIndex(),
     }
     chrome.runtime.sendMessage(extensionId, {
-        data: "currentTrack",
+        event: "currentTrack",
         api: externalAPI.getCurrentTrack(),
         isPlaying: externalAPI.isPlaying(),
         progress: externalAPI.getProgress(),
@@ -184,7 +177,7 @@ function previous() {
 function togglePause() {
     externalAPI.togglePause();
     chrome.runtime.sendMessage(extensionId, {
-        data: "togglePause",
+        event: "togglePause",
         isPlaying: externalAPI.isPlaying()
     }, );
 }
@@ -192,10 +185,18 @@ function togglePause() {
 function toggleLike() {
     externalAPI.toggleLike();
     chrome.runtime.sendMessage(extensionId, {
-        data: "toggleLike",
-        isLiked: externalAPI.getCurrentTrack()
+        event: "toggleLike",
+        isLiked: externalAPI.getCurrentTrack().liked
     });
 }
+let toggleDislike = () => {
+    externalAPI.toggleDislike();
+    chrome.runtime.sendMessage(extensionId, {
+        event: "toggleDislike",
+        disliked: { disliked: externalAPI.getCurrentTrack().disliked, notifyMe: true }
+    });
+}
+
 let previousKey = () => {
     let promise = externalAPI.prev();
     promise.then(
@@ -231,7 +232,7 @@ let toggleLikeKey = () => {
     chrome.runtime.sendMessage(extensionId, {
         key: "key",
         dataKey: "toggleLike-key",
-        currentTrack: externalAPI.getCurrentTrack()
+        currentTrack: externalAPI.getCurrentTrack().liked
     });
     getTracks();
 }

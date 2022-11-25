@@ -91,6 +91,15 @@
     },
     "whatNew": {
         "message": "What's new?"
+    },
+    "addDislikeButton": {
+        "message": "Add a dislike button?"
+    },
+    "addedToBlackList": {
+        "message": "The track will no longer appear in your recommendations!"
+    },
+    "removeFromBlackList": {
+        "message": "Now the track can appear in your recommendations!"
     }
 
 }

@@ -1,23 +1,26 @@
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     switch (request.data) {
         case 'previous':
-            previous();
+            window.postMessage({ function: "previous" }, "*");
             break;
         case 'togglePause':
-            togglePause();
+            window.postMessage({ function: "togglePause" }, "*");
             break;
         case 'next':
-            next();
+            window.postMessage({ function: "next" }, "*");
             break;
         case 'toggleLike':
-            toggleLike();
+            window.postMessage({ function: "toggleLike" })
+            break;
+        case 'toggleDislike':
+            window.postMessage({ function: "toggleDislike" })
             break;
         case 'setTime':
             window.postMessage({ function: "setTime", time: request.time }, "*");
             break;
         case 'extensionIsLoad':
             sendResponse({ isConnect: true })
-            getCurrentTrack();
+            window.postMessage({ function: "getCurrentTrack" }, "*");
             break;
         default:
             break;
@@ -63,25 +66,6 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     sendResponse({});
 });
 
-let getCurrentTrack = () => {
-    window.postMessage({ function: "getCurrentTrack" }, "*");
-}
-
-function togglePause() {
-    window.postMessage({ function: "togglePause" }, "*");
-
-}
-let previous = () => {
-    window.postMessage({ function: "previous" }, "*");
-
-}
-let next = () => {
-    window.postMessage({ function: "next" }, "*");
-
-}
-let toggleLike = () => {
-    window.postMessage({ function: "toggleLike" })
-}
 let injectJS = (id) => {
     let s = document.createElement('script');
     s.src = chrome.runtime.getURL('js/injected.js');
@@ -91,6 +75,7 @@ let injectJS = (id) => {
     };
     (document.head || document.documentElement).appendChild(s);
 }
+
 let getId = () => {
     chrome.runtime.sendMessage({ getId: "getId" });
     setTimeout(() => {

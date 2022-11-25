@@ -2,6 +2,7 @@ let playPauseNotify = document.getElementById('n1');
 let prevNextNotify = document.getElementById('n2');
 let checkBoxDarkTheme = document.getElementById("n3");
 let checkBoxIncreaseCover = document.getElementById("n4");
+let checkBoxDislikeButton = document.getElementById("n5");
 let grooveBox = document.querySelector(".groove-box");
 let Options = {
     onload: function() {
@@ -33,6 +34,10 @@ checkBoxDarkTheme.onclick = () => {
 checkBoxIncreaseCover.onclick = function() {
     sendEventBackground({ writeOptions: true, options: { isCoverIncrease: checkBoxIncreaseCover.checked } });
     setOptions({ isCoverIncrease: checkBoxIncreaseCover.checked });
+}
+checkBoxDislikeButton.onclick = function() {
+    sendEventBackground({ writeOptions: true, options: { isDislikeButton: checkBoxDislikeButton.checked } });
+    setOptions({ isDislikeButton: checkBoxDislikeButton.checked });
 }
 
 let sendEventBackground = (event, callback) => { // event should be as object.
@@ -90,9 +95,28 @@ let setOptions = (options) => {
         Options.isCoverIncrease = options.isCoverIncrease;
         checkBoxIncreaseCover.checked = options.isCoverIncrease;
         if (options.isCoverIncrease) {
-            setIncreaseCover(true)
+            setIncreaseCover(true);
         } else {
             setIncreaseCover(false);
+        }
+    }
+    if (options.isDislikeButton != undefined) {
+        Options.isDislikeButton = options.isDislikeButton;
+        checkBoxDislikeButton.checked = options.isDislikeButton;
+        if (options.isDislikeButton) {
+            setIncreaseCover(true);
+            dislike.style.display = "block";
+            checkBoxIncreaseCover.disabled = true;
+            checkBoxIncreaseCover.checked = true;
+            document.getElementById("checkBoxIncreaseCover").style.color = "#c2c2c2";
+        } else {
+            dislike.style.display = "none";
+            checkBoxIncreaseCover.disabled = false;
+            document.getElementById("checkBoxIncreaseCover").style.color = "";
+            if (Options.isCoverIncrease == false) {
+                setIncreaseCover(false);
+                checkBoxIncreaseCover.checked = false;
+            }
         }
     }
 }

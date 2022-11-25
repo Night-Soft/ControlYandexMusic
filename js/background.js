@@ -58,7 +58,7 @@ chrome.runtime.onMessage.addListener(
             return;
         } else if (request.getOptions != undefined) {
             if (request.send != undefined) {
-                console.log(request)
+                // console.log(request)
                 getOptions(request.getOptions, request.send);
             } else {
                 getOptions(request.getOptions);
@@ -203,8 +203,8 @@ let Options = {
     version: undefined,
     oldVersionDescription: undefined,
     isDarkTheme: undefined,
-    isCoverIncrease: undefined
-
+    isCoverIncrease: undefined,
+    isDislikeButton: undefined
 }
 
 let readOption = (option) => {
@@ -276,6 +276,10 @@ let writeOptions = (option) => {
     if (option.isCoverIncrease != undefined) {
         chrome.storage.local.set({ isCoverIncrease: option.isCoverIncrease });
         Options.isCoverIncrease = option.isCoverIncrease;
+    }
+    if (option.isDislikeButton != undefined) {
+        chrome.storage.local.set({ isDislikeButton: option.isDislikeButton });
+        Options.isDislikeButton = option.isDislikeButton;
     }
 }
 

@@ -91,6 +91,15 @@
     },
     "whatNew": {
         "message": "Что нового?"
+    },
+    "addDislikeButton": {
+        "message": "Добавить кнопку дизлайка?"
+    },
+    "addedToBlackList": {
+        "message": "Трек больше не будет появляться в ваших рекомендациях!"
+    },
+    "removeFromBlackList": {
+        "message": "Теперь трек сможет появляться в ваших рекомендациях!"
     }
 
 }

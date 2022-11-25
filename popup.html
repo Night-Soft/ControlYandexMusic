@@ -13,6 +13,9 @@
 </head>
 
 <body>
+    <div class="notification">
+        <h2 class="h2-notification">Track added to black list!</h2>
+    </div>
     <div class="container">
         <div class="bar1 transition"></div>
         <div class="bar2 transition"></div>
@@ -34,7 +37,6 @@
         <div class="content-menu slide-out">
             <div class="title title-menu ">Control Yandex Music</div>
             <div id="listMenu" class="list-menu">
-                <div class="side ">About</div>
                 <div class="side settings">
                     <span id="settings" class="title-span">Say thanks to the developer</span>
                     <div id="listSettings" class="list-settings">
@@ -58,12 +60,17 @@
                                 <label id="checkBoxIncreaseCover" for="n4">Reduce the control buttons and increase the cover.</label>
                                 <input type="checkbox" id="n4">
                             </div>
+                            <div class="content-label">
+                                <label id="checkBoxDislikeButton" for="n5">Add a dislike button?</label>
+                                <input type="checkbox" id="n5">
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div id="contactMe" class="side ">Contact Me</div>
-                <div id="whatNew" class="side ">What's new?</div>
                 <div id="shortCuts" class="side ">Open keyboard shortcuts</div>
+                <div id="whatNew" class="side ">What's new?</div>
+                <div class="side ">About</div>
+                <div id="contactMe" class="side ">Contact Me</div>
                 <div class="side-help ">
                     <span id="help" class="title-help title-help-menu">Say thanks to the developer</span>
                     <!-- <div class="paypal-menu">
@@ -139,6 +146,7 @@
         <div class="pause control "></div>
         <div class="next control "></div>
         <div class="like control "></div>
+        <div class="dislike control "></div>
     </div>
     <div class="no-connect">
         <div class="no-connect-content">

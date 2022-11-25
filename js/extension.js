@@ -24,7 +24,7 @@ let sett = document.getElementById("settings");
 
 let container = document.getElementsByClassName("container")[0];
 let containerMenu = document.getElementsByClassName("content-menu")[0];
-let about = document.getElementsByClassName("side")[0];
+let about = document.getElementsByClassName("side")[3];
 let supportMenu = document.getElementsByClassName("support-menu")[0];
 let closeSide = document.getElementsByClassName("close-side")[0];
 let aMenu = document.getElementsByTagName("a")[0];
@@ -38,6 +38,12 @@ let settings = document.getElementsByClassName("settings")[0];
 let transition = document.getElementsByClassName("transition");
 let hamburgerMenuList = document.getElementsByClassName("hamburger-menu-list")[0];
 let modalNews = document.querySelector(".modal-news");
+let dislike = document.getElementsByClassName("dislike")[0];
+let notification = document.getElementsByClassName("notification")[0];
+let textNotification = document.getElementsByClassName("h2-notification")[0];
+let notificationTrackName = document.getElementsByClassName("notification-track-name")[0];
+
+
 
 let contentListMenu = document.getElementsByClassName("content-list-menu")[0];
 let modalListMenu = document.getElementsByClassName("modal-list-menu")[0];
@@ -93,11 +99,12 @@ chrome.runtime.onMessage.addListener( // background, content script
 
 chrome.runtime.onMessageExternal.addListener( // injected script
     (request, sender, sendResponse) => {
-        switch (request.data) {
+        switch (request.event) {
             case 'currentTrack': // get from the key
                 setMediaData(request.api.title, getArtists(request.api, 5), request.api.cover);
                 changeState(request.isPlaying);
                 toggleLike(request.api.liked);
+                toggleDislike(request.api.disliked);
                 getDuration(request.api.duration);
                 getProgress(request.progress.position);
                 getIsPlay(request.isPlaying);
@@ -109,8 +116,20 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 trackUpdater(getDuration(), getProgress(), getIsPlay(request.isPlaying));
                 break;
             case 'toggleLike':
-                toggleLike(request.isLiked.liked);
-                toggleListLike(request.isLiked.liked);
+                if (request.isLiked) {
+                    toggleDislike(false);
+                    toggleListDisliked(false);
+                }
+                toggleLike(request.isLiked);
+                toggleListLike(request.isLiked);
+                break;
+            case 'toggleDislike':
+                State.disliked = request.disliked.disliked;
+                if (State.disliked) {
+                    toggleLike(false);
+                }
+                toggleDislike(request.disliked.disliked, true);
+                toggleListDisliked(request.disliked.disliked);
                 break;
             default:
                 break;
@@ -118,11 +137,9 @@ chrome.runtime.onMessageExternal.addListener( // injected script
 
         if (request.trackInfo) {
             updateTracksList(request.trackInfo);
-            State.isLike = request.trackInfo.tracksList[request.trackInfo.index];
-            State.isLike = request.trackInfo.tracksList[request.trackInfo.index];
+            State.track = request.trackInfo.tracksList[request.trackInfo.index];
+            State.disliked = request.trackInfo.tracksList[request.trackInfo.index].disliked;
             State.likeItem = document.querySelectorAll(".item-track")[request.trackInfo.index].lastChild;
-            toggleListLike(request.api.liked);
-
         }
         if (request.hasOwnProperty('controls')) {
             updateRepeat(request.controls.repeat);
@@ -151,6 +168,48 @@ chrome.runtime.onMessageExternal.addListener( // injected script
         }
         return true;
     });
+
+let LongPressButton = class {
+    constructor(button, func, delay = 750) {
+        this.button = button;
+        this.delay = delay;
+        this.longpresStart = true;
+        this.longpressTimer;
+        this.func = func;
+        this.onclickFunc;
+
+        button.onmousedown = (event) => {
+            if (event.button == 2) {
+                return;
+            }
+            this.longpresStart = true;
+            this.longpressTimer = setTimeout(() => {
+                this.longpresStart = false;
+                if (button.onclick != null) {
+                    this.onclickFunc = button.onclick;
+                    this.button.onclick = null;
+                }
+                this.func();
+            }, this.delay);
+
+        };
+
+        button.onmouseup = (event) => {
+            if (event.button == 2) {
+                return;
+            }
+            if (this.longpresStart) {
+                clearTimeout(this.longpressTimer);
+                this.longpresStart = false;
+                if (this.onclickFunc != null) {
+                    this.button.onclick = this.onclickFunc;
+                }
+            }
+
+        };
+    }
+
+}
 
 btnYes.onclick = () => {
     if (newOrReload == true) {
@@ -201,11 +260,21 @@ next[0].onclick = () => {
     stopUpdater();
     pushEvent(next[0].className, "clicked")
 };
+like[0].onLongPress = new LongPressButton(like[0], () => {
+    sendEvent("toggleDislike");
+});
 
 like[0].onclick = () => {
     sendEvent("toggleLike");
-    pushEvent(like[0].className, "clicked")
+    pushEvent(like[0].className, "clicked");
+}
 
+dislike.onLongPress = new LongPressButton(dislike, () => {
+    sendEvent("toggleDislike");
+});
+
+dislike.onclick = () => {
+    sendEvent("toggleDislike");
 }
 
 trackImage[0].onclick = () => {
@@ -424,12 +493,54 @@ let openNewTab = () => {
     yesNoNew.style.display = "none";
 }
 
-let toggleLike = (is) => {
-    if (is) {
+let toggleLike = (isLike) => {
+    if (isLike) {
         like[0].style.backgroundImage = "url(img/like.png)";
     } else {
-        like[0].style.backgroundImage = "url(img/disliked.png)";
+        like[0].style.backgroundImage = "url(img/notLike.png)";
     }
+}
+let toggleDislike = (isDisliked, notifyMe = false) => {
+    if (isDisliked) {
+        dislike.style.backgroundImage = "url(img/disliked.svg)";
+        if (notifyMe) {
+            showNotification(chrome.i18n.getMessage("addedToBlackList"));
+        }
+    } else {
+        dislike.style.backgroundImage = "url(img/dislike.svg)";
+        if (notifyMe) {
+            showNotification(chrome.i18n.getMessage("removeFromBlackList"));
+        }
+    }
+}
+
+let notificationTimer;
+let showNotification = (text) => {
+    clearTimeout(notificationTimer);
+    if (text != undefined) {
+        textNotification.innerHTML = text;
+    } else {
+        textNotification.innerHTML = chrome.i18n.getMessage("addedToBlackList");
+    }
+    notification.style.display = "flex";
+    let keyframe = {
+        transform: ['translateY(-40px)', 'translateY(0%)'],
+    };
+    let options = {
+        duration: 450,
+        fill: "both"
+    }
+    notification.animate(keyframe, options);
+    notificationTimer = setTimeout(() => {
+        notification.classList.remove("slide-bottom");
+
+        let keyframe = {
+            transform: ['translateY(0%)', 'translateY(-40px)'],
+        };
+        notification.animate(keyframe, options);
+        notificationTimer;
+    }, 5000);
+
 }
 
 let endAnimation = (ev) => {

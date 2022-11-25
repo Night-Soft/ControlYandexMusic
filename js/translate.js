@@ -35,5 +35,7 @@ let Translate = {
         checkBoxDarkTheme.innerHTML = chrome.i18n.getMessage("setDarkTheme");
         let checkBoxIncreaseCover = document.getElementById("checkBoxIncreaseCover");
         checkBoxIncreaseCover.innerHTML = chrome.i18n.getMessage("increaseCover");
+        let addDislikeButton = document.getElementById("checkBoxDislikeButton");
+        addDislikeButton.innerHTML = chrome.i18n.getMessage("addDislikeButton");
     }
 }

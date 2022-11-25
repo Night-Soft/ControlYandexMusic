@@ -1,5 +1,9 @@
 {
     "versions": [
+        ["2.4.0", {
+            "messageEn": "• Now the «dislike» button is available on the main screen (enable in the settings). Also now you can long press the «like» button to dislike a track. Works on the main screen and in the playlist.",
+            "messageRu": "• Теперь на главном экране доступна кнопка «дизлайка» (включается в настройках). Также теперь при долгом нажатии кнопки «нравится», трек больше не будет появляться в ваших рекомендациях (дизлайк). Работает на главном экране и в плейлисте."
+        }],
         ["2.3.0", {
             "messageEn": "• Added dark theme. <br> • Improved the displayed track list if your current playlist type is radio. Now you can see next 5-7 tracks.",
             "messageRu": "• Добавлена темная тема.<br> • Улучшен отображаемый список треков, если ваш текущий тип плейлиста — радио. Теперь вы можете увидеть следующие 5-7 треков."
