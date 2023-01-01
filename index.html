@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Yandex Music</title>
+    <link rel="stylesheet" href="style.css">
+    <script async src="js/theme.js"></script>
+    <script async src="js/load.js"></script>
+    <script async src="js/gaq.js"></script>
+</head>
+
+<body>
+    <div class="notification">
+        <h2 class="h2-notification">Track added to black list!</h2>
+    </div>
+    <div class="container">
+        <div class="bar1 transition"></div>
+        <div class="bar2 transition"></div>
+        <div class="bar3 transition"></div>
+    </div>
+    <div class="popup-btn-container">
+        <div class="popup-btn"></div>
+    </div>
+    <div class="popup-div-container">
+        <div class="box-top"></div>
+        <div class="box"></div>
+    </div>
+    <div class="hamburger-menu-list">
+        <div class="bar-list1 transition"></div>
+        <div class="bar-list2 transition"></div>
+        <div class="bar-list3 transition"></div>
+    </div>
+    <div id="listTrack" class="modal-list-menu">
+        <div class="content-list-menu">
+            <div class="list-track">
+                <div class="title-list">Title</div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-side">
+        <div class="content-menu slide-out">
+            <div class="title title-menu ">Control Yandex Music</div>
+            <div id="listMenu" class="list-menu">
+                <div class="side settings">
+                    <span id="settings" class="title-span">Say thanks to the developer</span>
+                    <div id="listSettings" class="list-settings">
+                        <div class="setting-item">
+                            <div class="content-label">
+                                <label id="allNotifications" for="checkboxAllNotifications">Notification every time a track is switched.</label>
+                                <input type="checkbox" id="checkboxAllNotifications">
+                            </div>
+                            <div class="content-reassign">
+                                <span class="subtitle" id="showNotify">Show notifications when control from keyboard: </span>
+                                <div class="content-label">
+                                    <label id="playPauseNotify" for="n1">Notification when play / pause.</label>
+                                    <input type="checkbox" id="n1">
+                                </div>
+                                <div class="content-label">
+                                    <label id="prevNextNotify" for="n2">Notification when previous / next track.</label>
+                                    <input type="checkbox" id="n2">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <div class="content-label">
+                                <label id="checkBoxDarkTheme" for="n3">Enable dark theme.</label>
+                                <input type="checkbox" id="n3">
+                            </div>
+                            <div class="content-label">
+                                <label id="checkBoxIncreaseCover" for="n4">Reduce the control buttons and increase the cover.</label>
+                                <input type="checkbox" id="n4">
+                            </div>
+                            <div class="content-label">
+                                <label id="checkBoxDislikeButton" for="n5">Add a dislike button?</label>
+                                <input type="checkbox" id="n5">
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <div class="content-label">
+                                <label id="checkBoxSavePos" for="n6">Save the position and size of the popup.</label>
+                                <input type="checkbox" id="n6">
+                            </div>
+                            <div class="content-reassign">
+                                <span class="subtitle" id="shortcutKeyOpenPopup">Select a shortcut key to open and activate the popup. (shortcut key will be reassigned)</span>
+                                <div class="container-reassign">
+                                    <div class="content-label">
+                                        <label id="checkBoxReassign" for="n7">The next shortcut key will be reassign -</label>
+                                        <input type="checkbox" id="n7">
+                                    </div>
+                                    <div class="select-shortcut-key">Choose from the list below.</div>
+                                </div>
+                                <div class="list-shortcut-keys"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="shortCuts" class="side ">Open keyboard shortcuts</div>
+                <div id="whatNew" class="side ">What's new?</div>
+                <div class="side ">About</div>
+                <div id="contactMe" class="side ">Contact Me</div>
+                <div class="side-help ">
+                    <span id="help" class="title-help title-help-menu">Say thanks to the developer</span>
+                    <!-- <div class="paypal-menu">
+                        <span class="paypal-title">PayPal</span>
+                    </div> -->
+                    <div class="donationalerts-menu">
+                        <span class="donationalerts-title">Donation Alerts</span>
+                        <div class="donationalerts-image"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="support-menu">
+                <h4>Any questions write to
+                    <a href="mailto:nightsoftware@outlook.com">nightsoftware@outlook.com</a>
+                </h4>
+            </div>
+        </div>
+        <div class="close-side"></div>
+    </div>
+    <div class="title ">Yandex Music</div>
+    <div class="content-track ">
+        <div class="cover"></div>
+
+        <!-- <div class="content-cover">
+            <div class="prev-cover cover"></div>
+            <div class="cover"></div>
+            <div class="next-cover cover"></div>
+        </div> -->
+        <div class="content-track-artist ">
+            <div class="title name-track ">Track</div>
+            <div class="title name-artists ">Artists</div>
+        </div>
+    </div>
+    <div class="modal ">
+        <img class="modal-cover"></img>
+    </div>
+    <div class="groove-box">
+        <div class="groove-content">
+            <div class="content-time">
+                <span class="current-time">0:0</span>
+                <div class="content-toggle">
+                    <div class="toggle-shuffle control-toggle"> </div>
+                    <div class="toggle-repeat control-toggle"> </div>
+                    <div class="content-groove-volume">
+                        <div class="toggle-volume control-toggle"> </div>
+                        <div class="slider-content">
+                            <div class="slider">
+                                <div class="slider-helper"></div>
+                                <div class="slider-groove slider-groove-volume">
+                                    <div class="slider-groove-current slider-groove-current-volume"></div>
+                                </div>
+                                <div class="slider-handle"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <span class="duration">0:0</span>
+            </div>
+            <div class="slider-content">
+                <div class="slider  slider-progress">
+                    <div class="slider-helper"></div>
+                    <div class="slider-groove slider-groove-progress">
+                        <div class="slider-groove-current slider-groove-current-progress"></div>
+                    </div>
+                    <div class="slider-handle progress-handle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content ">
+        <div class="previous control "></div>
+        <div class="pause control "></div>
+        <div class="next control "></div>
+        <div class="like control "></div>
+        <div class="dislike control "></div>
+    </div>
+    <div class="no-connect">
+        <div class="no-connect-content">
+            <h2 id="AppDetected">App detected tab with "Yandex Music" but can't connect to the tab!</h2>
+            <div class="loader-container">
+                <div class="loader ">
+                    <div class="loader2"></div>
+                </div>
+            </div>
+            <h2 id="AppQuestion">Reload the tab or open new?</h2>
+            <div class="yes-no-new">
+                <button id="Yes" class="no-conect-btn">Yes</button>
+                <button id="No" class="no-conect-btn">No</button>
+                <button id="New" class="no-conect-btn">New Yandex Music Tab</button>
+            </div>
+        </div>
+    </div>
+    <div id="scroll-bar" class="modal-news">
+        <div class="content-news">
+            <div>
+                <h2 id="Version">Version </h2>
+                <h2 class="versions">What's new?</h2>
+            </div>
+            <div class="list-changes-coontent"></div>
+            <div class="filter"></div>
+            <button id="YesNews" class="yesNews yesNews-disable no-conect-btn">Yes</button>
+        </div>
+
+    </div>
+    <script async src="js/extension.js "></script>
+    <script async src="js/whatNew.js"></script>
+    <script async src="js/options.js "></script>
+    <script async src="js/translate.js"></script>
+    <script async src="js/tracksList.js"></script>
+    <script src="js/slider.js"></script>
+</body>
+
+</html>

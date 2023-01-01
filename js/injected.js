@@ -1,6 +1,6 @@
 let extensionId = "UnknowId";
-let port;
-let lastCase;
+let port, lastCase, mediaSession;
+
 window.addEventListener("message", function(event) {
     if (event.source != window) { return; }
     switch (event.data.function) {
@@ -45,6 +45,7 @@ window.addEventListener("message", function(event) {
     if (event.data.id) {
         extensionId = event.data.id;
         port = chrome.runtime.connect(extensionId);
+        setMediaSession();
     }
     if (event.data.play) {
         externalAPI.play(parseInt(event.data.play))
@@ -73,33 +74,24 @@ window.addEventListener("message", function(event) {
             progress: externalAPI.getProgress(),
         });
     }
-}, false);
+});
+window.onpagehide = (event) => {
+    chrome.runtime.sendMessage(extensionId, {
+        pagehide: true,
+    });
+}
 
 externalAPI.on(externalAPI.EVENT_TRACK, function(event) {
+    getTracks(true);
     setMediaSession();
-    getTracks();
+    setTimeout(() => { // timer because something overrides ActionHandler.
+        setActionHandler();
+    }, 7000);
+
 });
 externalAPI.on(externalAPI.EVENT_TRACKS_LIST, function(event) {
     getTracks();
 });
-
-let mediaSession = navigator.mediaSession;
-if ('mediaSession' in navigator) {
-    navigator.mediaSession.setActionHandler('play', function() {
-        togglePauseKey();
-        navigator.mediaSession.playbackState = "playing";
-    });
-    navigator.mediaSession.setActionHandler('pause', function() {
-        togglePauseKey();
-        navigator.mediaSession.playbackState = "paused";
-    });
-    navigator.mediaSession.setActionHandler('previoustrack', function() {
-        previousKey();
-    });
-    navigator.mediaSession.setActionHandler('nexttrack', function() {
-        nextKey();
-    });
-}
 
 let getArtists = (list) => {
     let getArtistsTitle = (listArtists) => {
@@ -138,18 +130,57 @@ let setMediaSession = () => {
         title: current.title,
         artist: getArtists(externalAPI.getCurrentTrack()),
         artwork: [
-            { src: iconTrack + '50x50', sizes: '50x50', type: 'image/jpg' },
-            { src: iconTrack + '80x80', sizes: '80x80', type: 'image/jpg' },
-            { src: iconTrack + '100x100', sizes: '100x100', type: 'image/jpg' },
-            { src: iconTrack + '200x200', sizes: '200x200', type: 'image/jpg' },
-            { src: iconTrack + '300x300', sizes: '300x300', type: 'image/jpg' },
-            { src: iconTrack + '400x400', sizes: '400x400', type: 'image/jpg' },
-
+            { src: iconTrack + "50x50", sizes: "50x50", type: "image/jpeg" },
+            { src: iconTrack + "80x80", sizes: "80x80", type: "image/jpeg" },
+            { src: iconTrack + "100x100", sizes: "100x100", type: "image/jpeg" },
+            { src: iconTrack + "200x200", sizes: "200x200", type: "image/jpeg" },
+            { src: iconTrack + "300x300", sizes: "300x300", type: "image/jpeg" },
+            { src: iconTrack + "400x400", sizes: "400x400", type: "image/jpeg" },
         ]
     });
+    if (externalAPI.isPlaying()) {
+        navigator.mediaSession.playbackState = "playing";
+    } else {
+        navigator.mediaSession.playbackState = "paused";
+    }
+    setActionHandler();
+
+}
+let setActionHandler = () => {
+    if ('mediaSession' in navigator) {
+        navigator.mediaSession.setActionHandler('play', function() {
+            navigator.mediaSession.playbackState = "playing";
+            togglePauseKey();
+            console.log("mediaSession key")
+        });
+        navigator.mediaSession.setActionHandler('pause', function() {
+            navigator.mediaSession.playbackState = "paused";
+            togglePauseKey();
+            console.log("mediaSession key")
+        });
+        navigator.mediaSession.setActionHandler('previoustrack', function() {
+            previousKey();
+            console.log("mediaSession key")
+        });
+        navigator.mediaSession.setActionHandler('nexttrack', function() {
+            nextKey();
+            console.log("mediaSession key")
+        });
+
+        navigator.mediaSession.setActionHandler('seekbackward', function(event) {
+            console.log('> User clicked "Seek Backward" icon.');
+            externalAPI.setPosition(externalAPI.getProgress().position + 10)
+        });
+
+        navigator.mediaSession.setActionHandler('seekforward', function(event) {
+            externalAPI.setPosition(externalAPI.getProgress().position + 10)
+
+        });
+        console.log("mediaSession set")
+    }
 }
 
-function getTracks() {
+function getTracks(eventTrack = false) {
     let trackInfo = {
         tracksList: externalAPI.getTracksList(),
         sourceInfo: externalAPI.getSourceInfo(),
@@ -157,7 +188,8 @@ function getTracks() {
     }
     chrome.runtime.sendMessage(extensionId, {
         event: "currentTrack",
-        api: externalAPI.getCurrentTrack(),
+        eventTrack: eventTrack,
+        currentTrack: externalAPI.getCurrentTrack(),
         isPlaying: externalAPI.isPlaying(),
         progress: externalAPI.getProgress(),
         trackInfo: trackInfo,
@@ -198,30 +230,35 @@ let toggleDislike = () => {
 }
 
 let previousKey = () => {
+    console.log("previousKey");
     let promise = externalAPI.prev();
     promise.then(
         function() {
             chrome.runtime.sendMessage(extensionId, {
-                key: "key",
+                key: true,
                 dataKey: "previous-key",
                 currentTrack: externalAPI.getCurrentTrack()
             });
         });
 }
 let togglePauseKey = () => {
+    console.log("togglePauseKey");
+
     externalAPI.togglePause();
     chrome.runtime.sendMessage(extensionId, {
-        key: "key",
+        key: true,
         dataKey: "togglePause-key",
         currentTrack: externalAPI.getCurrentTrack()
     });
     getTracks();
 }
 let nextKey = () => {
+    console.log("nextKey");
+
     let promise = externalAPI.next();
     promise.then(function() {
         chrome.runtime.sendMessage(extensionId, {
-            key: "key",
+            key: true,
             dataKey: "next-key",
             currentTrack: externalAPI.getCurrentTrack()
         });
@@ -230,9 +267,11 @@ let nextKey = () => {
 let toggleLikeKey = () => {
     externalAPI.toggleLike();
     chrome.runtime.sendMessage(extensionId, {
-        key: "key",
+        event: "toggleLike",
+        key: true, // key: for background scritpr
         dataKey: "toggleLike-key",
-        currentTrack: externalAPI.getCurrentTrack().liked
+        isLiked: externalAPI.getCurrentTrack().liked,
+        currentTrack: externalAPI.getCurrentTrack()
     });
-    getTracks();
+    //getTracks();
 }

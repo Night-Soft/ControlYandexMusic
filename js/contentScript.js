@@ -1,4 +1,6 @@
+//let tabId;
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+    console.log("request", request)
     switch (request.data) {
         case 'previous':
             window.postMessage({ function: "previous" }, "*");
@@ -40,7 +42,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
             break;
     }
     if (request.hasOwnProperty('id')) {
-        injectJS(request.id);
+        injectJS(request.id, request.tabId);
         return;
     }
     if (request.hasOwnProperty('data')) {
@@ -63,18 +65,25 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
             window.postMessage({ getProgress: request.data.getProgress }, "*");
         }
     }
-    sendResponse({});
 });
-
+//let popupBounds = {}
 let injectJS = (id) => {
-    let s = document.createElement('script');
-    s.src = chrome.runtime.getURL('js/injected.js');
-    s.onload = function() {
-        window.postMessage({ id: id });
-        this.remove();
-    };
-    (document.head || document.documentElement).appendChild(s);
-}
+        let s = document.createElement('script');
+        s.src = chrome.runtime.getURL('js/injected.js');
+        s.onload = function() {
+            window.postMessage({ id: id });
+            this.remove();
+        };
+        (document.head || document.documentElement).appendChild(s);
+    }
+    // let injectJS = (id, tabId) => {
+    //     chrome.scripting.executeScript({
+    //             target: { tabId: tabId },
+    //             files: ['js/injected.js'],
+    //         },
+    //         () => {});
+    // }
+
 
 let getId = () => {
     chrome.runtime.sendMessage({ getId: "getId" });

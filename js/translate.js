@@ -37,5 +37,13 @@ let Translate = {
         checkBoxIncreaseCover.innerHTML = chrome.i18n.getMessage("increaseCover");
         let addDislikeButton = document.getElementById("checkBoxDislikeButton");
         addDislikeButton.innerHTML = chrome.i18n.getMessage("addDislikeButton");
+        let checkBoxSavePosT = document.getElementById("checkBoxSavePos");;
+        checkBoxSavePosT.innerHTML = chrome.i18n.getMessage("checkBoxSavePos");
+        let shortcutKeyOpenPopup = document.getElementById("shortcutKeyOpenPopup");;
+        shortcutKeyOpenPopup.innerHTML = chrome.i18n.getMessage("shortcutKeyOpenPopup");
+        let checkBoxReassignT = document.getElementById("checkBoxReassign");;
+        checkBoxReassignT.innerHTML = chrome.i18n.getMessage("checkBoxReassign");
+        let selectedShortcutKeyT = document.getElementsByClassName("select-shortcut-key")[0];
+        selectedShortcutKeyT.innerHTML = chrome.i18n.getMessage("selectedShortcutKey");
     }
 }

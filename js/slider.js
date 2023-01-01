@@ -83,11 +83,8 @@ let Slider = class {
         this.ownMouseUp(event);
     }
     ownMouseUp(event) {};
-    counter(x) {
-        let countProcent = (currentGrove) => {
-            return Math.round(currentGrove * this.maxScale / this.groove.offsetWidth);
-        }
-        return countProcent(x);
+    counter(currentGrove) {
+        return Math.round(currentGrove * this.maxScale / this.groove.offsetWidth);
     }
     setPosition(event) {
         if (event.hasOwnProperty("scale")) {
@@ -189,15 +186,15 @@ let helperVol = document.getElementsByClassName("slider-helper")[0];
 let sliderVolume = new Slider(sliderVolumeElemnt, currentGrooveVol, handleVol, helperVol);
 
 sliderVolume.ownMouseMoveDown = () => {
-    sendEvent({ setVolume: sliderVolume.scale / 100 });
+    sendEvent({ setVolume: sliderVolume.scale / 100 }, false, true);
     updateToggleVolumeIcon(sliderVolume.scale);
 }
 sliderVolume.ownMouseDown = () => {
-    sendEvent({ setVolume: sliderVolume.scale / 100 });
+    sendEvent({ setVolume: sliderVolume.scale / 100 }, false, true);
     updateToggleVolumeIcon(sliderVolume.scale);
 }
 sliderVolume.ownWheel = () => {
-    sendEvent({ setVolume: sliderVolume.scale / 100 });
+    sendEvent({ setVolume: sliderVolume.scale / 100 }, false, true);
     updateToggleVolumeIcon(sliderVolume.scale);
 }
 
@@ -251,16 +248,14 @@ let updateVolume = (volume) => {
     sliderVolumeContent.style.display = "block"; // for slider can get offset
     if (volume >= 50) {
         sliderVolume.setPosition({ scale: volume });
-        toggleVolume.style.backgroundPositionY = "-5px";
-
+        updateToggleVolumeIcon(volume);
     } else if (volume < 50 && volume != 0) {
         sliderVolume.setPosition({ scale: volume });
-        toggleVolume.style.backgroundPositionY = "-35px";
-
+        updateToggleVolumeIcon(volume);
     }
     if (volume <= 0) {
         sliderVolume.setPosition({ scale: volume });
-        toggleVolume.style.backgroundPositionY = "-65px";
+        updateToggleVolumeIcon(volume);
     }
     sliderVolumeContent.style.display = "none";
 }
@@ -268,6 +263,23 @@ let updateVolume = (volume) => {
 let updateRepeat = (repeat) => {
     if (repeat == null) {
         toggleRepeat.style.display = "none";
+        return;
+    }
+    if (typeof(fromPopup) != 'undefined') {
+        if (repeat === true) {
+            toggleRepeat.style.backgroundPositionY = "-6px";
+            toggleRepeat.style.filter = whiteFilter;
+            toggleRepeat.style.opacity = "1";
+        } else {
+            toggleRepeat.style.backgroundPositionY = "-6px";
+            toggleRepeat.style.filter = "";
+            toggleRepeat.style.opacity = "";
+        }
+        if (repeat === 1) {
+            toggleRepeat.style.backgroundPositionY = "-31px";
+            toggleRepeat.style.filter = whiteFilter;
+            toggleRepeat.style.opacity = "1";
+        }
         return;
     }
     if (repeat === true) {
@@ -301,14 +313,14 @@ let updateShuffle = (shuffle) => {
 }
 
 toggleShuffle.onclick = (event) => {
-    sendEvent({ toggleShuffle: true });
+    sendEvent({ toggleShuffle: true }, false, true);
 }
 toggleRepeat.onclick = (event) => {
-    sendEvent({ toggleRepeat: true });
+    sendEvent({ toggleRepeat: true }, false, true);
 
 }
 toggleVolume.onclick = (event) => {
-    sendEvent({ toggleVolume: true });
+    sendEvent({ toggleVolume: true }, false, true);
 
 }
 toggleVolume.onwheel = (event) => {
@@ -318,7 +330,7 @@ toggleVolume.onwheel = (event) => {
             if (sliderVolume.scale > sliderVolume.maxScale) sliderVolume.scale = sliderVolume.maxScale;
             sliderVolume.setPosition({ event: event, scale: sliderVolume.scale });
             sliderVolume.setPositionHelper({ scale: sliderVolume.scale });
-            sendEvent({ setVolume: sliderVolume.scale / 100 });
+            sendEvent({ setVolume: sliderVolume.scale / 100 }, false, true);
             updateToggleVolumeIcon(sliderVolume.scale);
         }
     } else {
@@ -327,13 +339,24 @@ toggleVolume.onwheel = (event) => {
             if (sliderVolume.scale < 0) sliderVolume.scale = 0;
             sliderVolume.setPosition({ event: event, scale: sliderVolume.scale });
             sliderVolume.setPositionHelper({ scale: sliderVolume.scale });
-            sendEvent({ setVolume: sliderVolume.scale / 100 });
+            sendEvent({ setVolume: sliderVolume.scale / 100 }, false, true);
             updateToggleVolumeIcon(sliderVolume.scale);
         }
     }
 }
 
 let updateToggleVolumeIcon = (scale) => {
+    if (typeof(fromPopup) != 'undefined') {
+        if (scale >= 50) {
+            toggleVolume.style.backgroundPositionY = "-5px";
+        } else if (scale < 50 && scale != 0) {
+            toggleVolume.style.backgroundPositionY = "-30px";
+        }
+        if (scale <= 0) {
+            toggleVolume.style.backgroundPositionY = "-55px";
+        }
+        return;
+    }
     if (scale >= 50) {
         toggleVolume.style.backgroundPositionY = "-5px";
     } else if (scale < 50 && scale != 0) {
@@ -376,11 +399,11 @@ let sliderPrgress = new Slider(sliderProgressElement, progressGrooveCurrent, pro
 sliderPrgress.isOwnDataHelper = true;
 
 sliderPrgress.ownMouseMove = (event) => {
-    sliderPrgress.setDataHelper(countTimeHelpers(event.x - 25, getDuration())); // -25 = helper.offsetLeft
+    sliderPrgress.setDataHelper(countTimeHelpers(event.x - sliderPrgress.groove.offsetLeft, getDuration())); // -25 = helper.offsetLeft
 }
 
 sliderPrgress.ownMouseMoveDown = (event) => {
-    sliderPrgress.setDataHelper(countTimeHelpers(event.x - 25, getDuration())); // -25 = helper.offsetLeft
+    sliderPrgress.setDataHelper(countTimeHelpers(event.x - sliderPrgress.groove.offsetLeft, getDuration())); // -25 = helper.offsetLeft
     setTime();
 }
 
@@ -430,7 +453,7 @@ function trackUpdater(duration = getDuration(), progress = getProgress(), isPlay
     stopUpdater();
     if (!isPlay) return;
     if (progress == 0) {
-        sendEvent({ getProgress: true });
+        sendEvent({ getProgress: true }, false, true);
         return;
     }
     if (isPlay) progressUpdater = setInterval(updaterTimer, 500);

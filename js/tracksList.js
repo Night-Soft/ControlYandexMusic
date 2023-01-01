@@ -10,12 +10,13 @@ let isFirstScroll = false;
 
 let State = { // current
     track: undefined,
-    index: undefined, // number
+    index: undefined, // Number
     disliked: undefined,
     isPlay: undefined,
     likeItem: undefined,
     coverLink: undefined,
-    coverItem: undefined
+    coverItem: undefined,
+    isAutoScroll: false
 }
 let CurrentAnimation = {
     keyframe: undefined,
@@ -49,19 +50,15 @@ let setTitle = (title) => {
 let setTracksList = (list, index) => {
     try {
         if (index >= 0 && State.index != index) {
-            State.index = index;
             let allItem = document.querySelectorAll(".item-track");
-            selectItem(allItem[index]);
+            selectItem(allItem[index], index);
         }
         if (equals(list, requestTracksList)) { return; }
     } catch (error) {}
-
     requestTracksList = list;
-    if (requestSourceInfo.type == "radio") {
-        setTitle(requestSourceInfo);
-        let allItem = document.querySelectorAll(".item-track");
-        clearList(allItem);
-    }
+    setTitle(requestSourceInfo);
+    let allItem = document.querySelectorAll(".item-track");
+    clearList(allItem);
     createListElement(list, index);
 }
 let createListElement = (list, index) => {
@@ -150,16 +147,11 @@ let createListElement = (list, index) => {
         itemTrack.onclick = (ev) => {
             if (ev.target == itemTrack || ev.target == contentItemName ||
                 ev.target == itemNameTrack || ev.target == itemArtists) {
-                let play = {
-                    play: `${i}`,
-                }
                 if (State.index == i) {
                     sendEvent("togglePause");
                 } else {
-                    sendEvent(play); // send as object
+                    sendEvent({ play: `${i}` }, false, true); // send as object
                     stopUpdater();
-                    selectItem(itemTrack);
-                    State.index = i;
                     if (!requestTracksList[i].liked && !list[i].disliked) {
                         listLike.classList.add("list-dislike");
                         listLike.style.animation = "show-like 1s normal";
@@ -177,14 +169,14 @@ let createListElement = (list, index) => {
         }
         itemTrack.appendChild(listLike);
         if (index != undefined && index == i) {
-            selectItem(itemTrack);
+            selectItem(itemTrack, index);
         }
         listTracks.appendChild(itemTrack);
-
     }
 }
 
-
+document.body.onmouseenter = () => { State.isAutoScroll = false; }
+document.body.onmouseleave = () => { State.isAutoScroll = true; }
 
 let listLikeControl = (listLike, list, index) => {
         if (State.index == index) {
@@ -279,10 +271,10 @@ const equals = (a, b) => {
     return true;
 };
 
-let getArtists = (list, number = 3) => {
+let getArtists = (list, amount = 3) => {
     let getArtistsTitle = (listArtists) => {
         let artists = "";
-        for (let i = 0; i < number; i++) {
+        for (let i = 0; i < amount; i++) {
             if (listArtists[i] == undefined && i != 0) {
                 artists = artists.slice(0, -2);
                 return artists;
@@ -303,7 +295,7 @@ let getArtists = (list, number = 3) => {
     }
 }
 
-let selectItem = (item) => {
+let selectItem = (item, index) => {
     try {
         if (!State.track.liked) {
             State.likeItem.classList.remove("list-dislike");
@@ -315,6 +307,10 @@ let selectItem = (item) => {
     item.classList.add("selected-item");
     previousSelectItem = item;
     selectedItem = item;
+    State.index = index;
+    if (State.isAutoScroll) {
+        selectedItem.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
 }
 
 let scrollToSelected = () => {
@@ -343,14 +339,37 @@ let animateListImage = (item) => {
     let itemOffset = offset(item);
     let left = -(window.innerWidth / 2 - width / 2 - itemOffset.left);
     let top = -(window.innerHeight / 2 - height / 2 - itemOffset.top);
+    let keyframe;
+    if (typeof(fromPopup) != 'undefined') {
+        let sizeCover, borderRadius;
+        let style = getComputedStyle(item);
+        borderRadius = parseInt(style.borderRadius.slice(0, -2));
+        if (window.innerHeight > window.innerWidth) {
+            sizeCover = window.innerWidth - Math.ceil(15 * window.innerWidth / 100);
+            modalCover[0].style.width = sizeCover + "px";
+            modalCover[0].style.height = sizeCover + "px";
+        } else {
+            sizeCover = window.innerHeight - Math.ceil(15 * window.innerHeight / 100);
+            modalCover[0].style.width = sizeCover + "px";
+            modalCover[0].style.height = sizeCover + "px";
+        }
+        keyframe = {
+            width: [width + 'px', sizeCover + 'px'],
+            height: [height + 'px', sizeCover + 'px'],
+            transform: ['translate(' + left + 'px, ' + top + 'px)', 'translate(0px, 0px)'],
+            borderRadius: [borderRadius + 'px', '20px'],
+            easing: ['cubic-bezier(.85, .2, 1, 1)']
+        }
+    } else {
+        keyframe = {
+            width: [width + 'px', 80 + '%'],
+            height: [height + 'px', 96 + '%'],
+            transform: ['translate(' + left + 'px, ' + top + 'px)', 'translate(0px, 0px)'],
+            borderRadius: ['10px', '20px'],
+            easing: ['cubic-bezier(.85, .2, 1, 1)']
+        };
+    }
 
-    let keyframe = {
-        width: [width + 'px', 80 + '%'],
-        height: [height + 'px', 96 + '%'],
-        transform: ['translate(' + left + 'px, ' + top + 'px)', 'translate(0px, 0px)'],
-        borderRadius: ['10px', '20px'],
-        easing: ['cubic-bezier(.85, .2, 1, 1)']
-    };
     let options = {
         duration: 500,
     }
@@ -359,5 +378,6 @@ let animateListImage = (item) => {
     CurrentAnimation.left = left;
     CurrentAnimation.top = top;
     CurrentAnimation.isFromList = true;
+    item.style.dispaly = "none";
     modalCover[0].animate(keyframe, options);
 }

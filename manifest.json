@@ -4,7 +4,7 @@
     "description": "__MSG_appDesc__",
     "short_name": "__MSG_shortName__",
     "default_locale": "en",
-    "version": "2.4.0",
+    "version": "2.4.1",
     "web_accessible_resources": [{
         "resources": ["js/injected.js", "./whatNew.json"],
         "matches": ["https://music.yandex.ua/*", "https://music.yandex.ru/*", "https://music.yandex.by/*", "https://avatars.yandex.net/*"]
@@ -22,7 +22,7 @@
     }],
     "action": {
         "default_icon": "img/icon.png",
-        "default_popup": "popup.html"
+        "default_popup": "index.html"
     },
     "commands": {
         "next-key": {
@@ -67,7 +67,9 @@
     "permissions": [
         "tabs",
         "notifications",
-        "storage"
+        "storage",
+        "system.display",
+        "nativeMessaging"
     ],
     "host_permissions": [
         "https://music.yandex.ua/*",

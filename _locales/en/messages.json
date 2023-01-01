@@ -100,6 +100,24 @@
     },
     "removeFromBlackList": {
         "message": "Now the track can appear in your recommendations!"
+    },
+    "noShortcutSelected": {
+        "message": "Select shortcut key first!"
+    },
+    "noShortcutKeyAction": {
+        "message": "There is no shortcut key set for this action! Don't forget to set it in settings of your browser."
+    },
+    "checkBoxSavePos": {
+        "message": "Save the position and size of the popup."
+    },
+    "shortcutKeyOpenPopup": {
+        "message": "Select a shortcut key to open and activate the popup. (The default shortcut key will be reassigned)."
+    },
+    "checkBoxReassign": {
+        "message": "The next shortcut key will be reassign -"
+    },
+    "selectedShortcutKey": {
+        "message": "Choose from the list below."
     }
 
 }

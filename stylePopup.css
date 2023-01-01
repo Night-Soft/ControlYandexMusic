@@ -1,0 +1,301 @@
+body {
+    margin: 0px;
+    height: 100vh;
+    width: 100%;
+}
+
+:root {
+    --coverBackgroundSize: 45px;
+    --pixselsForReduce: 0px;
+    --progress-height: 8px;
+    --progress-handle-size: 18px;
+    --volume-height: 7px;
+    --mainRed: #ff3333;
+    --slider: #c2c2c2;
+    --progress: #ffdd00;
+    --handleWhite: #ffffff;
+    --backgroundControl: rgba(252, 252, 255, 0.17);
+}
+
+.bar-list1,
+.bar-list2,
+.bar-list3 {
+    width: 20px;
+    height: 3px;
+    background-color: var(--mainRed);
+    margin: 3px 0;
+    border-radius: 5px;
+}
+
+.bar-list1::before {
+    content: "";
+    position: absolute;
+    background-color: var(--mainRed);
+    border-radius: 3px;
+    height: 3px;
+    width: 3px;
+    left: -5px;
+}
+
+.bar-list2::before {
+    content: "";
+    position: absolute;
+    background-color: var(--mainRed);
+    border-radius: 3px;
+    height: 3px;
+    width: 3px;
+    left: -5px;
+}
+
+.bar-list3::before {
+    content: "";
+    position: absolute;
+    background-color: var(--mainRed);
+    border-radius: 3px;
+    height: 3px;
+    width: 3px;
+    left: -5px;
+}
+
+.change-list .bar-list1 {
+    -webkit-transform: rotate(135deg) translate(4px, -3.5px);
+    transform: rotate(135deg) translate(4px, -3.5px);
+    width: 20px;
+}
+
+.change-list .bar-list3 {
+    -webkit-transform: rotate(45deg) translate(-5px, -5px);
+    transform: rotate(45deg) translate(-5px, -5px);
+    width: 20px;
+}
+
+.modal-list-menu-popup {
+    display: none;
+    height: auto;
+    top: 115px;
+    bottom: 0px;
+    border-radius: 5px;
+}
+
+.content-list-menu-popup {
+    width: 100%;
+}
+
+.control-popup {
+    background-color: unset;
+    border-style: unset;
+    border-color: unset;
+    text-align: unset;
+    border-radius: 3px;
+    width: 30px;
+    height: 30px;
+    background-size: 28px;
+}
+
+.slider-progress-popup {
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+.slider-content-popup {
+    display: flex;
+    justify-content: space-around;
+    color: white;
+}
+
+.content-time {
+    display: unset;
+}
+
+.groove-box {
+    margin-top: unset;
+    height: auto;
+}
+
+.current-time {
+    padding: unset;
+    padding-right: unset;
+}
+
+.duration {
+    padding: unset;
+}
+
+.content {
+    padding-top: unset;
+}
+
+.content-track {
+    justify-content: left;
+    flex-direction: row;
+    height: 40px;
+    width: auto;
+}
+
+.cover {
+    width: 35px;
+    height: 35px;
+    border-radius: 10px;
+    margin: 5px 10px 0px 5px;
+}
+
+.modal {
+    z-index: 4;
+}
+
+.modal-cover {
+    height: 200px;
+}
+
+.content-track-artist {
+    float: right;
+    align-self: center;
+    width: unset;
+    margin-right: 30px;
+}
+
+.name-track {
+    font-size: 1rem;
+}
+
+.name-artists {
+    font-size: 1rem;
+}
+
+.content-toggle {
+    flex-direction: row;
+    justify-content: left;
+    width: 100%;
+    margin: 0px;
+}
+
+.control-toggle {
+    align-self: unset;
+    height: 15px;
+    background-size: 25px;
+}
+
+.content-groove-volume {
+    padding-right: unset;
+    width: fit-content;
+}
+
+.item-track {
+    padding: 7px;
+    height: 20px;
+}
+
+.selected-item {
+    border-radius: 5px;
+}
+
+.item-name-track {
+    font-size: 0.8rem;
+}
+
+.item-artists {
+    font-size: 0.8rem;
+}
+
+.item-cover {
+    min-width: 25px;
+    height: 25px;
+    border-radius: 5px;
+}
+
+.list-like {
+    min-width: 25px;
+    height: 25px;
+    border-radius: 5px;
+}
+
+.list-dislike {
+    min-width: 25px;
+    height: 25px;
+    border-radius: 5px;
+}
+
+.list-disliked {
+    min-width: 25px;
+    height: 25px;
+    border-radius: 5px;
+}
+
+.notification {
+    height: auto;
+    width: 100%;
+}
+
+#AppDetected {
+    font-size: 0.8rem;
+    font-weight: 500;
+    line-height: 1;
+    margin: 0px;
+}
+
+#AppQuestion {
+    font-size: 0.8rem;
+    margin: 0px;
+    line-height: 1;
+}
+
+.no-conect-btn {
+    font-size: 12px;
+}
+
+.loader-container {
+    margin: 20px
+}
+
+@media screen and (min-height: 370px) {
+    .cover {
+        width: 45px;
+        height: 45px;
+    }
+    .name-track {
+        font-size: 1.1rem;
+    }
+    .name-artists {
+        font-size: 1.1rem;
+    }
+    .content-track {
+        height: 50px;
+    }
+    .control-toggle {
+        height: 20px;
+        background-size: 30px;
+    }
+    .modal-list-menu-popup {
+        top: 120px;
+    }
+    .item-track {
+        height: unset;
+        width: unset;
+    }
+    .item-cover {
+        min-width: 40px;
+        height: 40px;
+        border-radius: 10px;
+    }
+    .item-name-track {
+        font-size: 1rem;
+    }
+    .item-artists {
+        font-size: 1rem;
+    }
+    #AppDetected {
+        font-size: 25px;
+        margin: auto;
+        line-height: unset;
+        font-weight: bold;
+    }
+    #AppQuestion {
+        font-size: 20px;
+        margin: auto;
+        line-height: unset;
+        font-weight: 100;
+    }
+    .no-conect-btn {
+        font-size: initial;
+    }
+}

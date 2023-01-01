@@ -42,6 +42,9 @@ let dislike = document.getElementsByClassName("dislike")[0];
 let notification = document.getElementsByClassName("notification")[0];
 let textNotification = document.getElementsByClassName("h2-notification")[0];
 let notificationTrackName = document.getElementsByClassName("notification-track-name")[0];
+let popupBtn = document.getElementsByClassName("popup-btn")[0];
+let listsSortcutKeys = document.getElementsByClassName("list-shortcut-keys")[0];
+let selectShortcutKey = document.getElementsByClassName("select-shortcut-key")[0];
 
 
 
@@ -56,17 +59,6 @@ let urlCover;
 let Extension = {
     onload: function() {
         sendEvent("extensionIsLoad", true);
-        getYandexMusicTab().then(function(value) {
-            if (value == false) {
-                appDetected.innerHTML = chrome.i18n.getMessage("appNoDetected");
-                appQuestion.innerHTML = chrome.i18n.getMessage("appNoQuestion");
-                btnNew.style.display = "none";
-                noConnect.style.display = "flex";
-            } else {
-                appDetected.innerHTML = chrome.i18n.getMessage("appDetected");
-                appQuestion.innerHTML = chrome.i18n.getMessage("appQuestion");
-            }
-        });
     },
     addTransition: () => {
         transition[0].style.transition = "0.7s"
@@ -76,19 +68,29 @@ let Extension = {
         transition[4].style.transition = "0.7s"
         transition[5].style.transition = "0.7s"
     },
+    isConnected: undefined
 };
 
 chrome.runtime.onMessage.addListener( // background, content script
     (request, sender, sendResponse) => {
+        console.log("onMessage", request);
         if (request.onload == true) {
+            if (noConnect.style.display == "flex") {
+                noConnect.classList.add("puff-out-center");
+                let endConnectAnim = () => {
+                    noConnect.style.display = "none";
+                    noConnect.classList.remove("puff-out-center");
+                    noConnect.classList.remove("puff-in-center");
+                    noConnect.removeEventListener("animationend", endConnectAnim);
+                }
+                noConnect.addEventListener("animationend", endConnectAnim);
+            }
             getYandexMusicTab().then((id) => {
                 chrome.tabs.update(id, {
                     active: true
                 });
             });
         }
-        console.log("request.options", request.options);
-
         if (request.options) {
             setOptions(request.options);
             if (request.options.isShowWhatNew) {
@@ -99,13 +101,15 @@ chrome.runtime.onMessage.addListener( // background, content script
 
 chrome.runtime.onMessageExternal.addListener( // injected script
     (request, sender, sendResponse) => {
+        console.log("onMessageExternal extension", request)
         switch (request.event) {
             case 'currentTrack': // get from the key
-                setMediaData(request.api.title, getArtists(request.api, 5), request.api.cover);
+                setMediaData(request.currentTrack.title, getArtists(request.currentTrack, 5), request.currentTrack.cover);
                 changeState(request.isPlaying);
-                toggleLike(request.api.liked);
-                toggleDislike(request.api.disliked);
-                getDuration(request.api.duration);
+                toggleLike(request.currentTrack.liked);
+                // toggleListLike(request.currentTrack.liked)
+                toggleDislike(request.currentTrack.disliked);
+                getDuration(request.currentTrack.duration);
                 getProgress(request.progress.position);
                 getIsPlay(request.isPlaying);
                 setTrackProgress();
@@ -177,7 +181,10 @@ let LongPressButton = class {
         this.longpressTimer;
         this.func = func;
         this.onclickFunc;
-
+        this.screenWorkArea = {
+            height: 0,
+            width: 0
+        }
         button.onmousedown = (event) => {
             if (event.button == 2) {
                 return;
@@ -195,9 +202,7 @@ let LongPressButton = class {
         };
 
         button.onmouseup = (event) => {
-            if (event.button == 2) {
-                return;
-            }
+            if (event.button == 2) { return; }
             if (this.longpresStart) {
                 clearTimeout(this.longpressTimer);
                 this.longpresStart = false;
@@ -205,10 +210,8 @@ let LongPressButton = class {
                     this.button.onclick = this.onclickFunc;
                 }
             }
-
         };
     }
-
 }
 
 btnYes.onclick = () => {
@@ -334,6 +337,17 @@ about.onclick = () => {
 
 }
 
+popupBtn.onclick = () => {
+    sendEventBackground({ createPopup: true },
+        (result) => {
+            if (result.exists && result.isCreated) {
+                showNotification(result.message, 5500);
+            } else if (result.exists) {
+                showNotification(result.message, 5500);
+            }
+        });
+}
+
 let isSettingsOpen = false;
 settings.onclick = (event) => {
     if (event.target == settings || event.target == sett || event.target == listSettings) {
@@ -352,6 +366,81 @@ settings.onclick = (event) => {
             listSettings.className += " scale-from-top";
             listSettings.style.display = "flex";
             isSettingsOpen = true;
+
+            listsSortcutKeys.innerHTML = "";
+            chrome.commands.getAll().then((result) => {
+                for (let i = 0; i < result.length; i++) {
+                    let shortcutKey = document.createElement("DIV");
+                    shortcutKey.classList.add("shortcut-key");
+                    shortcutKey.innerHTML = result[i].description + " " + result[i].shortcut;
+                    shortcutKey.onclick = (ev) => {
+                        console.log("click", result[i]);
+                        if (Options.selectedShortcutKey != undefined) {
+                            if (result[i].name == Options.selectedShortcutKey.name) {
+                                listsSortcutKeys.childNodes[i].style.background = "";
+                                Options.selectedShortcutKey = undefined;
+                                selectShortcutKey.innerHTML = chrome.i18n.getMessage("selectedShortcutKey");
+                                if (checkBoxReassign.checked) {
+                                    checkBoxReassign.checked = false;
+                                    sendEventBackground({
+                                        writeOptions: true,
+                                        options: {
+                                            reassign: {
+                                                isReassign: checkBoxReassign.checked,
+                                                shortCut: Options.selectedShortcutKey
+                                            },
+                                        }
+                                    });
+                                    setOptions({
+                                        reassign: {
+                                            isReassign: checkBoxReassign.checked,
+                                            shortCut: Options.selectedShortcutKey
+                                        }
+                                    });
+                                }
+                                return;
+                            }
+                        }
+                        Options.selectedShortcutKey = result[i];
+                        Options.selectedShortcutKey.index = i;
+                        if (result[i].shortcut == '') {
+                            showNotification(chrome.i18n.getMessage("noShortcutKeyAction"));
+                        }
+                        shortcutKey.style.background = "#FF2222";
+                        for (let j = 0; j < listsSortcutKeys.children.length; j++) {
+                            if (j != i) {
+                                listsSortcutKeys.childNodes[j].style.background = "";
+                            }
+                        }
+                        selectShortcutKey.innerHTML = shortcutKey.innerHTML;
+                        if (checkBoxReassign.checked) {
+                            sendEventBackground({
+                                writeOptions: true,
+                                options: {
+                                    reassign: {
+                                        isReassign: checkBoxReassign.checked,
+                                        shortCut: Options.selectedShortcutKey
+                                    },
+                                }
+                            });
+                            setOptions({
+                                reassign: {
+                                    isReassign: checkBoxReassign.checked,
+                                    shortCut: Options.selectedShortcutKey
+                                }
+                            });
+                        }
+                    }
+                    listsSortcutKeys.appendChild(shortcutKey);
+                    if (Options.reassign.isReassign) {
+                        if (Options.reassign.shortCut.index == i) {
+                            shortcutKey.style.background = "#FF2222";
+                        }
+                    }
+                }
+                selectShortcutKey.innerHTML = Options.reassign.shortCut.description + " " + Options.reassign.shortCut.name;
+
+            });
         }
     }
 }
@@ -438,9 +527,6 @@ hamburgerMenuList.onclick = () => {
     toggleListMenu();
 }
 
-
-
-
 let toggleListMenu = () => {
     hamburgerMenuList.classList.toggle("change-list");
     let removeOpacity = () => {
@@ -474,15 +560,39 @@ let toggleListMenu = () => {
     }
 }
 
-let noConnceted = () => {
-    bntNo.style.display = "none";
-    btnYes.innerHTML = chrome.i18n.getMessage("reload");
-    noConnect.style.display = "flex";
-    noConnect.classList.add("puff-in-center");
-    newOrReload = false;
+let showNoConnected = (isTab = false) => {
+    //return;
+    if (Extension.isConnected == false) {
+        if (isTab) {
+            appDetected.innerHTML = chrome.i18n.getMessage("appDetected");
+            appQuestion.innerHTML = chrome.i18n.getMessage("appQuestion");
+            bntNo.style.display = "none";
+            btnYes.innerHTML = chrome.i18n.getMessage("reload");
+            noConnect.style.display = "flex";
+            noConnect.classList.add("puff-in-center");
+            newOrReload = false;
+            return;
+        } else {
+            appDetected.innerHTML = chrome.i18n.getMessage("appNoDetected");
+            appQuestion.innerHTML = chrome.i18n.getMessage("appNoQuestion");
+            btnNew.style.display = "none";
+            bntNo.style.display = "none";
+            noConnect.style.display = "flex";
+            noConnect.classList.add("puff-in-center");
+
+        }
+    }
 }
 
-let openNewTab = () => {
+let openNewTab = (tabId) => {
+    if (tabId != undefined) {
+        chrome.tabs.reload(tabId);
+        loaderContainer.style.display = "block";
+        appDetected.innerHTML = chrome.i18n.getMessage("waitWhilePage");
+        appQuestion.style.display = "none";
+        yesNoNew.style.display = "none";
+        return;
+    }
     chrome.tabs.create({
         url: "https://music.yandex.ru/home",
         active: false
@@ -515,7 +625,7 @@ let toggleDislike = (isDisliked, notifyMe = false) => {
 }
 
 let notificationTimer;
-let showNotification = (text) => {
+let showNotification = (text, time) => {
     clearTimeout(notificationTimer);
     if (text != undefined) {
         textNotification.innerHTML = text;
@@ -524,22 +634,29 @@ let showNotification = (text) => {
     }
     notification.style.display = "flex";
     let keyframe = {
-        transform: ['translateY(-40px)', 'translateY(0%)'],
+        transform: ['translateY(-100%)', 'translateY(0%)'],
     };
     let options = {
         duration: 450,
         fill: "both"
     }
     notification.animate(keyframe, options);
+    if (time == undefined) {
+        time = text.length * 80 + options.duration * 2 + 100;
+        if (time <= options.duration * 2 + 100) { // + 100ms for focus 
+            time = options.duration * 2 + 100;
+        }
+        console.log("endCalckTime", Math.ceil(time));
+    }
     notificationTimer = setTimeout(() => {
         notification.classList.remove("slide-bottom");
 
         let keyframe = {
-            transform: ['translateY(0%)', 'translateY(-40px)'],
+            transform: ['translateY(0%)', 'translateY(-100%)'],
         };
         notification.animate(keyframe, options);
         notificationTimer;
-    }, 5000);
+    }, time);
 
 }
 
@@ -547,12 +664,6 @@ let endAnimation = (ev) => {
     ev.stopPropagation();
     isMenuOpen = false;
     containerMenu.removeEventListener("animationend", endAnimation);
-}
-
-let MenuButton = class {
-    constructor(groove, currentGroove, handle, helper) {
-
-    }
 }
 
 let toggleMenu = () => {
@@ -605,30 +716,29 @@ let getYandexMusicTab = () => {
     });
 }
 
-let sendEvent = (event, isResponse = false) => {
-    let activeTab;
-    chrome.tabs.query({
-        windowType: "normal"
-    }, function(tabs) {
-        for (let i = tabs.length - 1; i >= 0; i--) {
-            if (tabs[i].url.startsWith("https://music.yandex")) {
-                activeTab = tabs[i].id;
-                break;
-            }
-        }
-        if (activeTab != undefined) {
-            chrome.tabs.sendMessage(activeTab, {
-                data: event,
-            }, function(response) {
+let sendEvent = (event, isResponse = false, forceObject = false) => {
+    if (typeof(event) != "object") event = { data: event };
+    if (forceObject) event = { data: event };
+    getYandexMusicTab().then((tab) => {
+        if (tab) {
+            chrome.tabs.sendMessage(tab, event, function(response) {
                 if (isResponse) {
-                    if (event == "extensionIsLoad" && response == undefined) {
-                        noConnceted();
+                    if (event.data == "extensionIsLoad" && response == undefined) {
+                        Extension.isConnected = false;
+                        showNoConnected(tab);
                         console.log("No connection");
+                    } else if (response.isConnect) {
+                        Extension.isConnected = true
                     }
                 }
             });
+        } else {
+            if (event.data == "extensionIsLoad") {
+                Extension.isConnected = false;
+                showNoConnected();
+            }
         }
-    });
+    }, (reject) => {});
 }
 
 let setRightFontSize = (fontSize = 1.4) => {
