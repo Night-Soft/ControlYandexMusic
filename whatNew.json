@@ -1,5 +1,9 @@
 {
     "versions": [
+        ["3.0.0", {
+            "messageEn": "• Added popup window. The window contains the current playlist and player control buttons. The window can be set to different sizes, both very small and large. The window can save position and size if it is set in the settings. In the settings, you can reassign one key combination for opening, bringing to the front and minimizing the window. (The popup only works correctly in 'Google Chrome', other popular Chrome-based browsers may cause unexpected behavior). <br>• Now you can turn on notifications to see how the song changes every time. <br>• In notifications, the track icon has rounded corners.",
+            "messageRu": "• Добавлено всплывающее окно. Окно содержит текущий плейлист и кнопки управления плеером. Окну можно задать разные размеры, как очень маленькое, так и большое. Окно может сохранять положение и размер, если это установлено в настройках. В настройках можно переназначить одну комбинацию клавиш для открытия, вывода на передний план и сворачивания окна. (Всплывающее окно корректно работает только в 'Google Chrome', другие популярные браузеры на основе Chrome могут привести к неожиданному поведению). <br>• Теперь вы можете включить уведомления что бы каждый раз видеть смену композиции. <br>• В уведомлениях иконка трека имеет скругленные углы."
+        }],
         ["2.4.0", {
             "messageEn": "• Now the «dislike» button is available on the main screen (enable in the settings). Also now you can long press the «like» button to dislike a track. Works on the main screen and in the playlist.",
             "messageRu": "• Теперь на главном экране доступна кнопка «дизлайка» (включается в настройках). Также теперь при долгом нажатии кнопки «нравится», трек больше не будет появляться в ваших рекомендациях (дизлайк). Работает на главном экране и в плейлисте."

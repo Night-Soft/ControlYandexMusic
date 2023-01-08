@@ -11,14 +11,9 @@ let grooveBox = document.querySelector(".groove-box");
 let contentReassign = document.getElementsByClassName("content-reassign")[0];
 let contentLabel = document.getElementsByClassName("content-label");
 
-
 let Options = {
     onload: function() {
         sendEventBackground({ getOptions: true }, checkNew);
-        sendEventBackground({ getPopupBounds: true }, (value) => {
-            console.log(value.popupBounds);
-            popupBounds = value.popupBounds;
-        });
     },
     isAllNoifications: undefined,
     isPlayPauseNotify: undefined,
@@ -69,7 +64,6 @@ checkBoxSavePos.onclick = function() {
     setOptions({ isSavePosPopup: checkBoxSavePos.checked });
 }
 checkBoxReassign.onclick = function() {
-    console.log(checkBoxReassign.checked);
     if (checkBoxReassign.checked) {
         if (Options.selectedShortcutKey != undefined) {
             sendEventBackground({
@@ -92,10 +86,7 @@ checkBoxReassign.onclick = function() {
             showNotification(chrome.i18n.getMessage("noShortcutSelected"));
         }
     } else {
-        let shortcutKey = document.getElementsByClassName("shortcut-key");
-        shortcutKey[Options.reassign.shortCut.index].style.background = "#FF2222";
-        selectShortcutKey.innerHTML = Options.reassign.shortCut.description + " " + Options.reassign.shortCut.shortcut;
-
+        setKeyDescription(true);
         sendEventBackground({
             writeOptions: true,
             options: {
@@ -112,7 +103,6 @@ checkBoxReassign.onclick = function() {
             }
         });
     }
-
 }
 
 let sendEventBackground = (event, callback) => { // event should be as object.
@@ -146,7 +136,6 @@ let setOptions = (options) => {
         checkboxAllNotifications.checked = options.isAllNoifications;
         Options.isAllNoifications = options.isAllNoifications;
         disabledOptions([contentLabel[2]], [prevNextNotify], !checkboxAllNotifications.checked);
-
     }
     if (options.isPlayPauseNotify != undefined) {
         playPauseNotify.checked = options.isPlayPauseNotify;
@@ -188,14 +177,12 @@ let setOptions = (options) => {
         checkBoxDislikeButton.checked = options.isDislikeButton;
         if (options.isDislikeButton) {
             setIncreaseCover(true);
-            dislike.style.display = "block";
-            checkBoxIncreaseCover.disabled = true;
             checkBoxIncreaseCover.checked = true;
-            document.getElementById("checkBoxIncreaseCover").style.color = "#c2c2c2";
+            dislike.style.display = "block";
+            disabledOptions([contentLabel[4]], [checkBoxIncreaseCover], !checkBoxDislikeButton.checked);
         } else {
             dislike.style.display = "none";
-            checkBoxIncreaseCover.disabled = false;
-            document.getElementById("checkBoxIncreaseCover").style.color = "";
+            disabledOptions([contentLabel[4]], [checkBoxIncreaseCover], !checkBoxDislikeButton.checked);
             if (Options.isCoverIncrease == false) {
                 setIncreaseCover(false);
                 checkBoxIncreaseCover.checked = false;
@@ -213,5 +200,7 @@ let setOptions = (options) => {
         Options.reassign.isReassign = options.reassign.isReassign;
         Options.reassign.shortCut = options.reassign.shortCut;
         checkBoxReassign.checked = options.reassign.isReassign;
+        Options.selectedShortcutKey = options.reassign.shortCut;
+
     }
 }

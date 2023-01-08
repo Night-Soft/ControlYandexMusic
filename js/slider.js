@@ -276,7 +276,7 @@ let updateRepeat = (repeat) => {
             toggleRepeat.style.opacity = "";
         }
         if (repeat === 1) {
-            toggleRepeat.style.backgroundPositionY = "-31px";
+            toggleRepeat.style.backgroundPositionY = "-36px";
             toggleRepeat.style.filter = whiteFilter;
             toggleRepeat.style.opacity = "1";
         }
@@ -350,10 +350,10 @@ let updateToggleVolumeIcon = (scale) => {
         if (scale >= 50) {
             toggleVolume.style.backgroundPositionY = "-5px";
         } else if (scale < 50 && scale != 0) {
-            toggleVolume.style.backgroundPositionY = "-30px";
+            toggleVolume.style.backgroundPositionY = "-35px";
         }
         if (scale <= 0) {
-            toggleVolume.style.backgroundPositionY = "-55px";
+            toggleVolume.style.backgroundPositionY = "-65px";
         }
         return;
     }
@@ -377,7 +377,7 @@ let progressHelper = document.getElementsByClassName("slider-helper")[1];
 let currentTime = document.querySelector(".current-time"); // below image
 let durationSpan = document.querySelector(".duration"); // below image
 
-let progressUpdater;
+let progressUpdater, currentUnixTime;
 let duration = 0;
 let progress = 0;
 let isPlay = false;
@@ -428,7 +428,10 @@ function setTime() {
         sliderPrgress.groove.offsetWidth * duration / 100;
     getProgress(currentSeconds);
     trackUpdater();
-    sendTime("setTime", currentSeconds);
+    sendEvent({
+        data: "setTime",
+        time: currentSeconds,
+    });
 }
 
 function setTrackProgress(duration = getDuration(), progress = getProgress(), isPlaying = getIsPlay()) {
@@ -444,9 +447,7 @@ function setTrackProgress(duration = getDuration(), progress = getProgress(), is
 const stopUpdater = () => {
     try {
         clearInterval(progressUpdater)
-    } catch (error) {
-        console.log(error)
-    }
+    } catch (error) { console.log(error); }
 }
 
 function trackUpdater(duration = getDuration(), progress = getProgress(), isPlay = getIsPlay()) {
@@ -458,18 +459,21 @@ function trackUpdater(duration = getDuration(), progress = getProgress(), isPlay
     }
     if (isPlay) progressUpdater = setInterval(updaterTimer, 500);
     sliderPrgress.maxScale = duration;
+    currentUnixTime = Date.now();
 
     function updaterTimer() {
-        getProgress(progress); // set progress value
         if (progress >= duration) {
             clearInterval(progressUpdater);
+            changeState(false);
             return;
+        }
+        if (Date.now() - currentUnixTime >= 500) {
+            progress += (Date.now() - currentUnixTime) / 1000;
+            currentUnixTime = Date.now();
         }
         //set current time progress
         currentTime.innerHTML = twoDigits(splitSeconds(progress).seconds, splitSeconds(progress).minutes);
         sliderPrgress.setPosition({ scale: progress });
-        progress += 0.5;
-
     }
 }
 
@@ -498,25 +502,4 @@ let twoDigits = (seconds, minutes) => {
         textMinutes = minutes;
     }
     return textMinutes + ":" + textSeconds;
-}
-
-function sendTime(event, currentSeconds) {
-    let activeTab;
-    chrome.tabs.query({
-        windowType: "normal"
-    }, function(tabs) {
-        for (let i = tabs.length - 1; i >= 0; i--) {
-            if (tabs[i].url.startsWith("https://music.yandex")) {
-                activeTab = tabs[i].id;
-                break;
-            }
-        }
-        if (activeTab != undefined) {
-            chrome.tabs.sendMessage(activeTab, {
-                data: event,
-                time: currentSeconds,
-            });
-        }
-
-    });
 }

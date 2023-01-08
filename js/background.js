@@ -1,3 +1,54 @@
+let keyOpenPage = false;
+let port = {
+    isConnected: false
+};
+
+let Background = {
+    createConnection: async() => {
+        return new Promise((resolve, reject) => {
+            getYandexMusicTab().then((result) => {
+                if (result) {
+                    try {
+                        if (port.isConnected == false) {
+                            port = chrome.tabs.connect(result, { name: chrome.runtime.id });
+                            port.isConnected = true;
+                        }
+                    } catch (error) {
+                        port.isConnected = false;
+                    }
+                    if (port.isConnected == false) {
+                        resolve(false);
+                    }
+                    onMessageAddListener();
+                    resolve(true);
+                } else {
+                    resolve(false);
+                }
+            });
+        });
+    },
+    isAllReaded: false,
+    lastReaded: {
+        time: undefined,
+        parameters: undefined
+    },
+}
+
+let Options = {
+    isAllNoifications: undefined,
+    isPlayPauseNotify: undefined,
+    isPrevNextNotify: undefined,
+    isShowWhatNew: undefined,
+    version: undefined,
+    oldVersionDescription: undefined,
+    isDarkTheme: undefined,
+    isCoverIncrease: undefined,
+    isDislikeButton: undefined,
+    isSavePosPopup: undefined,
+    popupBounds: undefined,
+    reassign: undefined
+}
+
 let PopupWindow = class {
     constructor() {
         if (!PopupWindow.instance) {
@@ -62,7 +113,7 @@ let PopupWindow = class {
                 return {
                     isCreated: true,
                     exists: true,
-                    message: "The window was successfully created!",
+                    message: chrome.i18n.getMessage("successfullyCreated"),
                     popupWindow: windowData
                 };
             });
@@ -75,7 +126,7 @@ let PopupWindow = class {
                         resolve({
                             isCreated: true,
                             exists: true,
-                            message: "The window was successfully created!",
+                            message: chrome.i18n.getMessage("successfullyCreated"),
                             popupWindow: windowData
                         });
                     });
@@ -83,7 +134,7 @@ let PopupWindow = class {
                     resolve({
                         isCreated: false,
                         exists: true,
-                        message: "The window already exists!",
+                        message: chrome.i18n.getMessage("windowAlreadyExists"),
                         popupWindow: result
                     });
                 }
@@ -141,14 +192,12 @@ let PopupWindow = class {
         }
         return new Promise((resolve, reject) => {
             getOptions({ parameters: ["popupBounds"] }).then((result) => {
-                console.log("result", result)
                 PopupWindow.instance.bounds = result.popupBounds;
                 resolve(result);
             });
         });
     }
 }
-let keyOpenPage = false;
 chrome.commands.onCommand.addListener(function(command) {
     if (command) { // 'next-key' 'previous-key' 'togglePause-key' 'toggleLike-key'
         if (Options.reassign == undefined) {
@@ -173,13 +222,18 @@ chrome.commands.onCommand.addListener(function(command) {
 
 chrome.runtime.onMessageExternal.addListener(
     function(request, sender, sendResponse) {
-        console.log("onMessageExternal", request);
-        if (request.eventTrack && Options.isAllNoifications) {
-            showNotification(request);
+        if (request.eventTrack == true) {
+            if (Background.isAllReaded) {
+                showNotification(request);
+            } else(
+                getOptions().then((result) => {
+                    showNotification(request);
+                })
+            )
             return;
         }
         if (request.key == true) {
-            if (State.isAllReaded) {
+            if (Background.isAllReaded) {
                 showNotification(request);
             } else(
                 getOptions().then((result) => {
@@ -190,25 +244,23 @@ chrome.runtime.onMessageExternal.addListener(
         //return true;
     });
 
-chrome.runtime.onMessage.addListener(
+chrome.runtime.onMessage.addListener( // content, extension, script
     function(request, sender, sendResponse) {
-        console.log("onMessage", request);
         if (request.backgroundMessage == "background") {
             setNotifications(request.name, request.artists, request.imageUrl);
         }
         if (request.getId != undefined) {
-            chrome.tabs.query({ windowType: "normal" }, function(tabs) {
-                for (let i = tabs.length - 1; i >= 0; i--) {
-                    if (tabs[i].url.startsWith("https://music.yandex")) {
-                        activeTab = tabs[i].id;
-                        chrome.tabs.sendMessage(tabs[i].id, { id: chrome.runtime.id, tabId: tabs[i].id });
-                        break;
-                    }
+            if (!port.isConnected) {
+                Background.createConnection();
+            }
+            getYandexMusicTab().then((result) => {
+                if (result) {
+                    sendEvent({ id: chrome.runtime.id, tabId: result });
                 }
             });
         }
         if (request.getOptions == true) {
-            if (State.isAllReaded) {
+            if (Background.isAllReaded) {
                 sendResponse({
                     options: Options
                 });
@@ -220,7 +272,6 @@ chrome.runtime.onMessage.addListener(
             return;
         } else if (request.getOptions != undefined) {
             if (request.send != undefined) {
-                // console.log(request)
                 getOptions(request.getOptions, request.send);
             } else {
                 getOptions(request.getOptions);
@@ -231,17 +282,16 @@ chrome.runtime.onMessage.addListener(
         }
         if (request.popupBounds != undefined) {
             writePopupBounds(request);
-            console.log(request.popupBounds);
         }
         if (request.createPopup) {
             openUpdatePopup().then((result) => {
                 sendResponse(result);
             });
         }
-        //return true; // 
+        return true; // 
     });
 chrome.windows.onRemoved.addListener((ev) => {
-    if (ev == popupWindow.bounds.id) {
+    if (ev == PopupWindow.instance.bounds.id) {
         try {
             delete popupWindow.bounds.id;
             delete popupWindow.bounds.tabs;
@@ -257,48 +307,79 @@ chrome.windows.onRemoved.addListener((ev) => {
             delete Options.popupBounds.incognito;
             delete Options.popupBounds.alwaysOnTop;
         } catch (error) {}
+        // write popupBounds when window removed
         writePopupBounds({ popupBounds: PopupWindow.instance.bounds }, true);
-        console.log("will write from removed", ev);
     }
 })
 let sendMessage = (event, callback) => {
     chrome.runtime.sendMessage(event, callback);
 }
 
-function sendEvent(event = {}, isKey) { // to content script
-    let activeTab;
-    chrome.tabs.query({ windowType: "normal" }, function(tabs) {
-        for (let i = tabs.length - 1; i >= 0; i--) {
-            if (tabs[i].url.startsWith("https://music.yandex")) {
-                activeTab = tabs[i].id;
-                break;
+let getYandexMusicTab = () => {
+    return new Promise(function(resolve, reject) {
+        chrome.tabs.query({
+            windowType: "normal"
+        }, function(tabs) {
+            for (let i = tabs.length - 1; i >= 0; i--) {
+                if (tabs[i].url.startsWith("https://music.yandex")) {
+                    resolve(tabs[i].id);
+                    break;
+                } else if (i == 0) {
+                    resolve(false);
+                }
             }
-        }
-        chrome.tabs.sendMessage(activeTab, event);
+        });
     });
 }
+
+let onMessageAddListener = () => {
+    port.onDisconnect.addListener((disconnect) => {
+        port.isConnected = false;
+    });
+    port.onMessage.addListener(function(request) {
+        if (request.response) {
+            response(request.response);
+        }
+    });
+    let response = (answer) => {
+        switch (answer.case) {
+            case "extensionIsLoad":
+                if (response.isConnect) {
+                    Extension.isConnected = true
+                } else {
+                    Extension.isConnected = false;
+                    showNoConnected(tab);
+                    console.log("No connection");
+                }
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+let sendEvent = (event) => { // to content script
+    port.postMessage(event);
+}
+
 let writePopupBoundsTimer;
 let writePopupBounds = (popupBounds, force = false) => {
+    // save to instance
     PopupWindow.instance.bounds = popupBounds.popupBounds;
-    console.log("save to instance");
     if (Options.isSavePosPopup) {
         if (equalsObj(popupBounds.popupBounds, Options.popupBounds) == false) {
             if (force) {
                 clearTimeout(writePopupBoundsTimer);
+                // popupBounds saved force
                 writeOptions(popupBounds);
-                console.log("popupBounds saved force");
                 return;
             }
             if (typeof(writePopupBoundsTimer) != "undefined") {
                 clearTimeout(writePopupBoundsTimer);
-                console.log("timer clear", writePopupBoundsTimer);
             }
             writePopupBoundsTimer = setTimeout(() => {
                 writeOptions(popupBounds);
-                console.log("popupBounds saved");
             }, 15000);
-        } else {
-            console.log("Objects is the same", popupBounds.popupBounds, Options.popupBounds);
         }
     }
 }
@@ -364,13 +445,11 @@ let roundedImage = async(imageUrl) => {
     let size = 80;
     if (imageUrl == undefined) {
         imageUrl = "../img/icon.png"
-        return;
     } else {
         imageUrl = "https://" + imageUrl
         imageUrl = imageUrl.slice(0, -2);
         imageUrl += size + "x" + size;
     }
-    console.log(imageUrl)
 
     let canvas = new OffscreenCanvas(size, size);
 
@@ -389,9 +468,14 @@ let roundedImage = async(imageUrl) => {
     }
     canvas.height = size;
     canvas.width = size;
+
     var ctx = canvas.getContext('2d');
+    let start = this.performance.now();
+
     const imgblob = await fetch(imageUrl).then(r => r.blob());
+    let end = this.performance.now();
     const img = await createImageBitmap(imgblob);
+
     img.src = imageUrl;
     ctx.save();
     roundedPath(ctx, 0, 0, size, size, 17);
@@ -400,7 +484,6 @@ let roundedImage = async(imageUrl) => {
     ctx.restore();
     let blobImg;
     await canvas.convertToBlob().then((blob) => {
-        console.log(blob);
         blobImg = blob;
     });
     return new Promise((resolve, reject) => {
@@ -418,30 +501,19 @@ let roundedImage = async(imageUrl) => {
         }
     })
 }
-let lastUrl, lastBase64Url;
+
 let showNotification = async(request) => {
-    console.log("request", request);
     let nameArtists = getArtists(request.currentTrack);
     let nameTrack = request.currentTrack.title;
     let iconTrack = request.currentTrack.cover;
-    let start = this.performance.now();
-    if (lastUrl != iconTrack) {
-        if (iconTrack == "../img/icon.png") { return; }
-        await roundedImage(iconTrack).then((result) => {
-            iconTrack = result.base64Url;
-            lastBase64Url = result.base64Url;
-        });
-    } else {
-        if (typeof(lastBase64Url) != "undefined") {
-            iconTrack = lastBase64Url;
-        }
-    }
-    lastUrl = request.currentTrack.cover;
-    let end = this.performance.now();
-    console.log("timeOfgetBlob", Number.parseFloat(end - start).toPrecision(5));
     let isLike = request.currentTrack.liked;
+    // get options
+    if (Background.isAllReaded == false || Background == undefined) {
+        await getOptions();
+    }
     if (Options.isAllNoifications == true) {
-        setNotifications(nameTrack, nameArtists, iconTrack)
+        setNotifications(nameTrack, nameArtists, iconTrack);
+        return;
     }
     if (Options.isPlayPauseNotify == true) {
         switch (request.dataKey) {
@@ -468,7 +540,7 @@ let showNotification = async(request) => {
                 iconTrack = "../img/like.png";
                 nameArtists = liked;
             } else {
-                iconTrack = "../img/disliked.png";
+                iconTrack = "../img/notLike.png";
                 nameArtists = disliked;
             }
             setNotifications(nameTrack, nameArtists, iconTrack)
@@ -477,19 +549,52 @@ let showNotification = async(request) => {
 
 }
 
-function setNotifications(trackTitle, trackArtists, iconTrack) {
+let lastUrl, lastBase64Url, notificationsTimeout;
+let setNotifications = async(trackTitle, trackArtists, iconTrack) => {
+    let start = this.performance.now();
+    if (iconTrack.startsWith("../") == false) {
+        if (lastUrl != iconTrack) {
+            lastUrl = iconTrack;
+            await roundedImage(iconTrack).then((result) => {
+                iconTrack = result.base64Url;
+                lastBase64Url = result.base64Url;
+            });
+        } else {
+            if (typeof(lastBase64Url) != "undefined") {
+                iconTrack = lastBase64Url;
+            }
+        }
+    }
+    let end = this.performance.now();
     if (iconTrack == undefined) {
         iconTrack = chrome.runtime.getURL("../img/icon.png");
     }
-    chrome.notifications.create("YandexMusicControl", {
-        type: "basic",
-        title: trackTitle,
-        message: trackArtists,
-        iconUrl: iconTrack
-    }, function(callback) {
-        setTimeout(function() {
-            chrome.notifications.clear("YandexMusicControl");
-        }, 7000);
+    chrome.notifications.getAll((notifications) => {
+        if (notifications.YandexMusicControl) {
+            chrome.notifications.update("YandexMusicControl", {
+                title: trackTitle,
+                message: trackArtists,
+                iconUrl: iconTrack
+            }, function(callback) {
+                try {
+                    clearTimeout(notificationsTimeout);
+                    notificationsTimeout = setTimeout(function() {
+                        chrome.notifications.clear("YandexMusicControl");
+                    }, 7000);
+                } catch (error) {}
+            });
+        } else {
+            chrome.notifications.create("YandexMusicControl", {
+                type: "basic",
+                title: trackTitle,
+                message: trackArtists,
+                iconUrl: iconTrack
+            }, function(callback) {
+                notificationsTimeout = setTimeout(function() {
+                    chrome.notifications.clear("YandexMusicControl");
+                }, 7000);
+            });
+        }
     });
 }
 
@@ -513,33 +618,10 @@ let getWhatNew = async() => {
         });
     });
 }
-let State = {
-    isAllReaded: false,
-    lastReaded: {
-        time: undefined,
-        parameters: undefined
-    },
-}
-
-let Options = {
-    isAllNoifications: undefined,
-    isPlayPauseNotify: undefined,
-    isPrevNextNotify: undefined,
-    isShowWhatNew: undefined,
-    version: undefined,
-    oldVersionDescription: undefined,
-    isDarkTheme: undefined,
-    isCoverIncrease: undefined,
-    isDislikeButton: undefined,
-    isSavePosPopup: undefined,
-    popupBounds: undefined,
-    reassign: undefined
-}
 
 let readOption = (option) => {
-    console.log("readOption", option);
     let date = new Date();
-    State.lastReaded.time = date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
+    Background.lastReaded.time = date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
     if (option == true) { // get all options
         return new Promise((resolve, reject) => {
             let OptionsKeys = Object.keys(Options);
@@ -549,8 +631,8 @@ let readOption = (option) => {
                     Options[OptionsKeys[i]] = result[OptionsKeys[i]];
                     obj[OptionsKeys[i]] = result[OptionsKeys[i]];
                     if (OptionsKeys.length - 1 == i) {
-                        State.isAllReaded = true;
-                        State.lastReaded.parameters = OptionsKeys;
+                        Background.isAllReaded = true;
+                        Background.lastReaded.parameters = OptionsKeys;
                         resolve(obj);
                     }
                 });
@@ -568,7 +650,7 @@ let readOption = (option) => {
                             Options[OptionsKeys[i]] = result[OptionsKeys[i]];
                             obj[OptionsKeys[i]] = result[OptionsKeys[i]];
                             if (option.parameters.length == Object.keys(obj).length) {
-                                State.lastReaded.parameters = option.parameters;
+                                Background.lastReaded.parameters = option.parameters;
                                 resolve(obj);
                             }
                         });
@@ -670,13 +752,4 @@ let getOptions = async(option = true, send = false) => { // read and send
     });
 }
 let popupWindow = new PopupWindow();
-
-let port = chrome.runtime.connectNative('yandex.music.control');
-
-port.onMessage.addListener(function(msg) {
-    console.log("Received" + msg);
-});
-port.onDisconnect.addListener(function() {
-    console.log("Disconnected");
-});
-port.postMessage({ text: "Hello, my_application" });
+Background.createConnection();

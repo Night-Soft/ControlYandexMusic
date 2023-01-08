@@ -8,7 +8,7 @@ body {
     --coverBackgroundSize: 45px;
     --pixselsForReduce: 0px;
     --progress-height: 8px;
-    --progress-handle-size: 18px;
+    --progress-handle-size: 16px;
     --volume-height: 7px;
     --mainRed: #ff3333;
     --slider: #c2c2c2;
@@ -245,6 +245,39 @@ body {
 
 .loader-container {
     margin: 20px
+}
+
+@media screen and (max-height: 103px) {
+    .content-track {
+        display: none;
+    }
+    .content-toggle {
+        display: none;
+    }
+    .groove-box {
+        width: calc(100% - 35px);
+    }
+    .slider-helper {
+        margin-top: 12px;
+        cursor: none;
+    }
+    .slider-helper::before {
+        border-radius: 3px;
+        bottom: 16px;
+        rotate: 180deg;
+        width: 3px;
+        height: 20px;
+        left: 13px;
+        background: white;
+        border-left: unset;
+        border-right: unset;
+        border-top: unset;
+        border-bottom: unset;
+        border-top-color: inherit;
+    }
+    .slider-groove-progress {
+        cursor: none;
+    }
 }
 
 @media screen and (min-height: 370px) {

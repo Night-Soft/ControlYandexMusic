@@ -44,21 +44,28 @@ let textNotification = document.getElementsByClassName("h2-notification")[0];
 let notificationTrackName = document.getElementsByClassName("notification-track-name")[0];
 let popupBtn = document.getElementsByClassName("popup-btn")[0];
 let listsSortcutKeys = document.getElementsByClassName("list-shortcut-keys")[0];
-let selectShortcutKey = document.getElementsByClassName("select-shortcut-key")[0];
+let selectedShortcutKey = document.getElementsByClassName("select-shortcut-key")[0];
 
 
 
 let contentListMenu = document.getElementsByClassName("content-list-menu")[0];
 let modalListMenu = document.getElementsByClassName("modal-list-menu")[0];
 
+let port = {
+    isConnected: false
+};
 let isMenuListOpen = false;
 let isMenuOpen = false;
-let newOrReload = true;
+let reload = true;
 let urlCover;
 
 let Extension = {
     onload: function() {
-        sendEvent("extensionIsLoad", true);
+        this.createConnection().then((result) => {
+            if (result) {
+                sendEvent("extensionIsLoad");
+            }
+        });
     },
     addTransition: () => {
         transition[0].style.transition = "0.7s"
@@ -68,13 +75,43 @@ let Extension = {
         transition[4].style.transition = "0.7s"
         transition[5].style.transition = "0.7s"
     },
+    createConnection: async() => {
+        return new Promise((resolve, reject) => {
+            getYandexMusicTab().then((result) => {
+                if (result) {
+                    try {
+                        if (port.isConnected == false) {
+                            port = chrome.tabs.connect(result, { name: chrome.runtime.id });
+                            port.isConnected = true;
+                        }
+                    } catch (error) {
+                        port.isConnected = false;
+                    }
+                    if (port.isConnected == false) {
+                        showNoConnected();
+                        resolve(false);
+                        return;
+                    }
+                    onMessageAddListener();
+                    resolve(true);
+                } else {
+                    Extension.isConnected = false;
+                    showNoConnected();
+                    resolve(false);
+                }
+            });
+        });
+    },
     isConnected: undefined
 };
 
 chrome.runtime.onMessage.addListener( // background, content script
     (request, sender, sendResponse) => {
-        console.log("onMessage", request);
         if (request.onload == true) {
+            reload = false;
+            if (port.isConnected == false) {
+                Extension.createConnection();
+            }
             if (noConnect.style.display == "flex") {
                 noConnect.classList.add("puff-out-center");
                 let endConnectAnim = () => {
@@ -101,13 +138,11 @@ chrome.runtime.onMessage.addListener( // background, content script
 
 chrome.runtime.onMessageExternal.addListener( // injected script
     (request, sender, sendResponse) => {
-        console.log("onMessageExternal extension", request)
         switch (request.event) {
             case 'currentTrack': // get from the key
                 setMediaData(request.currentTrack.title, getArtists(request.currentTrack, 5), request.currentTrack.cover);
                 changeState(request.isPlaying);
                 toggleLike(request.currentTrack.liked);
-                // toggleListLike(request.currentTrack.liked)
                 toggleDislike(request.currentTrack.disliked);
                 getDuration(request.currentTrack.duration);
                 getProgress(request.progress.position);
@@ -185,10 +220,9 @@ let LongPressButton = class {
             height: 0,
             width: 0
         }
+
         button.onmousedown = (event) => {
-            if (event.button == 2) {
-                return;
-            }
+            if (event.button == 2) { return; }
             this.longpresStart = true;
             this.longpressTimer = setTimeout(() => {
                 this.longpresStart = false;
@@ -198,7 +232,6 @@ let LongPressButton = class {
                 }
                 this.func();
             }, this.delay);
-
         };
 
         button.onmouseup = (event) => {
@@ -215,7 +248,7 @@ let LongPressButton = class {
 }
 
 btnYes.onclick = () => {
-    if (newOrReload == true) {
+    if (reload == false) {
         openNewTab();
     } else {
         chrome.tabs.query({
@@ -349,6 +382,46 @@ popupBtn.onclick = () => {
 }
 
 let isSettingsOpen = false;
+let setKeyDescription = (clear = false, shortcutKey, result) => {
+    selectedShortcutKey.style.background = "";
+    if (clear) {
+        let checkBoxReassignT = document.getElementById("checkBoxReassign");
+        checkBoxReassignT.innerHTML = chrome.i18n.getMessage("noShortcutSelected");
+        selectedShortcutKey.innerHTML = chrome.i18n.getMessage("selectedShortcutKey");
+        for (let j = 0; j < listsSortcutKeys.children.length; j++) {
+            listsSortcutKeys.childNodes[j].style.background = "";
+        }
+        return;
+    } else {
+        if (shortcutKey != undefined) {
+            selectedShortcutKey.innerHTML = shortcutKey.innerHTML;
+            if (result != undefined) {
+                if (result.shortcut != undefined && result.shortcut != '') {
+                    selectedShortcutKey.innerHTML = chrome.i18n.getMessage("openPopup") + result.shortcut + "'";
+                } else if (result.name != undefined) {
+                    selectedShortcutKey.style.background = "#DB0000"
+                    selectedShortcutKey.innerHTML = "'" + result.description + "' " + chrome.i18n.getMessage("isNoKeyAction");
+                }
+            }
+        }
+        try {
+            if (result == undefined) {
+                let checkBoxReassignT = document.getElementById("checkBoxReassign");
+                checkBoxReassignT.innerHTML = chrome.i18n.getMessage("noShortcutSelected");
+                return;
+            }
+            let checkBoxReassignT = document.getElementById("checkBoxReassign");
+            let checkBoxReassignText = chrome.i18n.getMessage("checkBoxReassignFirstHalf") + result.description + chrome.i18n.getMessage("checkBoxReassignSecondHalf");
+            checkBoxReassignT.innerHTML = checkBoxReassignText;
+            if (result.shortcut != undefined && result.shortcut != '') {
+                selectedShortcutKey.innerHTML = chrome.i18n.getMessage("openPopup") + result.shortcut + "'";
+            } else if (result.name != undefined) {
+                selectedShortcutKey.style.background = "#DB0000"
+                selectedShortcutKey.innerHTML = "'" + result.description + "' " + chrome.i18n.getMessage("isNoKeyAction");
+            }
+        } catch (error) {}
+    }
+}
 settings.onclick = (event) => {
     if (event.target == settings || event.target == sett || event.target == listSettings) {
         if (isSettingsOpen) {
@@ -366,20 +439,26 @@ settings.onclick = (event) => {
             listSettings.className += " scale-from-top";
             listSettings.style.display = "flex";
             isSettingsOpen = true;
-
             listsSortcutKeys.innerHTML = "";
+
             chrome.commands.getAll().then((result) => {
                 for (let i = 0; i < result.length; i++) {
                     let shortcutKey = document.createElement("DIV");
                     shortcutKey.classList.add("shortcut-key");
                     shortcutKey.innerHTML = result[i].description + " " + result[i].shortcut;
+                    try {
+                        if (Options.reassign.shortCut.index == i) {
+                            // set shortcut if previously not set
+                            Options.reassign.shortCut.shortcut = result[i].shortcut;
+                            setKeyDescription(false, shortcutKey, result[i]);
+                        }
+                    } catch (error) {}
                     shortcutKey.onclick = (ev) => {
-                        console.log("click", result[i]);
                         if (Options.selectedShortcutKey != undefined) {
                             if (result[i].name == Options.selectedShortcutKey.name) {
                                 listsSortcutKeys.childNodes[i].style.background = "";
                                 Options.selectedShortcutKey = undefined;
-                                selectShortcutKey.innerHTML = chrome.i18n.getMessage("selectedShortcutKey");
+                                setKeyDescription(true);
                                 if (checkBoxReassign.checked) {
                                     checkBoxReassign.checked = false;
                                     sendEventBackground({
@@ -412,7 +491,7 @@ settings.onclick = (event) => {
                                 listsSortcutKeys.childNodes[j].style.background = "";
                             }
                         }
-                        selectShortcutKey.innerHTML = shortcutKey.innerHTML;
+                        setKeyDescription(false, shortcutKey, result[i]);
                         if (checkBoxReassign.checked) {
                             sendEventBackground({
                                 writeOptions: true,
@@ -438,15 +517,13 @@ settings.onclick = (event) => {
                         }
                     }
                 }
-                selectShortcutKey.innerHTML = Options.reassign.shortCut.description + " " + Options.reassign.shortCut.name;
-
             });
         }
     }
 }
 
 let timeToClose;
-let log = (data) => { console.log(data) }
+let log = (...data) => { console.log(data) }
 settings.onmouseleave = () => {
     if (isSettingsOpen) return;
     settings.style.background = "";
@@ -560,28 +637,35 @@ let toggleListMenu = () => {
     }
 }
 
-let showNoConnected = (isTab = false) => {
-    //return;
-    if (Extension.isConnected == false) {
-        if (isTab) {
-            appDetected.innerHTML = chrome.i18n.getMessage("appDetected");
-            appQuestion.innerHTML = chrome.i18n.getMessage("appQuestion");
-            bntNo.style.display = "none";
-            btnYes.innerHTML = chrome.i18n.getMessage("reload");
-            noConnect.style.display = "flex";
-            noConnect.classList.add("puff-in-center");
-            newOrReload = false;
-            return;
-        } else {
-            appDetected.innerHTML = chrome.i18n.getMessage("appNoDetected");
-            appQuestion.innerHTML = chrome.i18n.getMessage("appNoQuestion");
-            btnNew.style.display = "none";
-            bntNo.style.display = "none";
-            noConnect.style.display = "flex";
-            noConnect.classList.add("puff-in-center");
-
+let showNoConnected = () => {
+    getYandexMusicTab().then((result) => {
+        if (Extension.isConnected == false) {
+            if (result) {
+                appDetected.innerHTML = chrome.i18n.getMessage("appDetected");
+                appQuestion.innerHTML = chrome.i18n.getMessage("appQuestion");
+                bntNo.style.display = "none";
+                loaderContainer.style.display = "none";
+                btnNew.style.display = "";
+                yesNoNew.style.display = "flex";
+                btnYes.innerHTML = chrome.i18n.getMessage("reload");
+                noConnect.style.display = "flex";
+                appQuestion.style.display = "";
+                noConnect.classList.add("puff-in-center");
+                reload = true;
+            } else {
+                appDetected.innerHTML = chrome.i18n.getMessage("appNoDetected");
+                appQuestion.innerHTML = chrome.i18n.getMessage("appNoQuestion");
+                loaderContainer.style.display = "none";
+                btnNew.style.display = "none";
+                bntNo.style.display = "none";
+                btnYes.innerHTML = chrome.i18n.getMessage("yes");
+                yesNoNew.style.display = "flex";
+                noConnect.style.display = "flex";
+                appQuestion.style.display = "";
+                reload = false;
+            }
         }
-    }
+    });
 }
 
 let openNewTab = (tabId) => {
@@ -646,7 +730,6 @@ let showNotification = (text, time) => {
         if (time <= options.duration * 2 + 100) { // + 100ms for focus 
             time = options.duration * 2 + 100;
         }
-        console.log("endCalckTime", Math.ceil(time));
     }
     notificationTimer = setTimeout(() => {
         notification.classList.remove("slide-bottom");
@@ -716,29 +799,36 @@ let getYandexMusicTab = () => {
     });
 }
 
+let onMessageAddListener = () => {
+    port.onDisconnect.addListener((disconnect) => {
+        Extension.isConnected = false;
+        port.isConnected = false;
+        showNoConnected();
+    });
+    port.onMessage.addListener(function(request) {
+        if (request.response) {
+            response(request.response);
+        }
+    });
+    let response = (answer) => {
+        switch (answer.case) {
+            case "extensionIsLoad":
+                if (answer.isConnect) {
+                    Extension.isConnected = true
+                } else {
+                    Extension.isConnected = false;
+                    showNoConnected();
+                    console.log("No connection");
+                }
+                break;
+        }
+    }
+}
+
 let sendEvent = (event, isResponse = false, forceObject = false) => {
     if (typeof(event) != "object") event = { data: event };
     if (forceObject) event = { data: event };
-    getYandexMusicTab().then((tab) => {
-        if (tab) {
-            chrome.tabs.sendMessage(tab, event, function(response) {
-                if (isResponse) {
-                    if (event.data == "extensionIsLoad" && response == undefined) {
-                        Extension.isConnected = false;
-                        showNoConnected(tab);
-                        console.log("No connection");
-                    } else if (response.isConnect) {
-                        Extension.isConnected = true
-                    }
-                }
-            });
-        } else {
-            if (event.data == "extensionIsLoad") {
-                Extension.isConnected = false;
-                showNoConnected();
-            }
-        }
-    }, (reject) => {});
+    port.postMessage(event);
 }
 
 let setRightFontSize = (fontSize = 1.4) => {

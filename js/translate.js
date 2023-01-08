@@ -13,10 +13,10 @@ let Translate = {
         aMail.innerHTML = "NightSoftware@outlook.com";
         writeLettr.innerHTML = chrome.i18n.getMessage("writeLetter");
         writeLettr.appendChild(aMail);
-        if (newOrReload == false) {
-            btnYes.innerHTML = chrome.i18n.getMessage("reload");
-        } else {
+        if (reload == false) {
             btnYes.innerHTML = chrome.i18n.getMessage("yes");
+        } else {
+            btnYes.innerHTML = chrome.i18n.getMessage("reload");
         }
         bntNo.innerHTML = chrome.i18n.getMessage("no");
         btnNew.innerHTML = chrome.i18n.getMessage("new");
@@ -26,7 +26,7 @@ let Translate = {
         playPauseNotify.labels[0].innerHTML = chrome.i18n.getMessage("playPauseNotify");
         prevNextNotify.labels[0].innerHTML = chrome.i18n.getMessage("prevNextNotify");
         let yesNews = document.getElementById("YesNews");
-        yesNews.innerHTML = chrome.i18n.getMessage("yes");
+        yesNews.innerHTML = chrome.i18n.getMessage("continue");
         let whatNew = document.getElementById("whatNew");
         whatNew.innerHTML = chrome.i18n.getMessage("whatNew");
         let versions = document.getElementsByClassName("versions")[0];
@@ -41,9 +41,9 @@ let Translate = {
         checkBoxSavePosT.innerHTML = chrome.i18n.getMessage("checkBoxSavePos");
         let shortcutKeyOpenPopup = document.getElementById("shortcutKeyOpenPopup");;
         shortcutKeyOpenPopup.innerHTML = chrome.i18n.getMessage("shortcutKeyOpenPopup");
-        let checkBoxReassignT = document.getElementById("checkBoxReassign");;
-        checkBoxReassignT.innerHTML = chrome.i18n.getMessage("checkBoxReassign");
         let selectedShortcutKeyT = document.getElementsByClassName("select-shortcut-key")[0];
         selectedShortcutKeyT.innerHTML = chrome.i18n.getMessage("selectedShortcutKey");
+        let allNotifications = document.getElementById("allNotifications");
+        allNotifications.innerHTML = chrome.i18n.getMessage("allNotifications");
     }
 }

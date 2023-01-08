@@ -7,19 +7,20 @@ let WhatNew = {
                 yesNews.innerHTML += " " + i;
                 yesNews.disabled = true;
                 let setTimer = () => {
-                    if (i > 0) { i--; }
-                    yesNews.innerHTML = yesNews.innerHTML.slice(0, -1);
-                    yesNews.innerHTML += i;
-                    if (i == 0) {
-                        setTimeout(function() { // need for delete "0"
-                            yesNews.innerHTML = yesNews.innerHTML.slice(0, -2);
-                            yesNews.disabled = false;
-                            yesNews.classList.remove("yesNews-disable")
-                            yesNews.onclick = () => { modalNews.style.display = "none"; }
-                        }, 1000);
-                        clearInterval(delay);
-
+                    if (i == 1) {
+                        yesNews.disabled = false;
+                        yesNews.classList.remove("yesNews-disable")
+                        yesNews.onclick = () => { modalNews.style.display = "none"; }
                     }
+                    if (i == 0) {
+                        yesNews.innerHTML = yesNews.innerHTML.slice(0, -2);
+                        clearInterval(delay);
+                        return;
+                    }
+                    yesNews.innerHTML = yesNews.innerHTML.slice(0, -1);
+                    yesNews.innerHTML += i - 1;
+                    if (i >= 0) { i--; }
+
                 }
                 let delay = setInterval(setTimer, 1000);
             } else {
@@ -55,7 +56,7 @@ let WhatNew = {
             if (!value["success"]) { return; }
             whatNewJson = value;
             let version = document.getElementById("Version");
-            version.innerHTML = chrome.i18n.getMessage("shortName");
+            version.innerHTML = chrome.i18n.getMessage("shortName") + " " + chrome.runtime.getManifest().version;
             let listChangesCoontent = document.getElementsByClassName("list-changes-coontent")[0];
             listChangesCoontent.innerHTML = "";
             for (let i = 0; i < whatNewJson["versions"].length; i++) {

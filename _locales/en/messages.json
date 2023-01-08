@@ -44,6 +44,9 @@
     "no": {
         "message": "No"
     },
+    "continue": {
+        "message": "Continue"
+    },
     "reload": {
         "message": "Reload"
     },
@@ -105,7 +108,10 @@
         "message": "Select shortcut key first!"
     },
     "noShortcutKeyAction": {
-        "message": "There is no shortcut key set for this action! Don't forget to set it in settings of your browser."
+        "message": "There is no shortcut key set for this action! Don't forget to set in keyboard shortcuts. Also, after assigning the shortcut keys, you may need to restart the browser for them to work correctly."
+    },
+    "isNoKeyAction": {
+        "message": "There is no shortcut key set for this action!"
     },
     "checkBoxSavePos": {
         "message": "Save the position and size of the popup."
@@ -113,11 +119,26 @@
     "shortcutKeyOpenPopup": {
         "message": "Select a shortcut key to open and activate the popup. (The default shortcut key will be reassigned)."
     },
-    "checkBoxReassign": {
-        "message": "The next shortcut key will be reassign -"
+    "checkBoxReassignFirstHalf": {
+        "message": "Now the shortcut key which uses as '"
+    },
+    "checkBoxReassignSecondHalf": {
+        "message": "' will be used for open popup."
+    },
+    "openPopup": {
+        "message": "Open popup window<br>'"
     },
     "selectedShortcutKey": {
         "message": "Choose from the list below."
+    },
+    "successfullyCreated": {
+        "message": "The window was successfully created!"
+    },
+    "windowAlreadyExists": {
+        "message": "The window already exists!"
+    },
+    "allNotifications": {
+        "message": "Notification every time a track is switched."
     }
 
 }

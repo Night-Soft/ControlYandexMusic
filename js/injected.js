@@ -1,5 +1,7 @@
-let extensionId = "UnknowId";
-let port, lastCase, mediaSession;
+let YandexMusicControl = {
+    id: "UnknowId",
+    port: undefined,
+}
 
 window.addEventListener("message", function(event) {
     if (event.source != window) { return; }
@@ -43,8 +45,8 @@ window.addEventListener("message", function(event) {
             break;
     }
     if (event.data.id) {
-        extensionId = event.data.id;
-        port = chrome.runtime.connect(extensionId);
+        YandexMusicControl.id = event.data.id;
+        YandexMusicControl.port = chrome.runtime.connect(YandexMusicControl.id);
         setMediaSession();
     }
     if (event.data.play) {
@@ -52,17 +54,17 @@ window.addEventListener("message", function(event) {
     }
     if (event.data.toggleVolume) {
         externalAPI.toggleMute();
-        chrome.runtime.sendMessage(extensionId, {
+        chrome.runtime.sendMessage(YandexMusicControl.id, {
             volume: externalAPI.getVolume(),
         }, );
     }
     if (event.data.toggleRepeat) {
-        chrome.runtime.sendMessage(extensionId, {
+        chrome.runtime.sendMessage(YandexMusicControl.id, {
             repeat: externalAPI.toggleRepeat(),
         });
     }
     if (event.data.toggleShuffle) {
-        chrome.runtime.sendMessage(extensionId, {
+        chrome.runtime.sendMessage(YandexMusicControl.id, {
             shuffle: externalAPI.toggleShuffle(),
         });
     }
@@ -70,27 +72,35 @@ window.addEventListener("message", function(event) {
         externalAPI.setVolume(event.data.setVolume);
     }
     if (event.data.hasOwnProperty('getProgress')) {
-        chrome.runtime.sendMessage(extensionId, {
+        chrome.runtime.sendMessage(YandexMusicControl.id, {
             progress: externalAPI.getProgress(),
         });
     }
 });
 window.onpagehide = (event) => {
-    chrome.runtime.sendMessage(extensionId, {
+    chrome.runtime.sendMessage(YandexMusicControl.id, {
         pagehide: true,
     });
 }
+window.onload = () => {
+    setTimeout(() => {
+        setActionHandler();
+    }, 5000)
+}
 
 externalAPI.on(externalAPI.EVENT_TRACK, function(event) {
-    getTracks(true);
+    getTracks(true); //this
     setMediaSession();
-    setTimeout(() => { // timer because something overrides ActionHandler.
-        setActionHandler();
-    }, 7000);
-
 });
 externalAPI.on(externalAPI.EVENT_TRACKS_LIST, function(event) {
     getTracks();
+});
+externalAPI.on(externalAPI.EVENT_STATE, function(event) {
+    chrome.runtime.sendMessage(YandexMusicControl.id, {
+        event: "STATE",
+        isPlaying: externalAPI.isPlaying(),
+        progress: externalAPI.getProgress(),
+    });
 });
 
 let getArtists = (list) => {
@@ -119,7 +129,11 @@ let getArtists = (list) => {
 
 let setMediaSession = () => {
     let current = externalAPI.getCurrentTrack();
-    let iconTrack = current.cover;
+    let iconTrack;
+    if (current == undefined) {
+        return;
+    }
+    iconTrack = current.cover;
     if (iconTrack == undefined) {
         iconTrack = 'img/icon.png'
     } else {
@@ -143,7 +157,6 @@ let setMediaSession = () => {
     } else {
         navigator.mediaSession.playbackState = "paused";
     }
-    setActionHandler();
 
 }
 let setActionHandler = () => {
@@ -151,32 +164,30 @@ let setActionHandler = () => {
         navigator.mediaSession.setActionHandler('play', function() {
             navigator.mediaSession.playbackState = "playing";
             togglePauseKey();
-            console.log("mediaSession key")
         });
         navigator.mediaSession.setActionHandler('pause', function() {
             navigator.mediaSession.playbackState = "paused";
             togglePauseKey();
-            console.log("mediaSession key")
         });
         navigator.mediaSession.setActionHandler('previoustrack', function() {
             previousKey();
-            console.log("mediaSession key")
         });
         navigator.mediaSession.setActionHandler('nexttrack', function() {
             nextKey();
-            console.log("mediaSession key")
         });
 
         navigator.mediaSession.setActionHandler('seekbackward', function(event) {
-            console.log('> User clicked "Seek Backward" icon.');
-            externalAPI.setPosition(externalAPI.getProgress().position + 10)
+            externalAPI.setPosition(externalAPI.getProgress().position - 10)
         });
 
         navigator.mediaSession.setActionHandler('seekforward', function(event) {
             externalAPI.setPosition(externalAPI.getProgress().position + 10)
-
         });
-        console.log("mediaSession set")
+
+        // need to set an empty function, because Yandex.Music overrides the ActionHandler when switching tracks.
+        // may be Yandex music was updated in November-December 2022
+        // overrided in - index.js?v=2.569.0:17 
+        navigator.mediaSession.setActionHandler = () => {};
     }
 }
 
@@ -186,7 +197,7 @@ function getTracks(eventTrack = false) {
         sourceInfo: externalAPI.getSourceInfo(),
         index: externalAPI.getTrackIndex(),
     }
-    chrome.runtime.sendMessage(extensionId, {
+    chrome.runtime.sendMessage(YandexMusicControl.id, {
         event: "currentTrack",
         eventTrack: eventTrack,
         currentTrack: externalAPI.getCurrentTrack(),
@@ -208,7 +219,7 @@ function previous() {
 
 function togglePause() {
     externalAPI.togglePause();
-    chrome.runtime.sendMessage(extensionId, {
+    chrome.runtime.sendMessage(YandexMusicControl.id, {
         event: "togglePause",
         isPlaying: externalAPI.isPlaying()
     }, );
@@ -216,25 +227,24 @@ function togglePause() {
 
 function toggleLike() {
     externalAPI.toggleLike();
-    chrome.runtime.sendMessage(extensionId, {
+    chrome.runtime.sendMessage(YandexMusicControl.id, {
         event: "toggleLike",
         isLiked: externalAPI.getCurrentTrack().liked
     });
 }
 let toggleDislike = () => {
     externalAPI.toggleDislike();
-    chrome.runtime.sendMessage(extensionId, {
+    chrome.runtime.sendMessage(YandexMusicControl.id, {
         event: "toggleDislike",
         disliked: { disliked: externalAPI.getCurrentTrack().disliked, notifyMe: true }
     });
 }
 
 let previousKey = () => {
-    console.log("previousKey");
     let promise = externalAPI.prev();
     promise.then(
         function() {
-            chrome.runtime.sendMessage(extensionId, {
+            chrome.runtime.sendMessage(YandexMusicControl.id, {
                 key: true,
                 dataKey: "previous-key",
                 currentTrack: externalAPI.getCurrentTrack()
@@ -242,10 +252,8 @@ let previousKey = () => {
         });
 }
 let togglePauseKey = () => {
-    console.log("togglePauseKey");
-
     externalAPI.togglePause();
-    chrome.runtime.sendMessage(extensionId, {
+    chrome.runtime.sendMessage(YandexMusicControl.id, {
         key: true,
         dataKey: "togglePause-key",
         currentTrack: externalAPI.getCurrentTrack()
@@ -253,11 +261,9 @@ let togglePauseKey = () => {
     getTracks();
 }
 let nextKey = () => {
-    console.log("nextKey");
-
     let promise = externalAPI.next();
     promise.then(function() {
-        chrome.runtime.sendMessage(extensionId, {
+        chrome.runtime.sendMessage(YandexMusicControl.id, {
             key: true,
             dataKey: "next-key",
             currentTrack: externalAPI.getCurrentTrack()
@@ -266,9 +272,9 @@ let nextKey = () => {
 }
 let toggleLikeKey = () => {
     externalAPI.toggleLike();
-    chrome.runtime.sendMessage(extensionId, {
+    chrome.runtime.sendMessage(YandexMusicControl.id, {
         event: "toggleLike",
-        key: true, // key: for background scritpr
+        key: true, // key: for background script
         dataKey: "toggleLike-key",
         isLiked: externalAPI.getCurrentTrack().liked,
         currentTrack: externalAPI.getCurrentTrack()

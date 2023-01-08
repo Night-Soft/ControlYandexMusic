@@ -28,28 +28,64 @@ let notificationTrackName = document.getElementsByClassName("notification-track-
 let contentListMenu = document.getElementsByClassName("content-list-menu")[0];
 let modalListMenu = document.getElementsByClassName("modal-list-menu")[0];
 
-let isMenuListOpen = false;
+let port = {
+    isConnected: false
+};
 let fromPopup = true;
-let reload = true;
+let reload = false;
 let urlCover;
 
 let Extension = {
     onload: function() {
-        sendEvent("extensionIsLoad", true);
-        Extension.addTransition();
+        this.createConnection().then((result) => {
+            if (result) {
+                sendEvent("extensionIsLoad");
+            }
+        });
     },
     addTransition: () => {
         transition[0].style.transition = "0.7s"
         transition[1].style.transition = "0.7s"
         transition[2].style.transition = "0.7s"
     },
+    createConnection: async() => {
+        return new Promise((resolve, reject) => {
+            getYandexMusicTab().then((result) => {
+                if (result) {
+                    try {
+                        if (port.isConnected == false) {
+                            port = chrome.tabs.connect(result, { name: chrome.runtime.id });
+                            port.isConnected = true;
+                        }
+                    } catch (error) {
+                        port.isConnected = false;
+                    }
+                    if (port.isConnected == false) {
+                        showNoConnected();
+                        resolve(false);
+                        return;
+                    }
+                    onMessageAddListener();
+                    resolve(true);
+                } else {
+                    Extension.isConnected = false;
+                    showNoConnected();
+                    resolve(false);
+                }
+            });
+        });
+    },
+    isMenuListOpen: undefined,
     isConnected: undefined
 };
 
 chrome.runtime.onMessage.addListener( // background, content script
     (request, sender, sendResponse) => {
-        console.log("request", request);
         if (request.onload) {
+            reload = false;
+            if (port.isConnected == false) {
+                Extension.createConnection();
+            }
             if (noConnect.style.display == "flex") {
                 noConnect.classList.add("puff-out-center");
                 let endConnectAnim = () => {
@@ -77,14 +113,11 @@ chrome.runtime.onMessage.addListener( // background, content script
 
 chrome.runtime.onMessageExternal.addListener( // injected script
     (request, sender, sendResponse) => {
-        console.log("onMessageExternal popup", request);
-
         switch (request.event) {
             case 'currentTrack': // get from the key
                 setMediaData(request.currentTrack.title, getArtists(request.currentTrack, 5), request.currentTrack.cover);
                 changeState(request.isPlaying);
                 toggleLike(request.currentTrack.liked);
-                //toggleListLike(request.currentTrack.liked)
                 toggleDislike(request.currentTrack.disliked);
                 getDuration(request.currentTrack.duration);
                 getProgress(request.progress.position);
@@ -111,6 +144,10 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 }
                 toggleDislike(request.disliked.disliked, true);
                 toggleListDisliked(request.disliked.disliked);
+                break;
+            case "STATE":
+                changeState(request.isPlaying);
+                trackUpdater(getDuration(), getProgress(), getIsPlay(request.isPlaying));
                 break;
             default:
                 break;
@@ -148,7 +185,7 @@ chrome.runtime.onMessageExternal.addListener( // injected script
             }
         }
         if (request.pagehide) {
-            if (reload) return;
+            if (reload == true) return;
             sendEventBackground({ isConnected: false })
             window.close();
         }
@@ -163,13 +200,11 @@ let FontSize = {
 chrome.windows.onBoundsChanged.addListener(
     function(ev) {
         if (popupPosition.windowId == ev.id) {
-            console.log("send for save bounds", ev);
-            ev.isTrackListOpen = isMenuListOpen;
+            ev.isTrackListOpen = Extension.isMenuListOpen;
             ev.prevPlaylistHeight = popupPosition.prevPlaylistHeight;
             sendEventBackground({ popupBounds: ev });
             if (FontSize.ifMore) {
                 if (ev.height > 370) {
-                    console.log("ifMore")
                     FontSize.size = 1.3;
                     FontSize.maxPx = 50;
                     FontSize.ifMore = false;
@@ -179,7 +214,6 @@ chrome.windows.onBoundsChanged.addListener(
             }
             if (FontSize.ifLess) {
                 if (ev.height < 370) {
-                    console.log("ifLess")
                     FontSize.size = 1.15;
                     FontSize.maxPx = 40;
                     FontSize.ifLess = false;
@@ -200,9 +234,7 @@ let LongPressButton = class {
         this.onclickFunc;
 
         button.onmousedown = (event) => {
-            if (event.button == 2) {
-                return;
-            }
+            if (event.button == 2) { return; }
             this.longpresStart = true;
             this.longpressTimer = setTimeout(() => {
                 this.longpresStart = false;
@@ -212,7 +244,6 @@ let LongPressButton = class {
                 }
                 this.func();
             }, this.delay);
-
         };
 
         button.onmouseup = (event) => {
@@ -230,7 +261,7 @@ let LongPressButton = class {
 
 btnYes.onclick = () => {
     //sendEventBackground({ keyOpenPage: false });
-    if (reload == true) {
+    if (reload == false) {
         openNewTab();
     } else {
         chrome.tabs.query({
@@ -337,6 +368,7 @@ let PopupPosition = class {
         } else {
             return PopupPosition.instance
         }
+
         let popupWindow = chrome.windows.getAll({ populate: true, windowTypes: ['popup'] });
         popupWindow.then((result) => {
             if (result.length) {
@@ -351,10 +383,12 @@ let PopupPosition = class {
                 this.windowId = undefined;
             }
         }, (reject) => {});
+
         this.x = 0;
         this.y = 0;
         this.width = 250;
         this.height = 110;
+        this.minHeight = 50;
         this.playlistHeight = 270;
         this.prevPlaylistHeight = 0;
         this.windowId;
@@ -365,9 +399,14 @@ let popupPosition = new PopupPosition();
 
 let toggleListMenu = () => {
     hamburgerMenuList.classList.toggle("change-list");
-    if (isMenuListOpen == false) {
+    if (Extension.isMenuListOpen == false || Extension.isMenuListOpen == undefined) {
         popupPosition.x = screenLeft;
         popupPosition.y = screenTop;
+        if (window.innerHeight <= 103) {
+            setTimeout(() => {
+                setRightFontSize();
+            }, 100);
+        }
         if (window.innerHeight < popupPosition.playlistHeight) {
             if (popupPosition.prevPlaylistHeight <= popupPosition.playlistHeight) {
                 if (window.innerWidth <= popupPosition.width) {
@@ -388,17 +427,27 @@ let toggleListMenu = () => {
             easing: ['cubic-bezier(.85, .2, 1, 1)']
         };
 
-        let options = {
-            duration: 500,
-        }
+        let options = { duration: 500 }
         list.style.overflowY = "hidden"
         list.style.display = "flex";
         let anim = list.animate(keyframe, options);
-        isMenuListOpen = true;
+        Extension.isMenuListOpen = true;
         anim.onfinish = () => {
-            list.style.overflowY = "auto"
+            list.style.height = "auto";
+            list.style.overflowY = "auto";
             scrollToSelected();
         }
+
+        let keyframeHamburger = { opacity: ['1', '0'] };
+        let optionsHamburger = { duration: 450 };
+        let animH = hamburgerMenuList.animate(keyframeHamburger, optionsHamburger);
+        animH.onfinish = () => {
+            hamburgerMenuList.style.top = "120px";
+            hamburgerMenuList.style.right = "10px";
+            keyframeHamburger = { opacity: ['0', '1'] };
+            hamburgerMenuList.animate(keyframeHamburger, optionsHamburger);
+        }
+
     } else {
         popupPosition.prevPlaylistHeight = window.innerHeight;
         keyframe = {
@@ -406,12 +455,10 @@ let toggleListMenu = () => {
             easing: ['cubic-bezier(.85, .2, 1, 1)']
         };
 
-        let options = {
-            duration: 500,
-        }
+        let options = { duration: 500 }
         list.style.overflowY = "hidden"
         let anim = list.animate(keyframe, options);
-        isMenuListOpen = false;
+        Extension.isMenuListOpen = false;
         anim.onfinish = () => {
             list.style.display = "none";
             window.resizeTo(window.innerWidth, popupPosition.height);
@@ -420,30 +467,50 @@ let toggleListMenu = () => {
                 return;
             }
             window.moveTo(popupPosition.x, popupPosition.y);
+            anim.onfinish = null;
+        }
+
+        let keyframeHamburger = { opacity: ['1', '0'] };
+        let optionsHamburger = { duration: 450 }
+        let animH = hamburgerMenuList.animate(keyframeHamburger, optionsHamburger);
+        animH.onfinish = () => {
+            hamburgerMenuList.style.top = "0px";
+            hamburgerMenuList.style.right = "";
+            keyframeHamburger = { opacity: ['0', '1'] };
+            hamburgerMenuList.animate(keyframeHamburger, optionsHamburger);
         }
     }
 }
 
-let showNoConnected = (isTab = false) => {
-    if (Extension.isConnected == false) {
-        //sendEventBackground({ keyOpenPage: true });
-        if (isTab) {
-            appDetected.innerHTML = chrome.i18n.getMessage("appDetected");
-            appQuestion.innerHTML = chrome.i18n.getMessage("appQuestion");
-            bntNo.style.display = "none";
-            btnYes.innerHTML = chrome.i18n.getMessage("reload");
-            noConnect.style.display = "flex";
-            noConnect.classList.add("puff-in-center");
-            reload = false;
-            return;
-        } else {
-            appDetected.innerHTML = chrome.i18n.getMessage("appNoDetected");
-            appQuestion.innerHTML = chrome.i18n.getMessage("appNoQuestion");
-            btnNew.style.display = "none";
-            bntNo.style.display = "none";
-            noConnect.style.display = "flex";
+let showNoConnected = () => {
+    getYandexMusicTab().then((result) => {
+        if (Extension.isConnected == false) {
+            if (result) {
+                appDetected.innerHTML = chrome.i18n.getMessage("appDetected");
+                appQuestion.innerHTML = chrome.i18n.getMessage("appQuestion");
+                bntNo.style.display = "none";
+                loaderContainer.style.display = "none";
+                btnNew.style.display = "";
+                yesNoNew.style.display = "flex";
+                btnYes.innerHTML = chrome.i18n.getMessage("reload");
+                noConnect.style.display = "flex";
+                appQuestion.style.display = "";
+                noConnect.classList.add("puff-in-center");
+                reload = true;
+            } else {
+                appDetected.innerHTML = chrome.i18n.getMessage("appNoDetected");
+                appQuestion.innerHTML = chrome.i18n.getMessage("appNoQuestion");
+                loaderContainer.style.display = "none";
+                btnNew.style.display = "none";
+                bntNo.style.display = "none";
+                btnYes.innerHTML = chrome.i18n.getMessage("yes");
+                yesNoNew.style.display = "flex";
+                noConnect.style.display = "flex";
+                appQuestion.style.display = "";
+                reload = false;
+            }
         }
-    }
+    });
 }
 
 let openNewTab = (tabId) => {
@@ -505,7 +572,6 @@ let showNotification = (text) => {
     notification.animate(keyframe, options);
     notificationTimer = setTimeout(() => {
         notification.classList.remove("slide-bottom");
-
         let keyframe = {
             transform: ['translateY(0%)', 'translateY(-100%)'],
         };
@@ -532,32 +598,39 @@ let getYandexMusicTab = () => {
     });
 }
 
+let onMessageAddListener = () => {
+    port.onDisconnect.addListener((disconnect) => {
+        Extension.isConnected = false;
+        port.isConnected = false;
+        showNoConnected();
+    });
+    port.onMessage.addListener(function(request) {
+        if (request.response) {
+            response(request.response);
+        }
+    });
+    let response = (answer) => {
+        switch (answer.case) {
+            case "extensionIsLoad":
+                if (answer.isConnect) {
+                    Extension.isConnected = true
+                } else {
+                    Extension.isConnected = false;
+                    showNoConnected();
+                    console.log("No connection");
+                }
+                break;
+        }
+    }
+}
+
 let sendEvent = (event, isResponse = false, forceObject = false) => {
     if (typeof(event) != "object") event = { data: event };
     if (forceObject) event = { data: event };
-    getYandexMusicTab().then((tab) => {
-        if (tab) {
-            chrome.tabs.sendMessage(tab, event, function(response) {
-                if (isResponse) {
-                    console.log("response", response);
+    port.postMessage(event);
 
-                    if (event.data == "extensionIsLoad" && response == undefined) {
-                        Extension.isConnected = false;
-                        showNoConnected(tab);
-                        console.log("No connection");
-                    } else if (response.isConnect) {
-                        Extension.isConnected = true
-                    }
-                }
-            });
-        } else {
-            if (event.data == "extensionIsLoad") {
-                Extension.isConnected = false;
-                showNoConnected();
-            }
-        }
-    }, (reject) => {});
 }
+
 let removeLastWorld = (textElement) => {
     textElement.trim();
     let lastIndex = textElement.lastIndexOf(" ");
@@ -615,7 +688,9 @@ let setMediaData = (trackTitle, trackArtists, iconTrack) => {
 }
 
 let changeState = (isPlaying) => {
-    if (State.isPlay != isPlaying) {
+    if (State.isPlay == isPlaying) {
+        return;
+    } else {
         State.isPlay = isPlaying;
     }
     if (isPlaying == false) {
@@ -663,12 +738,9 @@ let testImage = (url, size = 400, callback) => {
         modalCover[0].onload = () => {
             modal[0].style.display = "flex";
             callback.animate(callback.parameter); // call animation
-
         }
 
-    } catch (error) {
-        console.log(error);
-    }
+    } catch (error) { console.log(error); }
 }
 
 let animateMainImage = (item) => {
@@ -728,7 +800,6 @@ let Options = {
 
 let sendEventBackground = (event, callback) => { // event should be as object.
     chrome.runtime.sendMessage(event, function(response) {
-        console.log("response", response);
         if (response != undefined) {
             if (callback != undefined) {
                 callback(response.options);
@@ -738,7 +809,6 @@ let sendEventBackground = (event, callback) => { // event should be as object.
 };
 
 let setOptions = (options) => {
-        console.log("options", options)
         if (options.isDarkTheme != undefined) {
             Options.isDarkTheme = options.isDarkTheme;
             if (options.isDarkTheme) {
@@ -755,9 +825,7 @@ let setOptions = (options) => {
                 } else {
                     setIncreaseCover(false);
                 }
-            } catch (error) {
-                console.log(error)
-            }
+            } catch (error) { console.log(error) }
         }
         if (options.isDislikeButton != undefined) {
             Options.isDislikeButton = options.isDislikeButton;
@@ -773,14 +841,11 @@ let setOptions = (options) => {
         }
         if (options.popupBounds != undefined) {
             Options.popupBounds = options.popupBounds;
-            if (options.popupBounds.prevPlaylistHeight) {
-                let popupPos = new PopupPosition();
-                popupPos.prevPlaylistHeight = options.popupBounds.prevPlaylistHeight;
+            if (Extension.isMenuListOpen == undefined) {
+                if (options.popupBounds.isTrackListOpen) {
+                    toggleListMenu();
+                }
             }
-            if (options.popupBounds.isTrackListOpen) {
-                toggleListMenu();
-            }
-
         }
     }
     // END OPTIONS
