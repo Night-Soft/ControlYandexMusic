@@ -69,12 +69,12 @@ let setIncreaseCover = (isIncrease = false) => {
         rootCss.style.setProperty('--pixselsForReduce', '20px');
         rootCss.style.setProperty('--coverBackgroundSize', '35px');
         Options.isReduce = true;
-        changeState(State.isPlay);
+        try { changeState(State.isPlay); } catch (error) { console.log(error); }
     } else {
         rootCss.style.setProperty('--pixselsForReduce', '0px');
         rootCss.style.setProperty('--coverBackgroundSize', '45px');
         Options.isReduce = false;
-        changeState(State.isPlay);
+        try { changeState(State.isPlay); } catch (error) { console.log(error); }
     }
 }
 

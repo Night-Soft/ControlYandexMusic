@@ -3,7 +3,11 @@ let Slider = class {
         this.groove = groove;
         this.currentGroove = currentGroove;
         this.handle = handle;
-        this.helper = helper;
+        this.Helper = {
+            element: helper,
+            isShown: false,
+            isHelper: true
+        }
 
         groove.onmousemove = this.onMouseMove.bind(this);
         groove.onmouseleave = this.onMouseLeave.bind(this);
@@ -15,15 +19,14 @@ let Slider = class {
         this.scale = 50;
         this.scaleOnMouseMove = 50;
         this.maxScale = 100;
-        this.isHelper = true;
         this.isMouseEnter = false;
         this.isOwnDataHelper = false;
         groove.onmouseenter = (event) => {
             this.isMouseEnter = true;
             setTimeout(() => {
-                if (this.isHelper) {
+                if (this.Helper.isHelper) {
                     if (this.isMouseEnter == true) {
-                        this.helper.style.display = "block";
+                        this.showHelper(true);
                         this.setPositionHelper(event);
                     }
                 }
@@ -60,7 +63,7 @@ let Slider = class {
     ownMouseMove(event) {};
     onMouseLeave(event) {
         this.isMouseEnter = false;
-        this.helper.style.display = "none";
+        this.showHelper(false);
         this.groove.onmouseleave = this.onMouseLeave.bind(this);
         this.groove.onmousemove = this.onMouseMove.bind(this);
         this.ownMouseLeave(event);
@@ -121,10 +124,10 @@ let Slider = class {
     }
     setPositionHelper(event) {
         if (event.hasOwnProperty("scale")) {
-            if (this.isHelper) {
+            if (this.Helper.isHelper) {
                 let x = event.scale * this.groove.offsetWidth / this.maxScale;
                 if (x >= 0 && x <= this.groove.offsetWidth) {
-                    this.helper.style.left = x + this.groove.offsetLeft - this.helper.offsetWidth + this.helper.offsetWidth / 2 + "px";
+                    this.Helper.element.style.left = x + this.groove.offsetLeft - this.Helper.element.offsetWidth + this.Helper.element.offsetWidth / 2 + "px";
                 }
                 let percent = this.counter(x);
                 this.scaleOnMouseMove = percent;
@@ -135,10 +138,10 @@ let Slider = class {
             }
             return;
         }
-        if (this.isHelper) {
+        if (this.Helper.isHelper) {
             let x = event.x - this.groove.offsetLeft;
             if (x >= 0 && x <= this.groove.offsetWidth) {
-                this.helper.style.left = x + this.groove.offsetLeft - this.helper.offsetWidth + this.helper.offsetWidth / 2 + "px";
+                this.Helper.element.style.left = x + this.groove.offsetLeft - this.Helper.element.offsetWidth + this.Helper.element.offsetWidth / 2 + "px";
             }
             let percent = this.counter(x);
             this.scaleOnMouseMove = percent;
@@ -148,30 +151,19 @@ let Slider = class {
             }
         }
     }
-    setDataHelper(data) {
-        this.helper.innerHTML = data;
-    }
-    display(bool) {
-        if (bool) {
-            this.groove.style.display = "flex";
-            this.currentGroove.style.display = "block";
-            this.handle.style.display = "block";
-            this.helper.style.display = "block";
-        } else {
-            this.groove.style.display = "";
-            this.currentGroove.style.display = "";
-            this.handle.style.display = "";
-            this.helper.style.display = "";
-        }
 
+    setDataHelper(data) {
+        this.Helper.element.innerHTML = data;
     }
+
     showHelper(bool) {
+        if (bool == this.Helper.isShown) return;
         if (bool) {
-            this.isHelper = true;
-            this.helper.style.display = "block";
+            this.Helper.isShown = true;
+            this.Helper.element.style.display = "block";
         } else {
-            this.isHelper = false;
-            this.helper.style.display = "none";
+            this.Helper.isShown = false;
+            this.Helper.element.style.display = "none";
         }
     }
 }
@@ -240,12 +232,17 @@ contentGrooveVolume.onmouseleave = () => {
         sliderVolumeContent.addEventListener("animationend", endVolumeAnim);
         sliderVolumeContent.style.animation = "hide-volume 300ms";
         isVolAnim = false;
+        sliderVolume.showHelper(false);
     }
 }
 
 let updateVolume = (volume) => {
     volume = volume * 100;
-    sliderVolumeContent.style.display = "block"; // for slider can get offset
+    let isVolume;
+    if (sliderVolumeContent.style.display != "block") {
+        sliderVolumeContent.style.display = "block"; // for slider can get offset
+        isVolume = false;
+    }
     if (volume >= 50) {
         sliderVolume.setPosition({ scale: volume });
         updateToggleVolumeIcon(volume);
@@ -257,7 +254,9 @@ let updateVolume = (volume) => {
         sliderVolume.setPosition({ scale: volume });
         updateToggleVolumeIcon(volume);
     }
-    sliderVolumeContent.style.display = "none";
+    if (isVolume == false) {
+        sliderVolumeContent.style.display = "none";
+    }
 }
 
 let updateRepeat = (repeat) => {
@@ -265,34 +264,17 @@ let updateRepeat = (repeat) => {
         toggleRepeat.style.display = "none";
         return;
     }
-    if (typeof(fromPopup) != 'undefined') {
-        if (repeat === true) {
-            toggleRepeat.style.backgroundPositionY = "-6px";
-            toggleRepeat.style.filter = whiteFilter;
-            toggleRepeat.style.opacity = "1";
-        } else {
-            toggleRepeat.style.backgroundPositionY = "-6px";
-            toggleRepeat.style.filter = "";
-            toggleRepeat.style.opacity = "";
-        }
-        if (repeat === 1) {
-            toggleRepeat.style.backgroundPositionY = "-36px";
-            toggleRepeat.style.filter = whiteFilter;
-            toggleRepeat.style.opacity = "1";
-        }
-        return;
-    }
     if (repeat === true) {
-        toggleRepeat.style.backgroundPositionY = "-6px";
+        toggleRepeat.style.backgroundImage = "url(img/repeat.svg)"
         toggleRepeat.style.filter = whiteFilter;
         toggleRepeat.style.opacity = "1";
     } else {
-        toggleRepeat.style.backgroundPositionY = "-6px";
+        toggleRepeat.style.backgroundImage = "url(img/repeat.svg)"
         toggleRepeat.style.filter = "";
         toggleRepeat.style.opacity = "";
     }
     if (repeat === 1) {
-        toggleRepeat.style.backgroundPositionY = "-36px";
+        toggleRepeat.style.backgroundImage = "url(img/repeatOne.svg)";
         toggleRepeat.style.filter = whiteFilter;
         toggleRepeat.style.opacity = "1";
     }
@@ -324,6 +306,7 @@ toggleVolume.onclick = (event) => {
 
 }
 toggleVolume.onwheel = (event) => {
+    sliderVolume.showHelper(true);
     if (event.deltaY < 0) {
         if (sliderVolume.scale <= sliderVolume.maxScale) {
             sliderVolume.scale += 4;
@@ -346,24 +329,13 @@ toggleVolume.onwheel = (event) => {
 }
 
 let updateToggleVolumeIcon = (scale) => {
-    if (typeof(fromPopup) != 'undefined') {
-        if (scale >= 50) {
-            toggleVolume.style.backgroundPositionY = "-5px";
-        } else if (scale < 50 && scale != 0) {
-            toggleVolume.style.backgroundPositionY = "-35px";
-        }
-        if (scale <= 0) {
-            toggleVolume.style.backgroundPositionY = "-65px";
-        }
-        return;
-    }
     if (scale >= 50) {
-        toggleVolume.style.backgroundPositionY = "-5px";
+        toggleVolume.style.backgroundImage = "url(img/volumeMax.svg)";
     } else if (scale < 50 && scale != 0) {
-        toggleVolume.style.backgroundPositionY = "-35px";
+        toggleVolume.style.backgroundImage = "url(img/volumeMiddle.svg)";
     }
     if (scale <= 0) {
-        toggleVolume.style.backgroundPositionY = "-65px";
+        toggleVolume.style.backgroundImage = "url(img/volumeMute.svg)";
     }
 }
 

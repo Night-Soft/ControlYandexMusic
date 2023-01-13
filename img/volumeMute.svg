@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="28" height="28" version="1.1" xmlns="http://www.w3.org/2000/svg">
+ <g transform="translate(0,-56)" fill="none" fill-rule="evenodd">
+  <path d="m0 56h28v28h-28z"/>
+  <path d="m2 58h24v24h-24z" opacity=".2"/>
+  <path d="m3 73h4.057l7.943 5v-16l-7.972 5h-4.028zm18-1.586 2.828 2.829 1.415-1.415-2.829-2.828 2.829-2.828-1.415-1.415-2.828 2.829-2.828-2.829-1.415 1.415 2.829 2.828-2.829 2.828 1.415 1.415z" fill="#c2c2c2"/>
+ </g>
+</svg>

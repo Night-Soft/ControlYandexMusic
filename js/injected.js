@@ -102,6 +102,13 @@ externalAPI.on(externalAPI.EVENT_STATE, function(event) {
         progress: externalAPI.getProgress(),
     });
 });
+externalAPI.on(externalAPI.EVENT_VOLUME, function(event) {
+    console.log("event volume", externalAPI.getVolume());
+    chrome.runtime.sendMessage(YandexMusicControl.id, {
+        event: "VOLUME",
+        volume: externalAPI.getVolume()
+    });
+});
 
 let getArtists = (list) => {
     let getArtistsTitle = (listArtists) => {

@@ -147,7 +147,10 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 break;
             case "STATE":
                 changeState(request.isPlaying);
-                trackUpdater(getDuration(), getProgress(), getIsPlay(request.isPlaying));
+                trackUpdater(getDuration(), getProgress(request.progress.position), getIsPlay(request.isPlaying));
+                break;
+            case "VOLUME":
+                updateVolume(request.volume);
                 break;
             default:
                 break;
@@ -201,7 +204,8 @@ chrome.windows.onBoundsChanged.addListener(
     function(ev) {
         if (popupPosition.windowId == ev.id) {
             ev.isTrackListOpen = Extension.isMenuListOpen;
-            ev.prevPlaylistHeight = popupPosition.prevPlaylistHeight;
+            if (Extension.isMenuListOpen == true) { popupPosition.playlistHeight = window.innerHeight; }
+            ev.playlistHeight = popupPosition.playlistHeight - popupPosition.frameHeight;
             sendEventBackground({ popupBounds: ev });
             if (FontSize.ifMore) {
                 if (ev.height > 370) {
@@ -209,7 +213,6 @@ chrome.windows.onBoundsChanged.addListener(
                     FontSize.maxPx = 50;
                     FontSize.ifMore = false;
                     FontSize.ifLess = true;
-                    setRightFontSize(FontSize.size, FontSize.maxPx, true);
                 }
             }
             if (FontSize.ifLess) {
@@ -218,7 +221,6 @@ chrome.windows.onBoundsChanged.addListener(
                     FontSize.maxPx = 40;
                     FontSize.ifLess = false;
                     FontSize.ifMore = true;
-                    setRightFontSize(FontSize.size, FontSize.maxPx, true);
                 }
             }
         }
@@ -386,42 +388,66 @@ let PopupPosition = class {
 
         this.x = 0;
         this.y = 0;
-        this.width = 250;
-        this.height = 110;
-        this.minHeight = 50;
-        this.playlistHeight = 270;
-        this.prevPlaylistHeight = 0;
         this.windowId;
+        this.correctMinSize();
+    }
+    
+    #popupWidth = 250;
+    #popupHeight = 110;
+    #popupPlaylistHeight = 270;
+    correctMinSize() {
+        if (window.innerHeight < 110) {
+            window.resizeTo(this.width, this.height);
+        }
+    }
+    get width() {
+        if (window.outerWidth < 250 + this.frameWidth) {
+            return 250 + this.frameWidth;
+        }
+        return window.outerWidth; // + this.frameWidth;
+    }
+    set width(value) {
+        this.#popupWidth = value + this.frameWidth;
+    }
+
+    get height() {
+        if (this.#popupHeight < 110 + this.frameHeight) {
+            return 110 + this.frameHeight;
+        }
+        return this.#popupHeight;
+    }
+    set height(value) {
+        this.#popupHeight = value + this.frameHeight;
+    }
+
+    get playlistHeight() {
+        if (this.#popupPlaylistHeight < 270 + this.frameHeight) {
+            return 270 + this.frameHeight;
+        }
+        return this.#popupPlaylistHeight;
+    }
+    set playlistHeight(value) {
+        this.#popupPlaylistHeight = value + this.frameHeight;
+    }
+
+    get frameHeight() {
+        return window.outerHeight - window.innerHeight;
+    }
+    get frameWidth() {
+        return window.outerWidth - window.innerWidth;
     }
 
 }
 let popupPosition = new PopupPosition();
 
-let toggleListMenu = () => {
+let toggleListMenu = (saveHeight = true) => {
     hamburgerMenuList.classList.toggle("change-list");
     if (Extension.isMenuListOpen == false || Extension.isMenuListOpen == undefined) {
         popupPosition.x = screenLeft;
         popupPosition.y = screenTop;
-        if (window.innerHeight <= 103) {
-            setTimeout(() => {
-                setRightFontSize();
-            }, 100);
-        }
-        if (window.innerHeight < popupPosition.playlistHeight) {
-            if (popupPosition.prevPlaylistHeight <= popupPosition.playlistHeight) {
-                if (window.innerWidth <= popupPosition.width) {
-                    window.resizeTo(popupPosition.width, popupPosition.playlistHeight);
-                } else {
-                    window.resizeTo(window.innerWidth, popupPosition.playlistHeight);
-                }
-            } else {
-                if (window.innerWidth <= popupPosition.width) {
-                    window.resizeTo(popupPosition.width, window.prevPlaylistHeight);
-                } else {
-                    window.resizeTo(window.innerWidth, popupPosition.prevPlaylistHeight);
-                }
-            }
-        }
+        if (saveHeight) { popupPosition.height = window.innerHeight; }
+        window.resizeTo(popupPosition.width, popupPosition.playlistHeight);
+
         keyframe = {
             height: ['0px', '100vh'],
             easing: ['cubic-bezier(.85, .2, 1, 1)']
@@ -447,9 +473,8 @@ let toggleListMenu = () => {
             keyframeHamburger = { opacity: ['0', '1'] };
             hamburgerMenuList.animate(keyframeHamburger, optionsHamburger);
         }
-
     } else {
-        popupPosition.prevPlaylistHeight = window.innerHeight;
+        popupPosition.playlistHeight = window.innerHeight;
         keyframe = {
             height: ['100vh', '0px'],
             easing: ['cubic-bezier(.85, .2, 1, 1)']
@@ -461,7 +486,7 @@ let toggleListMenu = () => {
         Extension.isMenuListOpen = false;
         anim.onfinish = () => {
             list.style.display = "none";
-            window.resizeTo(window.innerWidth, popupPosition.height);
+            window.resizeTo(popupPosition.width, popupPosition.height);
             if (popupPosition.x != screenLeft) {
                 window.moveTo(screenLeft, screenTop);
                 return;
@@ -650,39 +675,12 @@ let setRightSize = (element, maxWidth, maxHeight, fontSize = 1) => {
         setRightSize(element, maxWidth, maxHeight);
     }
 }
-let setRightFontSize = (fontSize = FontSize.size, px = FontSize.maxPx, setFont) => {
-    if (setFont) {
-        artistsName[0].style.fontSize = fontSize + "rem";
-        trackName[0].style.fontSize = fontSize + "rem";
-    }
-    let heightArtist = artistsName[0].offsetHeight;
-    let heightTrack = trackName[0].offsetHeight;
-
-    if (heightArtist + heightTrack > px) {
-        if (fontSize <= 0.85) {
-            if (heightArtist > 20) {
-                artistsName[0].innerHTML = removeLastWorld(artistsName[0].innerHTML) + "...";
-                setRightFontSize(fontSize, px);
-            }
-            if (heightTrack > 20) {
-                trackName[0].innerHTML = removeLastWorld(trackName[0].innerHTML) + "...";
-                setRightFontSize(fontSize, px);
-            }
-        }
-        fontSize = fontSize - 0.05;
-        fontSize = fontSize.toFixed(2);
-        artistsName[0].style.fontSize = fontSize + "rem";
-        trackName[0].style.fontSize = fontSize + "rem";
-        setRightFontSize(fontSize, px);
-    }
-}
 
 let setMediaData = (trackTitle, trackArtists, iconTrack) => {
     artistsName[0].innerHTML = trackArtists;
     trackName[0].innerHTML = trackTitle;
     artistsName[0].style.fontSize = "";
     trackName[0].style.fontSize = "";
-    setRightFontSize();
     urlCover = getUrl(iconTrack, 50);
     trackImage[0].style.backgroundImage = "url(" + urlCover + ")";
 }
@@ -842,10 +840,14 @@ let setOptions = (options) => {
         if (options.popupBounds != undefined) {
             Options.popupBounds = options.popupBounds;
             if (Extension.isMenuListOpen == undefined) {
+                popupPosition.playlistHeight = options.popupBounds.playlistHeight;
                 if (options.popupBounds.isTrackListOpen) {
-                    toggleListMenu();
+                    popupPosition.height = 110;
+                    toggleListMenu(false);
+                    return;
                 }
             }
+            popupPosition.correctMinSize();
         }
     }
     // END OPTIONS

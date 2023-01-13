@@ -21,7 +21,6 @@ let yesNews = document.getElementById("YesNews");
 let whatNew = document.getElementById("whatNew");
 let sett = document.getElementById("settings");
 
-
 let container = document.getElementsByClassName("container")[0];
 let containerMenu = document.getElementsByClassName("content-menu")[0];
 let about = document.getElementsByClassName("side")[3];
@@ -45,15 +44,13 @@ let notificationTrackName = document.getElementsByClassName("notification-track-
 let popupBtn = document.getElementsByClassName("popup-btn")[0];
 let listsSortcutKeys = document.getElementsByClassName("list-shortcut-keys")[0];
 let selectedShortcutKey = document.getElementsByClassName("select-shortcut-key")[0];
-
-
-
 let contentListMenu = document.getElementsByClassName("content-list-menu")[0];
 let modalListMenu = document.getElementsByClassName("modal-list-menu")[0];
 
 let port = {
     isConnected: false
 };
+
 let isMenuListOpen = false;
 let isMenuOpen = false;
 let reload = true;
@@ -170,6 +167,13 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 toggleDislike(request.disliked.disliked, true);
                 toggleListDisliked(request.disliked.disliked);
                 break;
+            case "STATE":
+                changeState(request.isPlaying);
+                trackUpdater(getDuration(), getProgress(), getIsPlay(request.isPlaying));
+                break;
+            case "VOLUME":
+                updateVolume(request.volume);
+                break;
             default:
                 break;
         }
@@ -211,15 +215,11 @@ chrome.runtime.onMessageExternal.addListener( // injected script
 let LongPressButton = class {
     constructor(button, func, delay = 750) {
         this.button = button;
+        this.func = func;
         this.delay = delay;
         this.longpresStart = true;
         this.longpressTimer;
-        this.func = func;
         this.onclickFunc;
-        this.screenWorkArea = {
-            height: 0,
-            width: 0
-        }
 
         button.onmousedown = (event) => {
             if (event.button == 2) { return; }

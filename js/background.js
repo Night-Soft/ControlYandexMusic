@@ -434,7 +434,7 @@ let getArtists = (list, amount = 3) => {
     if (list.artists.length > 0) {
         return getArtistsTitle(list.artists);
     } else {
-        // get from posdcast
+        // get from podcast
         if (list.album.hasOwnProperty("title")) {
             return list.album.title;
         }
@@ -469,11 +469,8 @@ let roundedImage = async(imageUrl) => {
     canvas.height = size;
     canvas.width = size;
 
-    var ctx = canvas.getContext('2d');
-    let start = this.performance.now();
-
+    let ctx = canvas.getContext('2d');
     const imgblob = await fetch(imageUrl).then(r => r.blob());
-    let end = this.performance.now();
     const img = await createImageBitmap(imgblob);
 
     img.src = imageUrl;
@@ -551,21 +548,23 @@ let showNotification = async(request) => {
 
 let lastUrl, lastBase64Url, notificationsTimeout;
 let setNotifications = async(trackTitle, trackArtists, iconTrack) => {
-    let start = this.performance.now();
-    if (iconTrack.startsWith("../") == false) {
-        if (lastUrl != iconTrack) {
-            lastUrl = iconTrack;
-            await roundedImage(iconTrack).then((result) => {
-                iconTrack = result.base64Url;
-                lastBase64Url = result.base64Url;
-            });
-        } else {
-            if (typeof(lastBase64Url) != "undefined") {
-                iconTrack = lastBase64Url;
+    if (iconTrack == undefined) {
+        iconTrack = chrome.runtime.getURL("../img/icon.png");
+    } else {
+        if (iconTrack.startsWith("../") == false) {
+            if (lastUrl != iconTrack) {
+                lastUrl = iconTrack;
+                await roundedImage(iconTrack).then((result) => {
+                    iconTrack = result.base64Url;
+                    lastBase64Url = result.base64Url;
+                });
+            } else {
+                if (typeof(lastBase64Url) != "undefined") {
+                    iconTrack = lastBase64Url;
+                }
             }
         }
     }
-    let end = this.performance.now();
     if (iconTrack == undefined) {
         iconTrack = chrome.runtime.getURL("../img/icon.png");
     }
@@ -600,7 +599,6 @@ let setNotifications = async(trackTitle, trackArtists, iconTrack) => {
 
 chrome.notifications.onClicked.addListener((YandexMusicControl) => {
     sendEvent({ commandKey: 'next-key', key: true });
-
 });
 
 let getWhatNew = async() => {

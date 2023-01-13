@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="28" height="28" version="1.1" xmlns="http://www.w3.org/2000/svg">
+ <g fill="none" fill-rule="evenodd">
+  <path d="M0 0h28v28H0z"/>
+  <path d="M20 18v-2l4 3-4 3v-2c-2.328 0-3.684-.527-5.13-2.26l1.186-1.718C17.22 17.396 18.351 18 20 18zm0-10V6l4 3-4 3v-2c-2.564 0-3.876 1.46-6 5-2.376 3.96-3.73 5-7 5H4v-2h3c2.564 0 3.876-1.46 6-5 2.376-3.96 3.73-5 7-5zm-7.729 2.431l-1.267 1.619C9.82 10.626 8.678 10 7 10H4V8h3c2.403 0 3.771.561 5.271 2.431z" fill="#c2c2c2" fill-rule="nonzero"/>
+ </g>
+</svg>
