@@ -194,12 +194,7 @@ chrome.runtime.onMessageExternal.addListener( // injected script
         }
         return true;
     });
-let FontSize = {
-    size: 1.15,
-    maxPx: 40,
-    ifMore: true,
-    ifLess: false
-}
+
 chrome.windows.onBoundsChanged.addListener(
     function(ev) {
         if (popupPosition.windowId == ev.id) {
@@ -207,25 +202,10 @@ chrome.windows.onBoundsChanged.addListener(
             if (Extension.isMenuListOpen == true) { popupPosition.playlistHeight = window.innerHeight; }
             ev.playlistHeight = popupPosition.playlistHeight - popupPosition.frameHeight;
             sendEventBackground({ popupBounds: ev });
-            if (FontSize.ifMore) {
-                if (ev.height > 370) {
-                    FontSize.size = 1.3;
-                    FontSize.maxPx = 50;
-                    FontSize.ifMore = false;
-                    FontSize.ifLess = true;
-                }
-            }
-            if (FontSize.ifLess) {
-                if (ev.height < 370) {
-                    FontSize.size = 1.15;
-                    FontSize.maxPx = 40;
-                    FontSize.ifLess = false;
-                    FontSize.ifMore = true;
-                }
-            }
         }
     }
 )
+
 let LongPressButton = class {
     constructor(button, func, delay = 750) {
         this.button = button;
@@ -627,7 +607,10 @@ let onMessageAddListener = () => {
     port.onDisconnect.addListener((disconnect) => {
         Extension.isConnected = false;
         port.isConnected = false;
+        changeState(false);
+        stopUpdater();
         showNoConnected();
+
     });
     port.onMessage.addListener(function(request) {
         if (request.response) {
@@ -768,7 +751,7 @@ let animateMainImage = (item) => {
     }
     let options = {
         duration: 500,
-        fill: 'both'
+        // fill: 'both'
     }
 
     CurrentAnimation.keyframe = keyframe;
@@ -851,5 +834,6 @@ let setOptions = (options) => {
         }
     }
     // END OPTIONS
+    console.log("created windowSize", window.innerHeight, window.innerWidth);
 Options.onload();
 Extension.onload();

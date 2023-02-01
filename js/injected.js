@@ -1,6 +1,7 @@
 let YandexMusicControl = {
     id: "UnknowId",
     port: undefined,
+    actionHandler: undefined
 }
 
 window.addEventListener("message", function(event) {
@@ -82,11 +83,10 @@ window.onpagehide = (event) => {
         pagehide: true,
     });
 }
-window.onload = () => {
-    setTimeout(() => {
-        setActionHandler();
-    }, 5000)
-}
+// window.onload = () => {
+//     setTimeout(() => {
+//     }, 5000)
+// }
 
 externalAPI.on(externalAPI.EVENT_TRACK, function(event) {
     getTracks(true); //this
@@ -103,7 +103,6 @@ externalAPI.on(externalAPI.EVENT_STATE, function(event) {
     });
 });
 externalAPI.on(externalAPI.EVENT_VOLUME, function(event) {
-    console.log("event volume", externalAPI.getVolume());
     chrome.runtime.sendMessage(YandexMusicControl.id, {
         event: "VOLUME",
         volume: externalAPI.getVolume()
@@ -164,6 +163,7 @@ let setMediaSession = () => {
     } else {
         navigator.mediaSession.playbackState = "paused";
     }
+    //setActionHandler();
 
 }
 let setActionHandler = () => {
@@ -191,10 +191,11 @@ let setActionHandler = () => {
             externalAPI.setPosition(externalAPI.getProgress().position + 10)
         });
 
-        // need to set an empty function, because Yandex.Music overrides the ActionHandler when switching tracks.
+
+        // need set function to null, because Yandex.Music overrides the ActionHandler when switching tracks.
         // may be Yandex music was updated in November-December 2022
-        // overrided in - index.js?v=2.569.0:17 
-        navigator.mediaSession.setActionHandler = () => {};
+        YandexMusicControl.actionHandler = navigator.mediaSession.setActionHandler;  
+        navigator.mediaSession.setActionHandler = ()=>{};
     }
 }
 
@@ -288,3 +289,4 @@ let toggleLikeKey = () => {
     });
     //getTracks();
 }
+setActionHandler();

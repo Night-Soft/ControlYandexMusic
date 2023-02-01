@@ -167,6 +167,7 @@ let createListElement = (list, index) => {
         }
         listTracks.appendChild(itemTrack);
     }
+    selectedItem.scrollIntoView({ block: "center", behavior: "smooth" });
 }
 
 document.body.onmouseenter = () => { State.isAutoScroll = false; }
