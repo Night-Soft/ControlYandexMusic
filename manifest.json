@@ -68,8 +68,7 @@
         "tabs",
         "notifications",
         "storage",
-        "system.display",
-        "nativeMessaging"
+        "system.display"
     ],
     "host_permissions": [
         "https://music.yandex.ua/*",
