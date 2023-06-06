@@ -96,6 +96,7 @@ let Slider = class {
             this.currentGroove.style.width = x + "px";
             this.handle.style.left = x + this.groove.offsetLeft - this.handle.offsetWidth + this.handle.offsetWidth / 2 + "px";
             this.scale = event.scale;
+            //console.log(x, this.currentGroove.style.width, this.handle.style.left);
             return;
         }
         if (event.hasOwnProperty("event")) { // from wheel and constructor
@@ -170,13 +171,12 @@ let Slider = class {
 
 // toggles and volume
 
-let sliderVolumeElemnt = document.getElementsByClassName("slider")[0];
+let sliderVolumeElement = document.getElementsByClassName("slider")[0];
 let currentGrooveVol = document.getElementsByClassName("slider-groove-current")[0];
 let handleVol = document.getElementsByClassName("slider-handle")[0];
 let helperVol = document.getElementsByClassName("slider-helper")[0];
 
-let sliderVolume = new Slider(sliderVolumeElemnt, currentGrooveVol, handleVol, helperVol);
-
+let sliderVolume = new Slider(sliderVolumeElement, currentGrooveVol, handleVol, helperVol);
 sliderVolume.ownMouseMoveDown = () => {
     sendEvent({ setVolume: sliderVolume.scale / 100 }, false, true);
     updateToggleVolumeIcon(sliderVolume.scale);
@@ -236,7 +236,10 @@ contentGrooveVolume.onmouseleave = () => {
     }
 }
 
-let updateVolume = (volume) => {
+/**
+ * @param {number} volume min 0 max 1.
+ */
+let setVolume = (volume) => {
     volume = volume * 100;
     let isVolume;
     if (sliderVolumeContent.style.display != "block") {
@@ -274,7 +277,7 @@ let updateRepeat = (repeat) => {
         toggleRepeat.style.opacity = "";
     }
     if (repeat === 1) {
-        toggleRepeat.style.backgroundImage = "url(img/repeatOne.svg)";
+        toggleRepeat.style.backgroundImage = "url(img/repeat-one.svg)";
         toggleRepeat.style.filter = whiteFilter;
         toggleRepeat.style.opacity = "1";
     }
@@ -330,12 +333,12 @@ toggleVolume.onwheel = (event) => {
 
 let updateToggleVolumeIcon = (scale) => {
     if (scale >= 50) {
-        toggleVolume.style.backgroundImage = "url(img/volumeMax.svg)";
+        toggleVolume.style.backgroundImage = "url(img/volume-max.svg)";
     } else if (scale < 50 && scale != 0) {
-        toggleVolume.style.backgroundImage = "url(img/volumeMiddle.svg)";
+        toggleVolume.style.backgroundImage = "url(img/volume-middle.svg)";
     }
     if (scale <= 0) {
-        toggleVolume.style.backgroundImage = "url(img/volumeMute.svg)";
+        toggleVolume.style.backgroundImage = "url(img/volume-mute.svg)";
     }
 }
 
@@ -475,3 +478,10 @@ let twoDigits = (seconds, minutes) => {
     }
     return textMinutes + ":" + textSeconds;
 }
+
+try {
+    JsOnload.onload("Slider", false);
+} catch (error) {
+    console.log(error);
+}
+    

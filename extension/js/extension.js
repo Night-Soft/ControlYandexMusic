@@ -172,7 +172,7 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 trackUpdater(getDuration(), getProgress(), getIsPlay(request.isPlaying));
                 break;
             case "VOLUME":
-                updateVolume(request.volume);
+                setVolume(request.volume);
                 break;
             default:
                 break;
@@ -189,7 +189,7 @@ chrome.runtime.onMessageExternal.addListener( // injected script
             updateShuffle(request.controls.shuffle);
         }
         if (request.hasOwnProperty('volume')) {
-            updateVolume(request.volume);
+            setVolume(request.volume);
         }
         if (request.hasOwnProperty('repeat')) {
             updateRepeat(request.repeat);
@@ -638,6 +638,7 @@ let toggleListMenu = () => {
 }
 
 let showNoConnected = () => {
+    //return;
     getYandexMusicTab().then((result) => {
         if (Extension.isConnected == false) {
             if (result) {
@@ -691,9 +692,10 @@ let toggleLike = (isLike) => {
     if (isLike) {
         like[0].style.backgroundImage = "url(img/like.png)";
     } else {
-        like[0].style.backgroundImage = "url(img/notLike.png)";
+        like[0].style.backgroundImage = "url(img/no-like.png)";
     }
 }
+
 let toggleDislike = (isDisliked, notifyMe = false) => {
     if (isDisliked) {
         dislike.style.backgroundImage = "url(img/disliked.svg)";

@@ -4,9 +4,29 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Pack extension",
+            "label": "Build release!",
             "type": "shell",
-            "command": "./'Build release.sh'",
+            "command": "node build.js -release",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "Build develop version!",
+            "type": "shell",
+            "command": "node build.js -dev",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Build pre-realease!",
+            "type": "shell",
+            "command": "node build.js -pre-realease",
             "problemMatcher": [],
             "group": {
                 "kind": "build",

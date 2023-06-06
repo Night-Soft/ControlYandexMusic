@@ -1,0 +1,35 @@
+{
+    "version": "3.0.3",
+    "release": {
+        "name": "__MSG_appName__",
+        "icons": {
+            "200": "img/icon.png"
+        },
+        "action": {
+            "default_icon": "img/icon.png"
+        }
+    },
+    "pre-release": {
+        "name": "Yandex Music pre-release",
+        "icons": {
+            "200": "img/icon-pre-release.png"
+        },
+        "action": {
+            "default_icon": "img/icon-pre-release.png"
+        }
+      },
+      "dev": {
+        "name": "Yandex Music dev",
+        "icons": {
+            "200": "img/icon-dev.png"
+        },
+        "action": {
+            "default_icon": "img/icon-dev.png"
+        }
+      },
+      "ignore": [
+        "extension/img/icon-pre-release.png",
+        "extension/img/icon-dev.png",
+        "extension/img/payplal.png"
+      ]
+}

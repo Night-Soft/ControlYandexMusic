@@ -6,8 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Yandex Music</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="stylePopup.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/popup.css">
+    <link rel="stylesheet" href="css/side-panel.css">
+    <script src="js/js-onload.js"></script>
     <script async src="js/theme.js"></script>
 </head>
 
@@ -15,14 +17,17 @@
     <div class="notification">
         <h2 class="h2-notification">Track added to black list!</h2>
     </div>
+    <div class="popup-btn-container">
+        <div class="popup-btn"></div>
+    </div>
     <div class="modal ">
         <img class="modal-cover"></img>
     </div>
-    <div class="hamburger-menu-list">
+    <!-- <div class="hamburger-menu-list">
         <div class="bar-list1 transition"></div>
         <div class="bar-list2 transition"></div>
         <div class="bar-list3 transition"></div>
-    </div>
+    </div> -->
     <div class="content-track ">
         <div class="cover"></div>
         <div class="content-track-artist ">
@@ -49,7 +54,7 @@
     <div class="groove-box">
         <div class="groove-content">
             <div class="slider-content slider-content-popup">
-                <span class="current-time">0:0</span>
+                <span class="current-time">00:00</span>
                 <div class="slider  slider-progress slider-progress-popup">
                     <div class="slider-helper"></div>
                     <div class="slider-groove slider-groove-progress">
@@ -57,7 +62,7 @@
                     </div>
                     <div class="slider-handle progress-handle"></div>
                 </div>
-                <span class="duration">0:0</span>
+                <span class="duration">00:00</span>
             </div>
         </div>
     </div>
@@ -93,7 +98,8 @@
         </div>
     </div>
     <script src="js/popup.js "></script>
-    <script async src="js/tracksList.js"></script>
+    <script src="js/side-panel.js"></script>
+    <script async src="js/playlist.js"></script>
     <script src="js/slider.js"></script>
 </body>
 

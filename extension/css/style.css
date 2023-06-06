@@ -107,7 +107,7 @@ a {
 .previous {
     cursor: pointer;
     cursor: pointer;
-    background-image: url(img/previous.png);
+    background-image: url(../img/previous.png);
     background-repeat: no-repeat, repeat;
     background-position: center;
 }
@@ -115,14 +115,14 @@ a {
 .next {
     cursor: pointer;
     cursor: pointer;
-    background-image: url(img/next.png);
+    background-image: url(../img/next.png);
     background-repeat: no-repeat, repeat;
     background-position: center;
 }
 
 .pause {
     cursor: pointer;
-    background-image: url(img/pause.png);
+    background-image: url(../img/pause.png);
     background-repeat: no-repeat, repeat;
     background-position: center;
     width: calc(90px - var(--pixselsForReduce));
@@ -143,7 +143,7 @@ a {
 
 .like {
     cursor: pointer;
-    background-image: url(img/notLike.png);
+    background-image: url(../img/no-like.png);
     background-repeat: no-repeat, repeat;
     background-position: center;
 }
@@ -151,7 +151,7 @@ a {
 .dislike {
     display: none;
     cursor: pointer;
-    background-image: url(img/dislike.svg);
+    background-image: url(../img/dislike.svg);
     background-repeat: no-repeat, repeat;
     background-position: center;
 }
@@ -163,7 +163,7 @@ a {
 
 .toggle-shuffle {
     cursor: pointer;
-    background-image: url(img/shuffle.svg);
+    background-image: url(../img/shuffle.svg);
     background-repeat: no-repeat, repeat;
     background-position: center;
     background-size: 25px;
@@ -179,7 +179,7 @@ a {
 
 .toggle-repeat {
     cursor: pointer;
-    background-image: url(img/repeat.svg);
+    background-image: url(../img/repeat.svg);
     background-repeat: no-repeat, repeat;
     background-position-x: center;
     background-position-y: -6px;
@@ -196,7 +196,7 @@ a {
 
 .toggle-volume {
     cursor: pointer;
-    background-image: url(img/volumeMax.svg);
+    background-image: url(../img/volume-max.svg);
     background-repeat: no-repeat, repeat;
     background-position: center;
     background-position-y: -5px;
@@ -244,7 +244,7 @@ a {
 }
 
 .cover {
-    background-image: url(img/icon.png);
+    background-image: url(../img/icon.png);
     background-repeat: no-repeat, repeat;
     background-position: center;
     width: calc(150px + var(--pixselsForReduce));
@@ -263,7 +263,7 @@ a {
 
 .next-cover {
     background-image: url(https://avatars.yandex.net/get-music-content/4477012/65e76312.a.15482874-1/200x200);
-    -webkit-mask-image: url(/img/RightMask.png);
+    -webkit-mask-image: url(/../img/RightMask.png);
     -webkit-mask-repeat: no-repeat;
     background-image: url(https://avatars.yandex.net/get-music-content/4477012/65e76312.a.15482874-1/200x200);
     width: 25px;
@@ -274,7 +274,7 @@ a {
 
 .prev-cover {
     background-image: url(https://avatars.yandex.net/get-music-content/4477012/65e76312.a.15482874-1/200x200);
-    -webkit-mask-image: url(/img/LeftMask.png);
+    -webkit-mask-image: url(/../img/LeftMask.png);
     -webkit-mask-repeat: no-repeat;
     background-image: url(https://avatars.yandex.net/get-music-content/4477012/65e76312.a.15482874-1/200x200);
     width: 25px;
@@ -641,7 +641,7 @@ a {
 
 .popup-btn {
     cursor: pointer;
-    background-image: url(img/popup.svg);
+    background-image: url(../img/popup.svg);
     background-repeat: no-repeat, repeat;
     background-position: center;
     width: 35px;
@@ -660,15 +660,14 @@ a {
 }
 
 .list-like {
-    background-image: url(img/like.png);
+    background-image: url(../img/like.png);
     background-repeat: no-repeat, repeat;
-    background-position: center;
-    min-width: 40px;
-    height: 40px;
+    background-position: top center;
+    min-width: 30px;
+    height: 30px;
     position: absolute;
     right: 5px;
     background-size: contain;
-    align-self: center;
     margin-left: auto;
     border-radius: 10px;
     transition: 1s;
@@ -677,15 +676,15 @@ a {
 }
 
 .list-dislike {
-    background-image: url(img/notLike.png);
+    background-image: url(../img/no-like.png);
     background-repeat: no-repeat, repeat;
     background-position: center;
-    min-width: 40px;
-    height: 40px;
+    min-width: 30px;
+    height: 30px;
     position: absolute;
     right: 5px;
     background-size: contain;
-    align-self: center;
+    align-self: auto;
     margin-left: auto;
     border-radius: 10px;
     transition: 1s;
@@ -694,7 +693,7 @@ a {
 }
 
 .list-disliked {
-    background-image: url(img/disliked.svg);
+    background-image: url(../img/disliked.svg);
     background-repeat: no-repeat, repeat;
     background-position: center;
     min-width: 40px;
@@ -702,7 +701,7 @@ a {
     position: absolute;
     right: 5px;
     background-size: contain;
-    align-self: center;
+    align-self: auto;
     margin-left: auto;
     border-radius: 10px;
     transition: 1s;
@@ -719,14 +718,13 @@ a {
     }
 }
 
-
-/* .show-like {
-    animation: show-like 0.7s normal;
+.track-time {
+    font-size: 0.85rem;
+    align-self: end;
+    right: 5px;
+    text-align: right;
+    position: absolute;
 }
-
-.show-like-reverse {
-    animation: show-like 0.7s reverse;
-} */
 
 .content-list-menu {
     display: flex;
@@ -751,7 +749,6 @@ a {
 }
 
 .item-track:hover {
-    /* background: rgb(0 0 0 / 65%); */
     background: rgb(128 128 128 / 45%);
     padding-left: 25px;
     border-radius: 5px;
@@ -764,7 +761,7 @@ a {
 }
 
 .item-cover {
-    background-image: url(img/icon.png);
+    background-image: url(../img/icon.png);
     background-repeat: no-repeat, repeat;
     background-position: center;
     min-width: 40px;
@@ -777,7 +774,7 @@ a {
 }
 
 .content-item-name {
-    /* max-width: 235px; */
+    max-width: calc(100% - 80px);
     align-self: center;
     overflow-wrap: anywhere;
 }
@@ -1074,7 +1071,7 @@ label {
 }
 
 .icon {
-    background-image: url(img/icon.png);
+    background-image: url(../img/icon.png);
     background-repeat: no-repeat, repeat;
     background-position: center;
     width: 150px;
@@ -1330,7 +1327,7 @@ label {
 .donationalerts {
     transition: 0.5s;
     background: #172334;
-    background-image: url(img/donationalerts.png);
+    background-image: url(../img/donationalerts.png);
     background-repeat: no-repeat, repeat;
     background-position: center 45px;
     width: 40%;
@@ -1343,7 +1340,7 @@ label {
 
 .donationalerts:hover {
     background: #203047;
-    background-image: url(img/donationalerts.png);
+    background-image: url(../img/donationalerts.png);
     background-repeat: no-repeat, repeat;
     background-position: center 45px;
     width: 50%;
@@ -1382,7 +1379,7 @@ label {
 .donationalerts-image {
     display: block;
     transition: 0.5s;
-    background-image: url(img/donationalerts.png);
+    background-image: url(../img/donationalerts.png);
     background-repeat: no-repeat, repeat;
     background-position: center;
     width: 25%;
@@ -1399,7 +1396,7 @@ label {
 .paypal {
     transition: 0.5s;
     background: #172334;
-    background-image: url(img/payplal.png);
+    background-image: url(../img/payplal.png);
     background-repeat: no-repeat, repeat;
     background-position: center;
     width: 40%;
@@ -1412,7 +1409,7 @@ label {
 
 .paypal:hover {
     background: #203047;
-    background-image: url(img/payplal.png);
+    background-image: url(../img/payplal.png);
     background-repeat: no-repeat, repeat;
     background-position: center;
     width: 50%;
@@ -1426,7 +1423,7 @@ label {
 .paypal-menu {
     display: none;
     background: #172334;
-    background-image: url(img/payplal.png);
+    background-image: url(../img/payplal.png);
     color: white;
     text-align: center;
     background-size: 100px;

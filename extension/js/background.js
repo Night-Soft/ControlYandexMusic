@@ -1,31 +1,47 @@
-let keyOpenPage = false;
-let port = {
-    isConnected: false
-};
-
 let Background = {
-    createConnection: async() => {
-        return new Promise((resolve, reject) => {
-            getYandexMusicTab().then((result) => {
-                if (result) {
-                    try {
-                        if (port.isConnected == false) {
-                            port = chrome.tabs.connect(result, { name: chrome.runtime.id });
-                            port.isConnected = true;
+    connection: {
+        port: {},
+        isConnected: false,
+        async create() {
+            return new Promise((resolve, reject) => {
+                getYandexMusicTab().then((result) => {
+                    if (result) {
+                        try {
+                            if (this.isConnected == false) {
+                                this.port = chrome.tabs.connect(result, { name: chrome.runtime.id });
+                                this.isConnected = true;
+                            }
+                        } catch (error) {
+                            this.isConnected = false;
                         }
-                    } catch (error) {
-                        port.isConnected = false;
-                    }
-                    if (port.isConnected == false) {
+                        if (this.isConnected == false) {
+                            resolve(false);
+                        }
+                        this.onPortAddListener();
+                        resolve(true);
+                    } else {
                         resolve(false);
                     }
-                    onMessageAddListener();
-                    resolve(true);
-                } else {
-                    resolve(false);
+                });
+            });
+        },
+        onPortAddListener() {
+            this.port.onDisconnect.addListener((disconnect) => {
+                this.isConnected = false;
+            });
+            this.port.onMessage.addListener(function(request) {
+                if (request.response) {
+                    response(request.response);
                 }
             });
-        });
+            let response = (answer) => {
+                switch (answer.case) {
+                    case "extensionIsLoad":
+                        console.log("extension Is Load", answer);
+                        break;
+                }
+            }
+        }
     },
     isAllReaded: false,
     lastReaded: {
@@ -46,7 +62,8 @@ let Options = {
     isDislikeButton: undefined,
     isSavePosPopup: undefined,
     popupBounds: undefined,
-    reassign: undefined
+    reassign: undefined,
+    popupFrame: undefined
 }
 
 let PopupWindow = class {
@@ -58,73 +75,83 @@ let PopupWindow = class {
         }
         let display = chrome.system.display.getInfo();
         display.then((value) => {
-            this.screenWorkArea.height = value[0].workArea.height;
-            this.screenWorkArea.width = value[0].workArea.width;
+            this.workArea.height = value[0].workArea.height;
+            this.workArea.width = value[0].workArea.width;
         }, (reject) => {});
-        this.width = 250;
-        this.height = 110;
-        this.screenWorkArea = {
+        this.workArea = {
             height: 0,
             width: 0,
         }
-        this.bounds = undefined;
-        PopupWindow.checkCreated();
-        PopupWindow.getBounds();
+        this.bounds = {};
+        this.#getBounds();
     }
-    get left() {
-        return this.screenWorkArea.width - this.width
-    }
-    get top() {
-        return this.screenWorkArea.height - this.height
-    }
-    windowData = {
-        get height() {
-            if (PopupWindow.instance.bounds != undefined && Object.keys(PopupWindow.instance.bounds).length !== 0) {
-                return PopupWindow.instance.bounds.height;
+
+    windowData = () => {
+        const width = () => {
+            if (this.bounds != undefined && Object.keys(this.bounds).length !== 0) {
+                return this.bounds.width;
             }
-            return PopupWindow.instance.height;
-        },
-        get width() {
-            if (PopupWindow.instance.bounds != undefined && Object.keys(PopupWindow.instance.bounds).length !== 0) {
-                return PopupWindow.instance.bounds.width;
+            return 250;
+        }
+        const height = () => {
+            if (this.bounds != undefined && Object.keys(this.bounds).length !== 0) {
+                if (this.bounds.isTrackListOpen) {
+                    return this.bounds.playlistHeight;
+                }
+                return this.bounds.height;
             }
-            return PopupWindow.instance.width;
-        },
-        get left() {
-            if (PopupWindow.instance.bounds != undefined && Object.keys(PopupWindow.instance.bounds).length !== 0) {
-                return PopupWindow.instance.bounds.left;
+            return 110;
+        }
+        const left = () => {
+            if (this.bounds != undefined && Object.keys(this.bounds).length !== 0) {
+                return this.bounds.left;
             }
-            return PopupWindow.instance.left
-        },
-        get top() {
-            if (PopupWindow.instance.bounds != undefined && Object.keys(PopupWindow.instance.bounds).length !== 0) {
-                return PopupWindow.instance.bounds.top;
+            return this.workArea.width - width();
+        }
+        const top = () => {
+            if (this.bounds != undefined && Object.keys(this.bounds).length !== 0) {
+                return this.bounds.top;
             }
-            return PopupWindow.instance.top
-        },
-        focused: true,
-        type: "popup",
-        url: "../popup.html"
+            return this.workArea.height - height();
+        }
+        return {
+            height: height(),
+            width: width(),
+            left: left(),
+            top: top(),
+            focused: true,
+            type: "popup",
+            url: "../popup.html"
+        }
     }
     create(force = false) {
         if (force) {
-            chrome.windows.create(this.windowData, (windowData) => {
-                this.bounds = windowData;
-                return {
-                    isCreated: true,
-                    exists: true,
-                    message: chrome.i18n.getMessage("successfullyCreated"),
-                    popupWindow: windowData
-                };
+            return new Promise((resolve, reject) => {
+                chrome.windows.create(this.windowData(), (windowData) => {
+                    if (Object.keys(this.bounds).length > 0) {
+                        windowData.height = this.bounds.height;
+                    }
+                    Object.assign(this.bounds, windowData);
+                    resolve({
+                        nowCreated: true,
+                        exists: true,
+                        message: chrome.i18n.getMessage("successfullyCreated"),
+                        popupWindow: windowData
+                    });
+                });
             });
         }
         return new Promise((resolve, reject) => {
             PopupWindow.checkCreated().then((result) => {
                 if (result == false) { // 0 - The window already exists!
-                    chrome.windows.create(this.windowData, (windowData) => {
-                        this.bounds = windowData;
+                    chrome.windows.create(this.windowData(), (windowData) => {
+                        if (Object.keys(this.bounds).length > 0) {
+                            windowData.height = this.bounds.height;
+                        }
+                        Object.assign(this.bounds, windowData);
+                        console.log("windowData", this.bounds)
                         resolve({
-                            isCreated: true,
+                            nowCreated: true,
                             exists: true,
                             message: chrome.i18n.getMessage("successfullyCreated"),
                             popupWindow: windowData
@@ -132,7 +159,7 @@ let PopupWindow = class {
                     });
                 } else {
                     resolve({
-                        isCreated: false,
+                        nowCreated: false,
                         exists: true,
                         message: chrome.i18n.getMessage("windowAlreadyExists"),
                         popupWindow: result
@@ -178,6 +205,7 @@ let PopupWindow = class {
                             });
                         }
                     }
+                    resolve(false);
                 } else {
                     //this.bounds = undefined;
                     resolve(false);
@@ -185,23 +213,29 @@ let PopupWindow = class {
             }, (reject) => {});
         });
     }
-    static getBounds() {
+     #getBounds() {
         if (Options.popupBounds) {
             PopupWindow.instance.bounds = Options.popupBounds;
             return Options.popupBounds;
         }
         return new Promise((resolve, reject) => {
             getOptions({ parameters: ["popupBounds"] }).then((result) => {
-                PopupWindow.instance.bounds = result.popupBounds;
-                resolve(result);
+                if(result.popupBounds != undefined) {
+                    PopupWindow.instance.bounds = result.popupBounds;
+                    resolve(result);
+                } else {
+                    PopupWindow.instance.bounds = {};
+                    resolve(result, {});
+                }
             });
         });
     }
 }
+
 chrome.commands.onCommand.addListener(function(command) {
     if (command) { // 'next-key' 'previous-key' 'togglePause-key' 'toggleLike-key'
         if (Options.reassign == undefined) {
-            getOptions({ parameters: ["popupBounds", "reassign"] }).then((result) => {
+            getOptions({ parameters: ["popupBounds", "reassign", "frame"] }).then((result) => {
                 if ("isReassign" in Options.reassign) {
                     if (Options.reassign.isReassign == true && Options.reassign.shortCut.name == command) {
                         openUpdatePopup();
@@ -250,8 +284,8 @@ chrome.runtime.onMessage.addListener( // content, extension, script
             setNotifications(request.name, request.artists, request.imageUrl);
         }
         if (request.getId != undefined) {
-            if (!port.isConnected) {
-                Background.createConnection();
+            if (!Background.connection.isConnected) {
+                Background.connection.create();
             }
             getYandexMusicTab().then((result) => {
                 if (result) {
@@ -280,39 +314,41 @@ chrome.runtime.onMessage.addListener( // content, extension, script
         if (request.writeOptions != undefined) {
             writeOptions(request.options);
         }
-        if (request.popupBounds != undefined) {
-            writePopupBounds(request);
+        if (request.savePopupBounds != undefined) {
+            writePopupBounds(request.savePopupBounds);
         }
         if (request.createPopup) {
+            console.log("request.createPopup");
             openUpdatePopup().then((result) => {
+                console.log("result", result);
                 sendResponse(result);
             });
         }
+        if (request.frame) {
+            console.log("frame", request);
+            writeOptions({popupFrame: request.frame});
+        }
+        if (request.sidePanel) {
+           console.log("sidePanel")
+        }
         return true; // 
     });
+
 chrome.windows.onRemoved.addListener((ev) => {
     if (ev == PopupWindow.instance.bounds.id) {
-        try {
-            delete popupWindow.bounds.id;
-            delete popupWindow.bounds.tabs;
-            delete popupWindow.bounds.focused;
-            delete popupWindow.bounds.state;
-            delete popupWindow.bounds.incognito;
-            delete popupWindow.bounds.alwaysOnTop;
-
-            delete Options.popupBounds.id;
-            delete Options.popupBounds.tabs;
-            delete Options.popupBounds.focused;
-            delete Options.popupBounds.state;
-            delete Options.popupBounds.incognito;
-            delete Options.popupBounds.alwaysOnTop;
-        } catch (error) {}
-        // write popupBounds when window removed
-        writePopupBounds({ popupBounds: PopupWindow.instance.bounds }, true);
+        //this
+        // write popupBounds when popup window removed
+        console.log("write on removed", Object.assign({}, PopupWindow.instance.bounds));
+        writePopupBounds(Object.assign({}, PopupWindow.instance.bounds), true);
     }
-})
+});
+
 let sendMessage = (event, callback) => {
     chrome.runtime.sendMessage(event, callback);
+}
+
+let sendEvent = (event) => { // to content script
+    Background.connection.port.postMessage(event);
 }
 
 let getYandexMusicTab = () => {
@@ -332,70 +368,49 @@ let getYandexMusicTab = () => {
     });
 }
 
-let onMessageAddListener = () => {
-    port.onDisconnect.addListener((disconnect) => {
-        port.isConnected = false;
-    });
-    port.onMessage.addListener(function(request) {
-        if (request.response) {
-            response(request.response);
-        }
-    });
-    let response = (answer) => {
-        switch (answer.case) {
-            case "extensionIsLoad":
-                if (response.isConnect) {
-                    Extension.isConnected = true
-                } else {
-                    Extension.isConnected = false;
-                    showNoConnected(tab);
-                    console.log("No connection");
-                }
-                break;
-            default:
-                break;
-        }
-    }
-}
-
-let sendEvent = (event) => { // to content script
-    port.postMessage(event);
-}
-
 let writePopupBoundsTimer;
 let writePopupBounds = (popupBounds, force = false) => {
+    console.log("wirte", popupBounds)
+    PopupWindow.instance.bounds = popupBounds;
+    try {
+        const del = (obj, arr = ["id", "tabs", "focused", "type", "state", "incognito", "alwaysOnTop"]) => {
+            for (let i = 0; i < arr.length; i++) {
+                Reflect.deleteProperty(obj, arr[i]);
+            }
+        }
+        del(popupBounds);
+        del(Options.popupBounds);
+        console.log("del popupBounds", popupBounds);
+    } catch (error) { }
     // save to instance
-    PopupWindow.instance.bounds = popupBounds.popupBounds;
     if (Options.isSavePosPopup) {
-        if (equalsObj(popupBounds.popupBounds, Options.popupBounds) == false) {
+        if (equalsObj(popupBounds, Options.popupBounds) == false) {
             if (force) {
                 clearTimeout(writePopupBoundsTimer);
                 // popupBounds saved force
-                writeOptions(popupBounds);
+                Options.popupBounds = PopupWindow.instance.bounds;
+                writeOptions({popupBounds});
                 return;
             }
             if (typeof(writePopupBoundsTimer) != "undefined") {
                 clearTimeout(writePopupBoundsTimer);
             }
+            Options.popupBounds = PopupWindow.instance.bounds;
             writePopupBoundsTimer = setTimeout(() => {
-                writeOptions(popupBounds);
+                console.log("timeout write")
+                writeOptions({popupBounds});
             }, 15000);
         }
     }
 }
-
+// send to get frame
 let openUpdatePopup = async() => {
     if (typeof(popupWindow) == 'undefined') {
         popupWindow = new PopupWindow();
     }
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => { //this
         popupWindow.create().then((result) => {
-            // if (keyOpenPage == true) {
-            //     sendMessage({ keyOpenPage: true });
-            //     keyOpenPage = false;
-            //     return;
-            // }
-            if (result.exists && result.isCreated) {
+            if (result.exists && result.nowCreated) {
                 sendMessage({ popupCreated: true, windowData: popupWindow.bounds });
             } else if (result.exists) {
                 popupWindow.updateWindow();
@@ -405,6 +420,7 @@ let openUpdatePopup = async() => {
     });
 
 }
+
 const equalsObj = (a, b) => {
     if (a == undefined && b != undefined) return false;
     if (a != undefined && b == undefined) return false;
@@ -537,7 +553,7 @@ let showNotification = async(request) => {
                 iconTrack = "../img/like.png";
                 nameArtists = liked;
             } else {
-                iconTrack = "../img/notLike.png";
+                iconTrack = "../img/no-like.png";
                 nameArtists = disliked;
             }
             setNotifications(nameTrack, nameArtists, iconTrack)
@@ -602,7 +618,7 @@ chrome.notifications.onClicked.addListener((YandexMusicControl) => {
 });
 
 let getWhatNew = async() => {
-    let response = fetch("../whatNew.json");
+    let response = fetch("../data/what-new.json");
     return new Promise(function(resolve, reject) {
         response.then((data) => {
             data.json().then((value) => {
@@ -662,53 +678,20 @@ let readOption = (option) => {
 }
 
 let writeOptions = (option) => {
-    if (option.isAllNoifications != undefined) {
-        chrome.storage.local.set({ isAllNoifications: option.isAllNoifications });
-        Options.isAllNoifications = option.isAllNoifications;
-    }
-    if (option.isPlayPauseNotify != undefined) {
-        chrome.storage.local.set({ isPlayPauseNotify: option.isPlayPauseNotify });
-        Options.isPlayPauseNotify = option.isPlayPauseNotify;
-    }
-    if (option.isPrevNextNotify != undefined) {
-        chrome.storage.local.set({ isPrevNextNotify: option.isPrevNextNotify });
-        Options.isPrevNextNotify = option.isPrevNextNotify;
-    }
-    if (option.isShowWhatNew != undefined) {
-        chrome.storage.local.set({ isShowWhatNew: option.isShowWhatNew });
-        Options.isShowWhatNew = option.isShowWhatNew;
-    }
-    if (option.version != undefined) {
-        chrome.storage.local.set({ version: option.version });
-        Options.version = option.version;
-    }
-    if (option.oldVersionDescription != undefined) {
-        chrome.storage.local.set({ oldVersionDescription: option.oldVersionDescription });
-        Options.oldVersionDescription = option.oldVersionDescription;
-    }
-    if (option.isDarkTheme != undefined) {
-        chrome.storage.local.set({ isDarkTheme: option.isDarkTheme });
-        Options.isDarkTheme = option.isDarkTheme;
-    }
-    if (option.isCoverIncrease != undefined) {
-        chrome.storage.local.set({ isCoverIncrease: option.isCoverIncrease });
-        Options.isCoverIncrease = option.isCoverIncrease;
-    }
-    if (option.isDislikeButton != undefined) {
-        chrome.storage.local.set({ isDislikeButton: option.isDislikeButton });
-        Options.isDislikeButton = option.isDislikeButton;
-    }
-    if (option.popupBounds != undefined) {
-        chrome.storage.local.set({ popupBounds: option.popupBounds });
-        Options.popupBounds = option.popupBounds;
-    }
-    if (option.isSavePosPopup != undefined) {
-        chrome.storage.local.set({ isSavePosPopup: option.isSavePosPopup });
-        Options.isSavePosPopup = option.isSavePosPopup;
-    }
-    if (option.reassign != undefined) {
-        chrome.storage.local.set({ reassign: option.reassign });
-        Options.reassign = option.reassign;
+    console.log("option", option);
+    let keysOptions = Object.keys(Options);
+    let keysOption = Object.keys(option);
+
+    next: for (let i = 0; i < keysOptions.length; i++) {
+        for (let j = 0; j < keysOption.length; j++) {
+            if (keysOptions[i] == keysOption[j]) {
+                chrome.storage.local.set({ [keysOptions[i]]: option[keysOptions[i]] });
+                Options[keysOptions[i]] = option[keysOptions[i]];
+                console.log("Writed", option);
+                continue next;
+            }
+        }
+
     }
 }
 
@@ -750,4 +733,4 @@ let getOptions = async(option = true, send = false) => { // read and send
     });
 }
 let popupWindow = new PopupWindow();
-Background.createConnection();
+Background.connection.create();

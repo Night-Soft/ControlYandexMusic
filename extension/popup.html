@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Yandex Music</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/popup.css">
+    <script async src="js/theme.js"></script>
+</head>
+
+<body>
+    <div class="notification">
+        <h2 class="h2-notification">Track added to black list!</h2>
+    </div>
+    <div class="modal ">
+        <img class="modal-cover"></img>
+    </div>
+    <div class="hamburger-menu-list">
+        <div class="bar-list1 transition"></div>
+        <div class="bar-list2 transition"></div>
+        <div class="bar-list3 transition"></div>
+    </div>
+    <div class="content-track ">
+        <div class="cover"></div>
+        <div class="content-track-artist ">
+            <div class="title name-track ">Track</div>
+            <div class="title name-artists ">Artists</div>
+        </div>
+    </div>
+    <div class="content-toggle">
+        <div class="toggle-shuffle control-toggle"> </div>
+        <div class="toggle-repeat control-toggle"> </div>
+        <div class="content-groove-volume">
+            <div class="toggle-volume control-toggle"> </div>
+            <div class="slider-content">
+                <div class="slider">
+                    <div class="slider-helper"></div>
+                    <div class="slider-groove slider-groove-volume">
+                        <div class="slider-groove-current slider-groove-current-volume"></div>
+                    </div>
+                    <div class="slider-handle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="groove-box">
+        <div class="groove-content">
+            <div class="slider-content slider-content-popup">
+                <span class="current-time">00:00</span>
+                <div class="slider  slider-progress slider-progress-popup">
+                    <div class="slider-helper"></div>
+                    <div class="slider-groove slider-groove-progress">
+                        <div class="slider-groove-current slider-groove-current-progress"></div>
+                    </div>
+                    <div class="slider-handle progress-handle"></div>
+                </div>
+                <span class="duration">00:00</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="content ">
+        <div class="previous control control-popup"></div>
+        <div class="pause control control-popup"></div>
+        <div class="next control control-popup"></div>
+        <div class="like control control-popup"></div>
+        <div class="dislike control control-popup"></div>
+    </div>
+    <div id="listTrack" class="modal-list-menu modal-list-menu-popup">
+        <div class="content-list-menu content-list-menu-popup">
+            <div class="list-track">
+                <div class="title-list">Title</div>
+            </div>
+        </div>
+    </div>
+    <div class="no-connect">
+        <div class="no-connect-content">
+            <h2 id="AppDetected">App detected tab with "Yandex Music" but can't connect to the tab!</h2>
+            <div class="loader-container">
+                <div class="loader ">
+                    <div class="loader2"></div>
+                </div>
+            </div>
+            <h2 id="AppQuestion">Reload the tab or open new?</h2>
+            <div class="yes-no-new">
+                <button id="Yes" class="no-conect-btn">Yes</button>
+                <button id="No" class="no-conect-btn">No</button>
+                <button id="New" class="no-conect-btn">New Yandex Music Tab</button>
+            </div>
+        </div>
+    </div>
+    <script src="js/popup.js "></script>
+    <script async src="js/playlist.js"></script>
+    <script src="js/slider.js"></script>
+</body>
+
+</html>

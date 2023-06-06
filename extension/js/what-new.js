@@ -37,7 +37,7 @@ let WhatNew = {
         return locale;
     },
     getWhatNew: async() => {
-        let response = fetch("../whatNew.json");
+        let response = fetch("../data/what-new.json");
         return new Promise(function(resolve, reject) {
             response.then((data) => {
                 data.json().then((value) => {

@@ -1,16 +1,16 @@
 {
     "manifest_version": 3,
-    "name": "__MSG_appName__",
+    "name": "Yandex Music",
     "description": "__MSG_appDesc__",
     "short_name": "__MSG_shortName__",
     "default_locale": "en",
-    "version": "3.0.2",
+    "version": "3.0.3",
     "web_accessible_resources": [{
-        "resources": ["js/injected.js", "./whatNew.json"],
+        "resources": ["js/injected.js", "./what-new.json"],
         "matches": ["https://music.yandex.ua/*", "https://music.yandex.ru/*", "https://music.yandex.by/*", "https://avatars.yandex.net/*"]
     }],
     "icons": {
-        "200": "img/icon.png"
+        "200": "img/icon-dev.png"
     },
     "background": {
         "service_worker": "js/background.js"
@@ -18,10 +18,10 @@
     "content_scripts": [{
         "matches": ["https://music.yandex.ua/*", "https://music.yandex.ru/*", "https://music.yandex.by/*", "https://avatars.yandex.net/*"],
         "all_frames": false,
-        "js": ["js/contentScript.js"]
+        "js": ["js/content-script.js"]
     }],
     "action": {
-        "default_icon": "img/icon.png",
+        "default_icon": "img/icon-dev.png",
         "default_popup": "index.html"
     },
     "commands": {
@@ -64,11 +64,15 @@
     "content_security_policy": {
         "extension_pages": "script-src 'self'; object-src 'self'"
     },
+    "side_panel": {
+        "default_path": "side-panel.html"
+    },
     "permissions": [
         "tabs",
         "notifications",
         "storage",
-        "system.display"
+        "system.display",
+        "sidePanel"
     ],
     "host_permissions": [
         "https://music.yandex.ua/*",

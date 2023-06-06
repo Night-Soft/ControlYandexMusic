@@ -21,7 +21,7 @@ let setDarkTheme = (isDark = true) => {
         if (isDark) {
             setDarkText();
             document.body.style.setProperty("--bodyOpacity", 1); // set dark background
-            popup.style.backgroundImage = "url(../img/popupBlack.svg)";
+            popup.style.backgroundImage = "url(../img/popup-dark.svg)";
             darkTitle[0].style.color = DarkColors.white;
             darkTitle[0].style.background = DarkColors.dark;
             listTrack.style.color = DarkColors.white;
@@ -33,6 +33,7 @@ let setDarkTheme = (isDark = true) => {
             rootCss.style.setProperty('--handleWhite', '#EEEEEE');
             rootCss.style.setProperty('--backgroundControl', 'rgba(252, 252, 255, 0.1)');
         } else {
+            setDarkText(false);
             document.body.style.setProperty("--bodyOpacity", 0); // set bright background
             popup.style.backgroundImage = "";
             darkTitle[0].style.background = "";
@@ -45,7 +46,6 @@ let setDarkTheme = (isDark = true) => {
             rootCss.style.setProperty('--progress', '#ffdd00');
             rootCss.style.setProperty('--handleWhite', '#ffffff');
             rootCss.style.setProperty('--backgroundControl', 'rgba(252, 252, 255, 0.17)');
-            setDarkText(false);
         }
     } catch (error) {}
 }

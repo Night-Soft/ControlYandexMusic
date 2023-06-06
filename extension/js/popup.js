@@ -75,7 +75,13 @@ let Extension = {
             });
         });
     },
-    isMenuListOpen: undefined,
+    isSidePanel () {
+        if (window.location.pathname == '/side-panel.html') {
+            return true;
+        } else {
+            return false;
+        }
+    },
     isConnected: undefined
 };
 
@@ -106,15 +112,23 @@ chrome.runtime.onMessage.addListener( // background, content script
         if (request.options) {
             setOptions(request.options);
         }
-        // if (request.keyOpenPage) {
-        //     openNewTab();
-        // }
+        if (request.getFrame) {
+            popupWindow.x = screenLeft;
+            popupWindow.y = screenTop;
+            window.moveTo(0,0);
+            setTimeout(()=>{
+                sendEventBackground({ frame: { height: screenTop, width: screenLeft } });
+                console.log("getFrame send frame", { frame: { height: screenTop, width: screenLeft } });
+                window.moveTo(popupWindow.x - screenLeft, popupWindow.y - screenTop);
+            }, 100);
+        }
     });
 
 chrome.runtime.onMessageExternal.addListener( // injected script
     (request, sender, sendResponse) => {
         switch (request.event) {
             case 'currentTrack': // get from the key
+            console.log("currentTrack")
                 setMediaData(request.currentTrack.title, getArtists(request.currentTrack, 5), request.currentTrack.cover);
                 changeState(request.isPlaying);
                 toggleLike(request.currentTrack.liked);
@@ -150,7 +164,7 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 trackUpdater(getDuration(), getProgress(request.progress.position), getIsPlay(request.isPlaying));
                 break;
             case "VOLUME":
-                updateVolume(request.volume);
+                setVolume(request.volume);
                 break;
             default:
                 break;
@@ -167,7 +181,7 @@ chrome.runtime.onMessageExternal.addListener( // injected script
             updateShuffle(request.controls.shuffle);
         }
         if (request.hasOwnProperty('volume')) {
-            updateVolume(request.volume);
+            setVolume(request.volume);
         }
         if (request.hasOwnProperty('repeat')) {
             updateRepeat(request.repeat);
@@ -195,16 +209,27 @@ chrome.runtime.onMessageExternal.addListener( // injected script
         return true;
     });
 
-chrome.windows.onBoundsChanged.addListener(
-    function(ev) {
-        if (popupPosition.windowId == ev.id) {
-            ev.isTrackListOpen = Extension.isMenuListOpen;
-            if (Extension.isMenuListOpen == true) { popupPosition.playlistHeight = window.innerHeight; }
-            ev.playlistHeight = popupPosition.playlistHeight - popupPosition.frameHeight;
-            sendEventBackground({ popupBounds: ev });
+let boundsChangedId;
+chrome.windows.onBoundsChanged.addListener((ev) => {
+    if (Extension.isSidePanel()) return;
+    clearTimeout(boundsChangedId);
+    boundsChangedId = setTimeout(() => {
+        if (popupWindow.windowId == ev.id) {
+            ev.isTrackListOpen = popupWindow.isPlaylistOpen;
+            if (popupWindow.isPlaylistOpen == true) {
+                ev.height = popupWindow.height;
+                popupWindow.playlistHeight = window.innerHeight;
+                ev.playlistHeight = popupWindow.playlistHeight - popupWindow.frameHeight;
+            } else {
+                ev.height = window.innerHeight;
+                popupWindow.height = window.innerHeight;
+                ev.playlistHeight = popupWindow.playlistHeight - popupWindow.frameHeight;
+            }
+            sendEventBackground({ savePopupBounds: ev });
         }
-    }
-)
+    }, 200);
+}
+);
 
 let LongPressButton = class {
     constructor(button, func, delay = 750) {
@@ -342,17 +367,22 @@ modal[0].onclick = function() {
 }
 let list = document.getElementById("listTrack");
 
-hamburgerMenuList.onclick = () => { toggleListMenu(); }
-let PopupPosition = class {
+if (typeof hamburgerMenuList != "undefined") {
+    hamburgerMenuList.onclick = () => { togglePlaylist(); }  
+} else {
+//    togglePlaylist();
+}
+
+let PopupWindow = class {
     constructor() {
-        if (!PopupPosition.instance) {
-            PopupPosition.instance = this;
+        if (!PopupWindow.instance) {
+            PopupWindow.instance = this;
         } else {
-            return PopupPosition.instance
+            return PopupWindow.instance
         }
 
-        let popupWindow = chrome.windows.getAll({ populate: true, windowTypes: ['popup'] });
-        popupWindow.then((result) => {
+        let windows = chrome.windows.getAll({ populate: true, windowTypes: ['popup'] });
+        windows.then((result) => {
             if (result.length) {
                 let windowUrl;
                 for (let i = 0; i < result.length; i++) {
@@ -372,12 +402,25 @@ let PopupPosition = class {
         this.correctMinSize();
     }
     
-    #popupWidth = 250;
-    #popupHeight = 110;
-    #popupPlaylistHeight = 270;
+    #width = 250;
+    #height = 110;
+    #playlistHeight = 270;
+    #isPlaylistOpen = false;
     correctMinSize() {
         if (window.innerHeight < 110) {
             window.resizeTo(this.width, this.height);
+        }
+    }
+    resizeTo(width, height) {
+        if (width == window.innerWidth && height == window.innerHeight) return;
+        window.resizeTo(width, height);
+    }
+    get isPlaylistOpen() {
+        return this.#isPlaylistOpen;
+    }
+    set isPlaylistOpen(value) {
+        if (typeof value === 'boolean') {
+            this.#isPlaylistOpen = value;
         }
     }
     get width() {
@@ -387,27 +430,30 @@ let PopupPosition = class {
         return window.outerWidth; // + this.frameWidth;
     }
     set width(value) {
-        this.#popupWidth = value + this.frameWidth;
+        if (!Number.isInteger(value)) return;
+        this.#width = value + this.frameWidth;
     }
 
     get height() {
-        if (this.#popupHeight < 110 + this.frameHeight) {
+        if (this.#height < 110 + this.frameHeight) {
             return 110 + this.frameHeight;
         }
-        return this.#popupHeight;
+        return this.#height;
     }
     set height(value) {
-        this.#popupHeight = value + this.frameHeight;
+        if (!Number.isInteger(value)) return;
+        this.#height = value + this.frameHeight;
     }
 
     get playlistHeight() {
-        if (this.#popupPlaylistHeight < 270 + this.frameHeight) {
+        if (this.#playlistHeight < 270 + this.frameHeight) {
             return 270 + this.frameHeight;
         }
-        return this.#popupPlaylistHeight;
+        return this.#playlistHeight;
     }
     set playlistHeight(value) {
-        this.#popupPlaylistHeight = value + this.frameHeight;
+        if (!Number.isInteger(value)) return;
+        this.#playlistHeight = value + this.frameHeight;
     }
 
     get frameHeight() {
@@ -418,15 +464,37 @@ let PopupPosition = class {
     }
 
 }
-let popupPosition = new PopupPosition();
+let popupWindow = new PopupWindow();
 
-let toggleListMenu = (saveHeight = true) => {
-    hamburgerMenuList.classList.toggle("change-list");
-    if (Extension.isMenuListOpen == false || Extension.isMenuListOpen == undefined) {
-        popupPosition.x = screenLeft;
-        popupPosition.y = screenTop;
-        if (saveHeight) { popupPosition.height = window.innerHeight; }
-        window.resizeTo(popupPosition.width, popupPosition.playlistHeight);
+/** @param {boolean} show playlist or hide  */ 
+let togglePlaylist = (show) => {
+    if (show == undefined) { show = !popupWindow.isPlaylistOpen; }
+    if (typeof hamburgerMenuList != "undefined") {
+        hamburgerMenuList.classList.toggle("change-list");
+        let keyframeHamburger = { opacity: ['1', '0'] };
+        let optionsHamburger = { duration: 450 };
+        let animH = hamburgerMenuList.animate(keyframeHamburger, optionsHamburger);
+        if (show) {
+            animH.onfinish = () => {
+                hamburgerMenuList.style.top = "120px";
+                hamburgerMenuList.style.right = "10px";
+                keyframeHamburger = { opacity: ['0', '1'] };
+                hamburgerMenuList.animate(keyframeHamburger, optionsHamburger);
+            }
+        } else {
+            animH.onfinish = () => {
+                hamburgerMenuList.style.top = "0px";
+                hamburgerMenuList.style.right = "";
+                keyframeHamburger = { opacity: ['0', '1'] };
+                hamburgerMenuList.animate(keyframeHamburger, optionsHamburger);
+            }
+        }
+    }
+    if (show) {
+        popupWindow.x = screenLeft;
+        popupWindow.y = screenTop;
+        //popupWindow.height = window.innerHeight;
+        popupWindow.resizeTo(popupWindow.width, popupWindow.playlistHeight);
 
         keyframe = {
             height: ['0px', '100vh'],
@@ -437,24 +505,16 @@ let toggleListMenu = (saveHeight = true) => {
         list.style.overflowY = "hidden"
         list.style.display = "flex";
         let anim = list.animate(keyframe, options);
-        Extension.isMenuListOpen = true;
+        popupWindow.isPlaylistOpen = true;
         anim.onfinish = () => {
             list.style.height = "auto";
             list.style.overflowY = "auto";
             scrollToSelected();
         }
 
-        let keyframeHamburger = { opacity: ['1', '0'] };
-        let optionsHamburger = { duration: 450 };
-        let animH = hamburgerMenuList.animate(keyframeHamburger, optionsHamburger);
-        animH.onfinish = () => {
-            hamburgerMenuList.style.top = "120px";
-            hamburgerMenuList.style.right = "10px";
-            keyframeHamburger = { opacity: ['0', '1'] };
-            hamburgerMenuList.animate(keyframeHamburger, optionsHamburger);
-        }
+
+        console.log("playlist open")
     } else {
-        popupPosition.playlistHeight = window.innerHeight;
         keyframe = {
             height: ['100vh', '0px'],
             easing: ['cubic-bezier(.85, .2, 1, 1)']
@@ -463,31 +523,24 @@ let toggleListMenu = (saveHeight = true) => {
         let options = { duration: 500 }
         list.style.overflowY = "hidden"
         let anim = list.animate(keyframe, options);
-        Extension.isMenuListOpen = false;
+        popupWindow.isPlaylistOpen = false;
         anim.onfinish = () => {
             list.style.display = "none";
-            window.resizeTo(popupPosition.width, popupPosition.height);
-            if (popupPosition.x != screenLeft) {
+            popupWindow.resizeTo(popupWindow.width, popupWindow.height);
+            if (popupWindow.x != screenLeft) {
                 window.moveTo(screenLeft, screenTop);
                 return;
             }
-            window.moveTo(popupPosition.x, popupPosition.y);
+            window.moveTo(popupWindow.x, popupWindow.y);
             anim.onfinish = null;
         }
+        console.log("playlist close")
 
-        let keyframeHamburger = { opacity: ['1', '0'] };
-        let optionsHamburger = { duration: 450 }
-        let animH = hamburgerMenuList.animate(keyframeHamburger, optionsHamburger);
-        animH.onfinish = () => {
-            hamburgerMenuList.style.top = "0px";
-            hamburgerMenuList.style.right = "";
-            keyframeHamburger = { opacity: ['0', '1'] };
-            hamburgerMenuList.animate(keyframeHamburger, optionsHamburger);
-        }
     }
 }
 
 let showNoConnected = () => {
+    //return;
     getYandexMusicTab().then((result) => {
         if (Extension.isConnected == false) {
             if (result) {
@@ -541,7 +594,7 @@ let toggleLike = (isLike) => {
     if (isLike) {
         like[0].style.backgroundImage = "url(img/like.png)";
     } else {
-        like[0].style.backgroundImage = "url(img/notLike.png)";
+        like[0].style.backgroundImage = "url(img/no-like.png)";
     }
 }
 let toggleDislike = (isDisliked, notifyMe = false) => {
@@ -781,9 +834,13 @@ let Options = {
 
 let sendEventBackground = (event, callback) => { // event should be as object.
     chrome.runtime.sendMessage(event, function(response) {
+        console.log("response",response)
         if (response != undefined) {
+            if (response.options) {
+                setOptions(response.options); 
+            }
             if (callback != undefined) {
-                callback(response.options);
+                callback(response);
             }
         }
     });
@@ -822,18 +879,20 @@ let setOptions = (options) => {
         }
         if (options.popupBounds != undefined) {
             Options.popupBounds = options.popupBounds;
-            if (Extension.isMenuListOpen == undefined) {
-                popupPosition.playlistHeight = options.popupBounds.playlistHeight;
-                if (options.popupBounds.isTrackListOpen) {
-                    popupPosition.height = 110;
-                    toggleListMenu(false);
-                    return;
-                }
+            //this
+            popupWindow.playlistHeight = options.popupBounds.playlistHeight;
+            popupWindow.height = options.popupBounds.height;
+            console.log("options.popupBounds",options.popupBounds)
+            console.log("popupWindow", popupWindow)
+            if (options.popupBounds.isTrackListOpen) {
+               console.log("open list isTrackListOpen = ", options.popupBounds.isTrackListOpen);
+               togglePlaylist(true);
+               return;
             }
-            popupPosition.correctMinSize();
+            popupWindow.correctMinSize();
         }
     }
     // END OPTIONS
-    console.log("created windowSize", window.innerHeight, window.innerWidth);
+console.log("created windowSize", window.innerHeight, window.innerWidth);
 Options.onload();
 Extension.onload();

@@ -93,8 +93,8 @@ body {
 }
 
 .slider-progress-popup {
-    margin-left: 5px;
-    margin-right: 5px;
+    margin-left: 10px;
+    margin-right: 10px;
 }
 
 .slider-content-popup {
@@ -113,11 +113,13 @@ body {
 }
 
 .current-time {
+    margin-left: 5px;
     padding: unset;
     padding-right: unset;
 }
 
 .duration {
+    margin-right: 5px;
     padding: unset;
 }
 

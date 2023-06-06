@@ -162,6 +162,10 @@ let createListElement = (list, index) => {
             }
         }
         itemTrack.appendChild(listLike);
+        let trackTime = document.createElement("span");
+        trackTime.classList.add("track-time");
+        trackTime.innerHTML = twoDigits(splitSeconds(list[i].duration).seconds, splitSeconds(list[i].duration).minutes);
+        itemTrack.appendChild(trackTime);
         if (index != undefined && index == i) {
             selectItem(itemTrack, index);
         }
