@@ -20,7 +20,7 @@ window.addEventListener("message", function(event) {
             next();
             break;
         case 'setTime':
-            externalAPI.setPosition(event.data.time)
+            externalAPI.setPosition(event.data.time);
             break;
         case 'toggleLike':
             toggleLike();
@@ -87,8 +87,10 @@ window.onpagehide = (event) => {
 //     setTimeout(() => {
 //     }, 5000)
 // }
+let previousProgress = 0, currentProgress = 0;
 
 externalAPI.on(externalAPI.EVENT_TRACK, function(event) {
+    previousProgress = 0;
     getTracks(true); //this
     setMediaSession();
 });
@@ -107,6 +109,16 @@ externalAPI.on(externalAPI.EVENT_VOLUME, function(event) {
         event: "VOLUME",
         volume: externalAPI.getVolume()
     });
+});
+
+externalAPI.on(externalAPI.EVENT_PROGRESS, function(event) {
+    currentProgress = externalAPI.getProgress().position;
+    if (previousProgress + 1 < currentProgress || previousProgress - 1 > currentProgress) {
+        chrome.runtime.sendMessage(YandexMusicControl.id, {
+            progress: externalAPI.getProgress(),
+        });
+    }
+    previousProgress = currentProgress;
 });
 
 let getArtists = (list) => {
