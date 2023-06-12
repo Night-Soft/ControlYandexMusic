@@ -63,7 +63,6 @@ let Options = {
     isSavePosPopup: undefined,
     popupBounds: undefined,
     reassign: undefined,
-    popupFrame: undefined
 }
 
 let PopupWindow = class {
@@ -149,7 +148,6 @@ let PopupWindow = class {
                             windowData.height = this.bounds.height;
                         }
                         Object.assign(this.bounds, windowData);
-                        console.log("windowData", this.bounds)
                         resolve({
                             nowCreated: true,
                             exists: true,
@@ -235,17 +233,17 @@ let PopupWindow = class {
 chrome.commands.onCommand.addListener(function(command) {
     if (command) { // 'next-key' 'previous-key' 'togglePause-key' 'toggleLike-key'
         if (Options.reassign == undefined) {
-            getOptions({ parameters: ["popupBounds", "reassign", "frame"] }).then((result) => {
+            getOptions({ parameters: ["popupBounds", "reassign"] }).then((result) => {
                 if ("isReassign" in Options.reassign) {
                     if (Options.reassign.isReassign == true && Options.reassign.shortCut.name == command) {
-                        openUpdatePopup();
+                        createUpdatePopup();
                         return;
                     }
                 }
             });
         } else {
             if (Options.reassign.isReassign == true && Options.reassign.shortCut.name == command) {
-                openUpdatePopup();
+                createUpdatePopup();
                 return;
             } else {
                 sendEvent({ commandKey: command, key: true });
@@ -318,27 +316,16 @@ chrome.runtime.onMessage.addListener( // content, extension, script
             writePopupBounds(request.savePopupBounds);
         }
         if (request.createPopup) {
-            console.log("request.createPopup");
-            openUpdatePopup().then((result) => {
-                console.log("result", result);
+            createUpdatePopup().then((result) => {
                 sendResponse(result);
             });
-        }
-        if (request.frame) {
-            console.log("frame", request);
-            writeOptions({popupFrame: request.frame});
-        }
-        if (request.sidePanel) {
-           console.log("sidePanel")
         }
         return true; // 
     });
 
 chrome.windows.onRemoved.addListener((ev) => {
     if (ev == PopupWindow.instance.bounds.id) {
-        //this
         // write popupBounds when popup window removed
-        console.log("write on removed", Object.assign({}, PopupWindow.instance.bounds));
         writePopupBounds(Object.assign({}, PopupWindow.instance.bounds), true);
     }
 });
@@ -370,7 +357,7 @@ let getYandexMusicTab = () => {
 
 let writePopupBoundsTimer;
 let writePopupBounds = (popupBounds, force = false) => {
-    console.log("wirte", popupBounds)
+    //console.log("set popupBounds date to instance", popupBounds)
     PopupWindow.instance.bounds = popupBounds;
     try {
         const del = (obj, arr = ["id", "tabs", "focused", "type", "state", "incognito", "alwaysOnTop"]) => {
@@ -380,7 +367,7 @@ let writePopupBounds = (popupBounds, force = false) => {
         }
         del(popupBounds);
         del(Options.popupBounds);
-        console.log("del popupBounds", popupBounds);
+        //console.log("delete unnecessary from popupBounds", popupBounds);
     } catch (error) { }
     // save to instance
     if (Options.isSavePosPopup) {
@@ -397,14 +384,14 @@ let writePopupBounds = (popupBounds, force = false) => {
             }
             Options.popupBounds = PopupWindow.instance.bounds;
             writePopupBoundsTimer = setTimeout(() => {
-                console.log("timeout write")
+                //console.log("popupBounds writed with timeout")
                 writeOptions({popupBounds});
             }, 15000);
         }
     }
 }
 // send to get frame
-let openUpdatePopup = async() => {
+let createUpdatePopup = async() => {
     if (typeof(popupWindow) == 'undefined') {
         popupWindow = new PopupWindow();
     }
@@ -654,23 +641,40 @@ let readOption = (option) => {
         });
     }
     if (option.parameters) { // get selected options
-        return new Promise((resolve, reject) => {
-            let OptionsKeys = Object.keys(Options);
-            let obj = {}
-            for (let j = 0; j < option.parameters.length; j++) {
-                for (let i = 0; i < OptionsKeys.length; i++) {
-                    if (OptionsKeys[i].localeCompare(option.parameters[j]) == 0) {
-                        chrome.storage.local.get([option.parameters[j]], function(result) {
-                            Options[OptionsKeys[i]] = result[OptionsKeys[i]];
-                            obj[OptionsKeys[i]] = result[OptionsKeys[i]];
-                            if (option.parameters.length == Object.keys(obj).length) {
-                                Background.lastReaded.parameters = option.parameters;
-                                resolve(obj);
-                            }
-                        });
-
+        const compare = (arr1, arr2) => {
+            let same = [];
+            let different = arr1.slice();
+            for (let i = 0; i < arr1.length; i++) {
+                for (let j = 0; j < arr2.length; j++) {
+                    if (arr1[i] == arr2[j]) {
+                        same.push(arr1[i]);
+                        different.splice(different.indexOf(arr1[i]), 1);
                     }
                 }
+            }
+            return { parameters: same, different };
+        }
+
+        return new Promise((resolve, reject) => {
+            let { parameters, different } = compare(option.parameters, Object.keys(Options));
+
+            if (different.length > 0) {
+                try {
+                    throw new Error(`The "${different}" is not defined!`);
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+            let object = {}
+            for (let i = 0; i < parameters.length; i++) {
+                chrome.storage.local.get(parameters[i], (result) => {
+                    object[parameters[i]] = result[parameters[i]];
+                    Options[parameters[i]] = result[parameters[i]];
+                    if (i + 1 == parameters.length) {
+                        Background.lastReaded.parameters = parameters;
+                        resolve(object)
+                    }
+                });
             }
 
         });
@@ -678,7 +682,6 @@ let readOption = (option) => {
 }
 
 let writeOptions = (option) => {
-    console.log("option", option);
     let keysOptions = Object.keys(Options);
     let keysOption = Object.keys(option);
 
@@ -687,7 +690,6 @@ let writeOptions = (option) => {
             if (keysOptions[i] == keysOption[j]) {
                 chrome.storage.local.set({ [keysOptions[i]]: option[keysOptions[i]] });
                 Options[keysOptions[i]] = option[keysOptions[i]];
-                console.log("Writed", option);
                 continue next;
             }
         }
@@ -703,6 +705,12 @@ let writeOptions = (option) => {
  * @return {object} Result as object.
  */
 let getOptions = async(option = true, send = false) => { // read and send
+    if (option != true && typeof option != "object" && !Array.isArray(option)) {
+        option = { parameters: [option.toString()] };
+    }
+    if (Array.isArray(option)) {
+        option = { parameters: option }
+    }
     return new Promise((resolve, reject) => {
         readOption(option).then((result) => { // read from parameter
             if (option === true) {
