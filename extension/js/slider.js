@@ -394,7 +394,7 @@ sliderPrgress.ownWheel = (event) => {
 
 let countTimeHelpers = (currentPosition, duration = getDuration()) => {
     let currentSeconds = currentPosition * 100 / sliderPrgress.groove.offsetWidth * duration / 100;
-    let time = twoDigits(splitSeconds(currentSeconds).seconds, splitSeconds(currentSeconds).minutes);
+    let time = getStringDuration(currentSeconds);
     return time;
 }
 
@@ -412,9 +412,9 @@ function setTime() {
 function setTrackProgress(duration = getDuration(), progress = getProgress(), isPlaying = getIsPlay()) {
     //set duration time progress
     sliderPrgress.maxScale = duration;
-    durationSpan.innerHTML = twoDigits(splitSeconds(duration).seconds, splitSeconds(duration).minutes);
+    durationSpan.innerHTML = getStringDuration(duration);
     //set current time progress
-    currentTime.innerHTML = twoDigits(splitSeconds(progress).seconds, splitSeconds(progress).minutes);
+    currentTime.innerHTML = getStringDuration(progress);
     // set progress to slider
     sliderPrgress.setPosition({ scale: progress });
 }
@@ -424,18 +424,30 @@ const stopUpdater = () => {
         clearInterval(progressUpdater)
     } catch (error) { console.log(error); }
 }
-
+let getProgressCouter = 0;
+let getProgressId;
 function trackUpdater(duration = getDuration(), progress = getProgress(), isPlay = getIsPlay()) {
     stopUpdater();
     if (!isPlay) return;
     if (progress == 0) {
-        sendEvent({ getProgress: true }, false, true);
+        if (getProgressCouter <= 150) { // 150 request in 30 seconds
+            clearInterval(getProgressId);
+            getProgressId = setTimeout(() => {
+                sendEvent({ getProgress: true }, false, true);
+                getProgressCouter++;
+            }, 200);
+        } else {
+            changeState(false);
+            getProgressCouter = 0;
+        }
         return;
-    }
+    }    
+    getProgressCouter = 0;
+    changeState(isPlay);
     if (isPlay) progressUpdater = setInterval(updaterTimer, 500);
     sliderPrgress.maxScale = duration;
     currentUnixTime = Date.now();
-
+    progress = Number.parseFloat(progress.toFixed(6));
     function updaterTimer() {
         if (progress >= duration) {
             clearInterval(progressUpdater);
@@ -447,25 +459,37 @@ function trackUpdater(duration = getDuration(), progress = getProgress(), isPlay
             currentUnixTime = Date.now();
         }
         //set current time progress
-        currentTime.innerHTML = twoDigits(splitSeconds(progress).seconds, splitSeconds(progress).minutes);
+        if (progress > duration) { progress = duration; }
+        progress = Number.parseFloat(progress.toFixed(6));
+        currentTime.innerHTML = getStringDuration(progress);
         sliderPrgress.setPosition({ scale: progress });
     }
 }
 
 let splitSeconds = (currentSeconds) => {
+    let hours = 0;
     let minutes = 0;
     let seconds = 0;
-    if (currentSeconds >= 59) {
+    if (currentSeconds / 3600 > 0) {
+        hours = Math.floor(currentSeconds / 3600);
+        currentSeconds = currentSeconds - (hours * 3600);
+    }
+    if (currentSeconds > 59) {
         minutes = Math.floor(currentSeconds / 60);
         seconds = Math.floor(currentSeconds - minutes * 60);
     } else {
         seconds = Math.ceil(currentSeconds);
     }
-    return { minutes: minutes, seconds: seconds }
+    return { hours: hours, minutes: minutes, seconds: seconds }
 }
 
-let twoDigits = (seconds, minutes) => {
-    let textSeconds, textMinutes;
+let twoDigits = (seconds, minutes, hours) => {
+    let textSeconds, textMinutes, textHours;
+    if(hours > 0 && hours < 10) {
+        textHours = "0" + hours;
+    } else {
+        textHours = hours;
+    }
     if (seconds < 10) {
         textSeconds = "0" + seconds;
     } else {
@@ -476,12 +500,20 @@ let twoDigits = (seconds, minutes) => {
     } else {
         textMinutes = minutes;
     }
+    if (hours > 0) {
+    return textHours + ":" + textMinutes + ":" + textSeconds;
+    }
     return textMinutes + ":" + textSeconds;
+}
+
+let getStringDuration = (duration = 0) => {
+    const {seconds, minutes, hours} = splitSeconds(duration);
+    return twoDigits(seconds, minutes, hours);
 }
 
 try {
     JsOnload.onload("Slider", false);
 } catch (error) {
-    console.log(error);
+    //console.log(error);
 }
     

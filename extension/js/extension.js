@@ -200,13 +200,7 @@ chrome.runtime.onMessageExternal.addListener( // injected script
         if (request.hasOwnProperty('progress')) {
             if (Object.keys(request).length == 1) {
                 getProgress(request.progress.position);
-                if (request.progress.position == 0) {
-                    setTimeout(() => {
-                        trackUpdater();
-                    }, 500);
-                } else {
-                    trackUpdater();
-                }
+                trackUpdater();
             }
         }
         return true;
@@ -523,7 +517,6 @@ settings.onclick = (event) => {
 }
 
 let timeToClose;
-let log = (...data) => { console.log(data) }
 settings.onmouseleave = () => {
     if (isSettingsOpen) return;
     settings.style.background = "";
@@ -638,7 +631,6 @@ let toggleListMenu = () => {
 }
 
 let showNoConnected = () => {
-    //return;
     getYandexMusicTab().then((result) => {
         if (Extension.isConnected == false) {
             if (result) {
@@ -942,5 +934,5 @@ let openCover = (item, url, animate = animateMainImage) => {
 }
 
 let pushEvent = (target, event) => {
-    _gaq.push(['_trackEvent', target, event]);
+    //gtag('event', target, event);
 }

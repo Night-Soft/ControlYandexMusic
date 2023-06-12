@@ -118,7 +118,7 @@ chrome.runtime.onMessage.addListener( // background, content script
             window.moveTo(0,0);
             setTimeout(()=>{
                 sendEventBackground({ frame: { height: screenTop, width: screenLeft } });
-                console.log("getFrame send frame", { frame: { height: screenTop, width: screenLeft } });
+               // console.log("getFrame send frame", { frame: { height: screenTop, width: screenLeft } });
                 window.moveTo(popupWindow.x - screenLeft, popupWindow.y - screenTop);
             }, 100);
         }
@@ -128,7 +128,6 @@ chrome.runtime.onMessageExternal.addListener( // injected script
     (request, sender, sendResponse) => {
         switch (request.event) {
             case 'currentTrack': // get from the key
-            console.log("currentTrack")
                 setMediaData(request.currentTrack.title, getArtists(request.currentTrack, 5), request.currentTrack.cover);
                 changeState(request.isPlaying);
                 toggleLike(request.currentTrack.liked);
@@ -192,13 +191,7 @@ chrome.runtime.onMessageExternal.addListener( // injected script
         if (request.hasOwnProperty('progress')) {
             if (Object.keys(request).length == 1) {
                 getProgress(request.progress.position);
-                if (request.progress.position == 0) {
-                    setTimeout(() => {
-                        trackUpdater();
-                    }, 500);
-                } else {
-                    trackUpdater();
-                }
+                trackUpdater();
             }
         }
         if (request.pagehide) {
@@ -206,7 +199,7 @@ chrome.runtime.onMessageExternal.addListener( // injected script
             sendEventBackground({ isConnected: false })
             window.close();
         }
-        return true;
+       // return true;
     });
 
 let boundsChangedId;
@@ -476,6 +469,7 @@ let togglePlaylist = (show) => {
         let animH = hamburgerMenuList.animate(keyframeHamburger, optionsHamburger);
         if (show) {
             animH.onfinish = () => {
+                hamburgerMenuList.classList.add("playlist-open");
                 hamburgerMenuList.style.top = "120px";
                 hamburgerMenuList.style.right = "10px";
                 keyframeHamburger = { opacity: ['0', '1'] };
@@ -483,6 +477,7 @@ let togglePlaylist = (show) => {
             }
         } else {
             animH.onfinish = () => {
+                hamburgerMenuList.classList.remove("playlist-open");
                 hamburgerMenuList.style.top = "0px";
                 hamburgerMenuList.style.right = "";
                 keyframeHamburger = { opacity: ['0', '1'] };
@@ -511,9 +506,7 @@ let togglePlaylist = (show) => {
             list.style.overflowY = "auto";
             scrollToSelected();
         }
-
-
-        console.log("playlist open")
+        // playlist open
     } else {
         keyframe = {
             height: ['100vh', '0px'],
@@ -534,7 +527,7 @@ let togglePlaylist = (show) => {
             window.moveTo(popupWindow.x, popupWindow.y);
             anim.onfinish = null;
         }
-        console.log("playlist close")
+        // playlist close
 
     }
 }
@@ -834,7 +827,6 @@ let Options = {
 
 let sendEventBackground = (event, callback) => { // event should be as object.
     chrome.runtime.sendMessage(event, function(response) {
-        console.log("response",response)
         if (response != undefined) {
             if (response.options) {
                 setOptions(response.options); 
@@ -882,10 +874,7 @@ let setOptions = (options) => {
             //this
             popupWindow.playlistHeight = options.popupBounds.playlistHeight;
             popupWindow.height = options.popupBounds.height;
-            console.log("options.popupBounds",options.popupBounds)
-            console.log("popupWindow", popupWindow)
             if (options.popupBounds.isTrackListOpen) {
-               console.log("open list isTrackListOpen = ", options.popupBounds.isTrackListOpen);
                togglePlaylist(true);
                return;
             }
@@ -893,6 +882,5 @@ let setOptions = (options) => {
         }
     }
     // END OPTIONS
-console.log("created windowSize", window.innerHeight, window.innerWidth);
 Options.onload();
 Extension.onload();
