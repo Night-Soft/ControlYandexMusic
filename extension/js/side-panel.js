@@ -4,6 +4,7 @@ let SidePanel = {
             setTimeout(()=>{
                 sliderPrgress.setPosition({scale: 50});
                 setVolume(0.5);
+                changeState(getIsPlay())
            // console.log("time out");
             },100);
         }
@@ -16,7 +17,6 @@ const popupBtn = document.getElementsByClassName("popup-btn")[0];
 popupBtn.onclick = () => {
     sendEventBackground({ createPopup: true},
         (result) => {
-            console.log(result);
             if (result.exists && result.isCreated) {
                 showNotification(result.message, 5500);
             } else if (result.exists) {

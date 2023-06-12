@@ -3,9 +3,9 @@ const fs = require("fs");
 const { version } = require("process");
 const beautify = require('beautify');
 
-const red = '\033[0;31m';
-const green = '\033[0;32m';
-const clear = '\033[0m';
+const red = '\x1b[0;31m';
+const green = '\x1b[0;32m';
+const clear = '\x1b[0m';
 
 const enter = () => {
   if (process.argv.length <= 2) {
@@ -102,7 +102,7 @@ const preRelease = async (version = "pre-release") => {
         console.error(err);
       }
       console.log("copied successfully");
-      console.log(version + " built in " + (performance.now() - timeStart).toFixed(3));
+      console.log(green + version + " built in " + (performance.now() - timeStart).toFixed(3) + clear);
     });
   });
 }
@@ -152,7 +152,7 @@ const buildRelease = async (version = "release") => {
   });
   zip.file("manifest.json", beautify(JSON.stringify(manifest), { format: 'json' }));
   zip.file('Readme.txt', fs.readFileSync("Readme.txt"))
-  const zipName = 'Yandex Music ' + manifest.version + ".zip";
+  const zipName = 'Yandex Music Control ' + manifest.version + ".zip";
   zip.generateNodeStream({
     type: 'nodebuffer', compression: "DEFLATE",
     compressionOptions: {
@@ -162,7 +162,7 @@ const buildRelease = async (version = "release") => {
   }).pipe(fs.createWriteStream(zipName))
     .on('finish', function () {
       console.log(zipName + " written.");
-      console.log(version + " built in " + (performance.now() - timeStart).toFixed(3));
+      console.log(green + version + " built in " + (performance.now() - timeStart).toFixed(3) + clear);
 
     });
 }

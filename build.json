@@ -1,5 +1,5 @@
 {
-    "version": "3.0.3",
+    "version": "3.1.0",
     "release": {
         "name": "__MSG_appName__",
         "icons": {
@@ -30,6 +30,7 @@
       "ignore": [
         "extension/img/icon-pre-release.png",
         "extension/img/icon-dev.png",
-        "extension/img/payplal.png"
+        "extension/js/gaq.js",
+        "extension/js/gtag.js"
       ]
 }

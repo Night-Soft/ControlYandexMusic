@@ -68,7 +68,11 @@ body {
     transform: rotate(45deg) translate(-5px, -5px);
     width: 20px;
 }
-
+.playlist-open {
+    background-color: rgb(0 0 0 / 10%);
+    backdrop-filter: blur(2px);
+    border-bottom-left-radius: 5px;
+}
 .modal-list-menu-popup {
     display: none;
     height: auto;
@@ -196,8 +200,11 @@ body {
 }
 
 .item-track {
-    padding: 7px;
     min-height: 20px;
+    margin: 5px 0px 5px 0px;
+    padding: unset;
+    transition: 0.4s;
+    font-family: 'Roboto', sans-serif;
 }
 
 .selected-item {
@@ -219,15 +226,18 @@ body {
 }
 
 .list-like {
-    min-width: 25px;
-    height: 25px;
+    min-width: 30px;
+    height: 30px;
     border-radius: 5px;
+    margin-top: 3px;
 }
 
 .list-dislike {
-    min-width: 25px;
-    height: 25px;
+    min-width: 30px;
+    height: 30px;
     border-radius: 5px;
+    margin-top: 3px;
+
 }
 
 .list-disliked {
@@ -345,5 +355,17 @@ body {
     }
     .no-conect-btn {
         font-size: initial;
+    }
+}
+
+@media screen and (max-height: 370px) {
+    .list-like {
+        min-width: 24px;
+        height: 24px
+    }
+
+    .list-dislike {
+        min-width: 24px;
+        height: 24px
     }
 }

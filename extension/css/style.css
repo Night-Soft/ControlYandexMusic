@@ -513,6 +513,7 @@ a {
     --progress: #ffdd00;
     --handleWhite: #ffffff;
     --backgroundControl: rgba(252, 252, 255, 0.17);
+    --ifHour: calc(100% - 80px);
 }
 
 .slider-groove-progress {
@@ -667,6 +668,7 @@ a {
     height: 30px;
     position: absolute;
     right: 5px;
+    margin-top: 3px;
     background-size: contain;
     margin-left: auto;
     border-radius: 10px;
@@ -682,6 +684,7 @@ a {
     min-width: 30px;
     height: 30px;
     position: absolute;
+    margin-top: 3px;
     right: 5px;
     background-size: contain;
     align-self: auto;
@@ -740,7 +743,6 @@ a {
 
 .item-track {
     display: flex;
-    padding: 5px;
     margin: 5px 0px 5px 0px;
     font-size: 1.1rem;
     cursor: pointer;
@@ -750,10 +752,19 @@ a {
 
 .item-track:hover {
     background: rgb(128 128 128 / 45%);
-    padding-left: 25px;
     border-radius: 5px;
 }
-
+.item-track-content {
+    display: flex;
+    width: 100%;
+    padding: 5px;
+    /* margin: 5px 0px 5px 0px; */
+    padding: 5px;
+    transition: 0.4s;
+}
+.item-track-content:hover {
+    transform: translateX(25px);
+}
 .title-list {
     text-align: center;
     font-size: 1.3rem;
@@ -774,7 +785,7 @@ a {
 }
 
 .content-item-name {
-    max-width: calc(100% - 80px);
+    max-width: var(--ifHour);
     align-self: center;
     overflow-wrap: anywhere;
 }
