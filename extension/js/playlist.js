@@ -62,6 +62,7 @@ let setTracksList = (list, index) => {
     createListElement(list, index);
 }
 let createListElement = (list, index) => {
+    let ifHour = false;
     for (let i = 0; i < list.length; i++) {
         let itemTrack = document.createElement("DIV");
         itemTrack.classList.add("item-track");
@@ -88,17 +89,20 @@ let createListElement = (list, index) => {
 
         contentItemName.appendChild(itemNameTrack);
         contentItemName.appendChild(itemArtists);
+        let itemTrackContent = document.createElement("DIV");
+        itemTrackContent.classList.add("item-track-content");
 
-        itemTrack.appendChild(itemCover);
-        itemTrack.appendChild(contentItemName);
+        itemTrackContent.appendChild(itemCover);
+        itemTrackContent.appendChild(contentItemName);
 
         let listLike = document.createElement("DIV");
         if (list[i].liked) {
             listLike.classList.add("list-like");
         } else if (list[i].disliked) {
-            setDislikedStyle(itemTrack, true);
+            setDislikedStyle(itemTrackContent, true);
             listLike.classList.add("list-disliked");
         }
+
         itemTrack.onmouseenter = (ev) => {
             ev.stopPropagation();
             ev.stopImmediatePropagation();
@@ -120,6 +124,7 @@ let createListElement = (list, index) => {
                 }
             }
         }
+
         itemTrack.onmouseleave = (ev) => {
             ev.stopPropagation();
             ev.stopImmediatePropagation();
@@ -139,9 +144,9 @@ let createListElement = (list, index) => {
                 listLike.onLongPress = null;
             }
         }
+
         itemTrack.onclick = (ev) => {
-            if (ev.target == itemTrack || ev.target == contentItemName ||
-                ev.target == itemNameTrack || ev.target == itemArtists) {
+            if (ev.target != listLike && ev.target != itemCover) {
                 if (State.index == i) {
                     sendEvent("togglePause");
                 } else {
@@ -162,13 +167,21 @@ let createListElement = (list, index) => {
             }
         }
         itemTrack.appendChild(listLike);
+
         let trackTime = document.createElement("span");
         trackTime.classList.add("track-time");
-        trackTime.innerHTML = twoDigits(splitSeconds(list[i].duration).seconds, splitSeconds(list[i].duration).minutes);
+        trackTime.innerHTML = getStringDuration(list[i].duration);
         itemTrack.appendChild(trackTime);
+
         if (index != undefined && index == i) {
             selectItem(itemTrack, index);
         }
+        if (list[i].duration > 3600 && ifHour == false) {
+            let rootCss = document.querySelector(':root');
+            rootCss.style.setProperty('--ifHour', 'calc(100% - 100px)');
+        }
+
+        itemTrack.prepend(itemTrackContent);
         listTracks.appendChild(itemTrack);
     }
     selectedItem.scrollIntoView({ block: "center", behavior: "smooth" });
