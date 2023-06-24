@@ -58,6 +58,7 @@ let Options = {
     version: undefined,
     oldVersionDescription: undefined,
     isDarkTheme: undefined,
+    theme: undefined,
     isCoverIncrease: undefined,
     isDislikeButton: undefined,
     isSavePosPopup: undefined,
@@ -694,6 +695,18 @@ let writeOptions = (option) => {
             }
         }
 
+    }
+    if (option.remove) {
+        chrome.storage.local.remove(option.remove);
+        if (Array.isArray(option.remove)) {
+            option.remove.forEach(element => {
+                delete Options[element];
+            });
+            return;
+        }
+        if (typeof option.remove == "string") {
+            delete Options[option.remove];
+        }
     }
 }
 
