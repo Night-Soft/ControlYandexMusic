@@ -8,19 +8,24 @@ let Slider = class {
             isShown: false,
             isHelper: true
         }
-
-        groove.onmousemove = this.onMouseMove.bind(this);
-        groove.onmouseleave = this.onMouseLeave.bind(this);
-
-        groove.onmousedown = this.onMouseDown.bind(this);
-        groove.onmouseup = this.onMouseUp.bind(this);
-        groove.onwheel = this.onWheel.bind(this);
-
         this.scale = 50;
-        this.scaleOnMouseMove = 50;
         this.maxScale = 100;
+        this.scaleOnMouseMove = 50;
         this.isMouseEnter = false;
         this.isOwnDataHelper = false;
+
+        this._onMouseMove = this._onMouseMove.bind(this);
+        this._onMouseLeave = this._onMouseLeave.bind(this);
+        this._onMouseDown = this._onMouseDown.bind(this);
+        this._onMouseUp = this._onMouseUp.bind(this);
+        this._onWheel = this._onWheel.bind(this);
+
+        groove.addEventListener("mousemove", this._onMouseMove);
+        groove.addEventListener("mouseleave", this._onMouseLeave);
+        groove.addEventListener("mousedown", this._onMouseDown);
+        groove.addEventListener("mouseup", this._onMouseUp);
+        groove.addEventListener("wheel", this._onWheel);
+
         groove.onmouseenter = (event) => {
             this.isMouseEnter = true;
             setTimeout(() => {
@@ -33,104 +38,95 @@ let Slider = class {
             }, 150);
             this.ownMouseEnter(event);
         }
-        this.setPosition({ event: { type: "wheel" }, scale: this.scale });
+        this.setPosition(this.scale);
     }
-    onWheel(event) {
+    _onWheel(event) {
         if (event.deltaY < 0) {
             if (this.scale <= this.maxScale) {
                 this.scale += 4;
                 if (this.scale > this.maxScale) this.scale = this.maxScale;
-                this.setPosition({ event: event, scale: this.scale });
-                this.setPositionHelper({ scale: this.scale });
+                this.setPosition(this.scale);
+                this.setPositionHelper(this.scale);
             }
         } else {
             if (this.scale >= 0) {
                 this.scale -= 4;
                 if (this.scale < 0) this.scale = 0;
-                this.setPosition({ event: event, scale: this.scale });
-                this.setPositionHelper({ scale: this.scale });
+                this.setPosition(this.scale);
+                this.setPositionHelper(this.scale);
             }
         }
         this.ownWheel(event);
 
     }
-    ownWheel(event) {};
-    ownMouseEnter(event) {};
-    onMouseMove(event) {
+    ownWheel(event) { };
+    ownMouseEnter(event) { };
+    _onMouseMove(event) {
         this.setPositionHelper(event);
         this.ownMouseMove(event);
     }
-    ownMouseMove(event) {};
-    onMouseLeave(event) {
+    ownMouseMove(event) { };
+    _onMouseLeave(event) {
         this.isMouseEnter = false;
         this.showHelper(false);
-        this.groove.onmouseleave = this.onMouseLeave.bind(this);
-        this.groove.onmousemove = this.onMouseMove.bind(this);
+        this.groove.removeEventListener("mousemove", this.#onMouseMoveDown);
         this.ownMouseLeave(event);
     }
-    ownMouseLeave(event) {};
-    onMouseDown(event) {
+    ownMouseLeave(event) { };
+    _onMouseDown(event) {
         this.setPosition(event);
         this.ownMouseDown(event);
-        this.groove.onmousemove = (event) => {
-            this.setPosition(event);
-            this.setPositionHelper(event);
-            this.ownMouseMoveDown(event);
-        }
+        this.groove.addEventListener("mousemove", this.#onMouseMoveDown);
     }
-    ownMouseMoveDown(event) {};
-    ownMouseDown(event) {};
-    onMouseUp(event) {
-        this.groove.onmouseleave = this.onMouseLeave.bind(this);
-        this.groove.onmousemove = this.onMouseMove.bind(this);
+    #onMouseMoveDown = (event) => {
+        this.setPosition(event);
+        this.setPositionHelper(event);
+        this.ownMouseMoveDown(event);
+    }
+    ownMouseMoveDown(event) { };
+    ownMouseDown(event) { };
+    _onMouseUp(event) {
+        this.groove.removeEventListener("mousemove", this.#onMouseMoveDown);
         this.ownMouseUp(event);
     }
-    ownMouseUp(event) {};
-    counter(currentGrove) {
+    ownMouseUp(event) { };
+    #counter(currentGrove) {
         return Math.round(currentGrove * this.maxScale / this.groove.offsetWidth);
     }
     setPosition(event) {
-        if (event.hasOwnProperty("scale")) {
-            if (event.scale > this.maxScale) event.scale = this.maxScale;
-            let x = event.scale * this.groove.offsetWidth / this.maxScale;
+        if (isFinite(event)) { // from wheel and constructor
+            if (event > this.maxScale) event = this.maxScale;
+            let x = event * this.groove.offsetWidth / this.maxScale;
             this.currentGroove.style.width = x + "px";
-            this.handle.style.left = x + this.groove.offsetLeft - this.handle.offsetWidth + this.handle.offsetWidth / 2 + "px";
-            this.scale = event.scale;
-            //console.log(x, this.currentGroove.style.width, this.handle.style.left);
+            this.handle.style.left = x - this.handle.offsetWidth / 2 +"px";
+            this.scale = event;
             return;
         }
-        if (event.hasOwnProperty("event")) { // from wheel and constructor
-            let x = event.scale * this.groove.offsetWidth / this.maxScale;
-            this.currentGroove.style.width = x + "px";
-            this.handle.style.left = x + this.groove.offsetLeft - this.handle.offsetWidth + this.handle.offsetWidth / 2 + "px";
-            return;
-        }
-
         let x = event.x - this.groove.offsetLeft;
         if (x >= 0 && x <= this.groove.offsetWidth) {
             this.currentGroove.style.width = x + "px";
-            this.handle.style.left = x + this.groove.offsetLeft - this.handle.offsetWidth + this.handle.offsetWidth / 2 + "px";
+            this.handle.style.left = x - this.handle.offsetWidth / 2 +"px";
             this.scale = this.currentGroove.offsetWidth * this.maxScale / this.groove.offsetWidth;
         } else if (x > this.groove.offsetWidth) {
             x = this.groove.offsetWidth;
             this.currentGroove.style.width = x + "px";
-            this.handle.style.left = x + this.groove.offsetLeft - this.handle.offsetWidth + this.handle.offsetWidth / 2 + "px";
+            this.handle.style.left = x - this.handle.offsetWidth / 2 +"px";
             this.scale = this.currentGroove.offsetWidth * this.maxScale / this.groove.offsetWidth;
         } else if (x < 0) {
             x = 0;
             this.currentGroove.style.width = x + "px";
-            this.handle.style.left = x + this.groove.offsetLeft - this.handle.offsetWidth + this.handle.offsetWidth / 2 + "px";
+            this.handle.style.left = x - this.handle.offsetWidth / 2 +"px";
             this.scale = this.currentGroove.offsetWidth * this.maxScale / this.groove.offsetWidth;
         }
     }
     setPositionHelper(event) {
-        if (event.hasOwnProperty("scale")) {
+        if (isFinite(event)) {
             if (this.Helper.isHelper) {
-                let x = event.scale * this.groove.offsetWidth / this.maxScale;
+                let x = event * this.groove.offsetWidth / this.maxScale;
                 if (x >= 0 && x <= this.groove.offsetWidth) {
-                    this.Helper.element.style.left = x + this.groove.offsetLeft - this.Helper.element.offsetWidth + this.Helper.element.offsetWidth / 2 + "px";
+                    this.Helper.element.style.left = x - this.Helper.element.offsetWidth/2 + "px";
                 }
-                let percent = this.counter(x);
+                let percent = this.#counter(x);
                 this.scaleOnMouseMove = percent;
                 if (this.isOwnDataHelper) return;
                 if (percent <= this.maxScale && percent >= 0) { // percent
@@ -142,9 +138,9 @@ let Slider = class {
         if (this.Helper.isHelper) {
             let x = event.x - this.groove.offsetLeft;
             if (x >= 0 && x <= this.groove.offsetWidth) {
-                this.Helper.element.style.left = x + this.groove.offsetLeft - this.Helper.element.offsetWidth + this.Helper.element.offsetWidth / 2 + "px";
+                this.Helper.element.style.left = x - this.Helper.element.offsetWidth/2 + "px";
             }
-            let percent = this.counter(x);
+            let percent = this.#counter(x);
             this.scaleOnMouseMove = percent;
             if (this.isOwnDataHelper) return;
             if (percent <= this.maxScale && percent >= 0) { // percent
@@ -153,7 +149,7 @@ let Slider = class {
         }
     }
 
-    setDataHelper(data) {
+    setDataHelper(data,) {
         this.Helper.element.innerHTML = data;
     }
 
@@ -240,6 +236,7 @@ contentGrooveVolume.onmouseleave = () => {
  * @param {number} volume min 0 max 1.
  */
 let setVolume = (volume) => {
+    State.volume = volume;
     volume = volume * 100;
     let isVolume;
     if (sliderVolumeContent.style.display != "block") {
@@ -247,14 +244,14 @@ let setVolume = (volume) => {
         isVolume = false;
     }
     if (volume >= 50) {
-        sliderVolume.setPosition({ scale: volume });
+        sliderVolume.setPosition(volume);
         updateToggleVolumeIcon(volume);
     } else if (volume < 50 && volume != 0) {
-        sliderVolume.setPosition({ scale: volume });
+        sliderVolume.setPosition(volume);
         updateToggleVolumeIcon(volume);
     }
     if (volume <= 0) {
-        sliderVolume.setPosition({ scale: volume });
+        sliderVolume.setPosition(volume);
         updateToggleVolumeIcon(volume);
     }
     if (isVolume == false) {
@@ -314,8 +311,8 @@ toggleVolume.onwheel = (event) => {
         if (sliderVolume.scale <= sliderVolume.maxScale) {
             sliderVolume.scale += 4;
             if (sliderVolume.scale > sliderVolume.maxScale) sliderVolume.scale = sliderVolume.maxScale;
-            sliderVolume.setPosition({ event: event, scale: sliderVolume.scale });
-            sliderVolume.setPositionHelper({ scale: sliderVolume.scale });
+            sliderVolume.setPosition(sliderVolume.scale);
+            sliderVolume.setPositionHelper(sliderVolume.scale);
             sendEvent({ setVolume: sliderVolume.scale / 100 }, false, true);
             updateToggleVolumeIcon(sliderVolume.scale);
         }
@@ -323,8 +320,8 @@ toggleVolume.onwheel = (event) => {
         if (sliderVolume.scale >= 0) {
             sliderVolume.scale -= 4;
             if (sliderVolume.scale < 0) sliderVolume.scale = 0;
-            sliderVolume.setPosition({ event: event, scale: sliderVolume.scale });
-            sliderVolume.setPositionHelper({ scale: sliderVolume.scale });
+            sliderVolume.setPosition(sliderVolume.scale);
+            sliderVolume.setPositionHelper(sliderVolume.scale);
             sendEvent({ setVolume: sliderVolume.scale / 100 }, false, true);
             updateToggleVolumeIcon(sliderVolume.scale);
         }
@@ -353,32 +350,16 @@ let currentTime = document.querySelector(".current-time"); // below image
 let durationSpan = document.querySelector(".duration"); // below image
 
 let progressUpdater, currentUnixTime;
-let duration = 0;
-let progress = 0;
-let isPlay = false;
-
-let getDuration = (d) => {
-    if (d != undefined) { duration = d; }
-    return duration;
-}
-let getProgress = (p) => {
-    if (p != undefined) { progress = p; }
-    return progress;
-}
-let getIsPlay = (isP) => {
-    if (isP != undefined) { isPlay = isP; }
-    return isPlay;
-}
 
 let sliderPrgress = new Slider(sliderProgressElement, progressGrooveCurrent, progressHandle, progressHelper);
 sliderPrgress.isOwnDataHelper = true;
 
 sliderPrgress.ownMouseMove = (event) => {
-    sliderPrgress.setDataHelper(countTimeHelpers(event.x - sliderPrgress.groove.offsetLeft, getDuration())); // -25 = helper.offsetLeft
+    sliderPrgress.setDataHelper(countTimeHelpers(event.x - sliderPrgress.groove.offsetLeft, State.duration)); // -25 = helper.offsetLeft
 }
 
 sliderPrgress.ownMouseMoveDown = (event) => {
-    sliderPrgress.setDataHelper(countTimeHelpers(event.x - sliderPrgress.groove.offsetLeft, getDuration())); // -25 = helper.offsetLeft
+    sliderPrgress.setDataHelper(countTimeHelpers(event.x - sliderPrgress.groove.offsetLeft, State.duration)); // -25 = helper.offsetLeft
     setTime();
 }
 
@@ -388,20 +369,25 @@ sliderPrgress.ownMouseDown = (event) => {
 
 sliderPrgress.ownWheel = (event) => {
     setTime();
-    sliderPrgress.setDataHelper(countTimeHelpers(sliderPrgress.currentGroove.offsetWidth, getDuration())); // -25 = helper.offsetLeft
+    sliderPrgress.setDataHelper(countTimeHelpers(sliderPrgress.currentGroove.offsetWidth, State.duration)); // -25 = helper.offsetLeft
 
 }
 
-let countTimeHelpers = (currentPosition, duration = getDuration()) => {
+let countTimeHelpers = (currentPosition, duration = State.duration) => {
     let currentSeconds = currentPosition * 100 / sliderPrgress.groove.offsetWidth * duration / 100;
+    if (currentSeconds < 0) {
+        currentSeconds = 0;
+    } else if (currentSeconds > duration) {
+        currentSeconds = duration;
+    }
     let time = getStringDuration(currentSeconds);
     return time;
 }
 
 function setTime() {
     let currentSeconds = sliderPrgress.currentGroove.offsetWidth * 100 /
-        sliderPrgress.groove.offsetWidth * duration / 100;
-    getProgress(currentSeconds);
+        sliderPrgress.groove.offsetWidth * State.duration / 100;
+    State.progress = currentSeconds;
     trackUpdater();
     sendEvent({
         data: "setTime",
@@ -409,14 +395,14 @@ function setTime() {
     });
 }
 
-function setTrackProgress(duration = getDuration(), progress = getProgress(), isPlaying = getIsPlay()) {
+function setTrackProgress(duration = State.duration, progress = State.progress, isPlaying = State.isPlay) {
     //set duration time progress
     sliderPrgress.maxScale = duration;
     durationSpan.innerHTML = getStringDuration(duration);
     //set current time progress
     currentTime.innerHTML = getStringDuration(progress);
     // set progress to slider
-    sliderPrgress.setPosition({ scale: progress });
+    sliderPrgress.setPosition(progress);
 }
 
 const stopUpdater = () => {
@@ -426,18 +412,18 @@ const stopUpdater = () => {
 }
 let getProgressCouter = 0;
 let getProgressId;
-function trackUpdater(duration = getDuration(), progress = getProgress(), isPlay = getIsPlay()) {
+function trackUpdater(duration = State.duration, progress = State.progress, isPlay = State.isPlay) {
     stopUpdater();
     if (!isPlay) return;
     if (progress == 0) {
-        if (getProgressCouter <= 150) { // 150 request in 30 seconds
+        if (getProgressCouter <= 170) { // 150 request in 30 seconds
             clearInterval(getProgressId);
             getProgressId = setTimeout(() => {
                 sendEvent({ getProgress: true }, false, true);
                 getProgressCouter++;
             }, 200);
         } else {
-            changeState(false);
+            sendEvent("togglePause"); // set to pause
             getProgressCouter = 0;
         }
         return;
@@ -462,7 +448,7 @@ function trackUpdater(duration = getDuration(), progress = getProgress(), isPlay
         if (progress > duration) { progress = duration; }
         progress = Number.parseFloat(progress.toFixed(6));
         currentTime.innerHTML = getStringDuration(progress);
-        sliderPrgress.setPosition({ scale: progress });
+        sliderPrgress.setPosition(progress);
     }
 }
 
@@ -512,7 +498,7 @@ let getStringDuration = (duration = 0) => {
 }
 
 try {
-    JsOnload.onload("Slider", false);
+    JsOnload.onload("Slider", false); // side-panel.js
 } catch (error) {
     //console.log(error);
 }
