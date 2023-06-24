@@ -1,5 +1,7 @@
 let tracksListTitle = document.getElementsByClassName("title-list")[0];
 let listTracks = document.getElementsByClassName("list-track")[0];
+let trackPositionTop;
+let trackPositionBottom;
 let requestSourceInfo;
 let requestTracksList;
 let previousSelectItem;
@@ -16,8 +18,51 @@ let State = { // current
     likeItem: undefined,
     coverLink: undefined,
     coverItem: undefined,
-    isAutoScroll: false
+    isAutoScroll: false,
+    _volume: 0.5,
+    _duration: 0,
+    _progress: 0,
+    _isPlay: undefined,
+    
+    get duration() {
+        return this._duration;
+    },
+    set duration(value) {
+        if (Number.isFinite(value)) {
+            this._duration = value;
+        }
+    },
+
+    get progress() {
+        return this._progress;
+    },
+    set progress(value) {
+        if (Number.isFinite(value)) {
+            this._progress = value;
+        }
+    },
+
+    get volume() {
+        return this._volume;
+    },
+    set volume(value) {
+        if (Number.isFinite(value)) {
+            this._volume = value;
+        }
+    },
+
+    get isPlay() {
+        return this._isPlay;
+    },
+    set isPlay(bool) {
+        if (typeof bool  === "boolean") {
+            this._isPlay = bool;
+        } else {
+            this._isPlay = false;
+        }
+    }
 }
+
 let CurrentAnimation = {
     keyframe: undefined,
     options: undefined,
@@ -59,6 +104,10 @@ let setTracksList = (list, index) => {
     setTitle(requestSourceInfo);
     let allItem = document.querySelectorAll(".item-track");
     clearList(allItem);
+    try {
+        trackPositionTop.remove();
+        trackPositionBottom.remove();    
+    } catch (error) {}
     createListElement(list, index);
 }
 let createListElement = (list, index) => {
@@ -184,7 +233,26 @@ let createListElement = (list, index) => {
         itemTrack.prepend(itemTrackContent);
         listTracks.appendChild(itemTrack);
     }
-    selectedItem.scrollIntoView({ block: "center", behavior: "smooth" });
+
+    trackPositionTop = document.createElement('div');
+    trackPositionTop.classList.add("track-position-top");
+    trackPositionBottom = document.createElement('div');
+    trackPositionBottom.classList.add("track-position-bottom");
+
+    let listTrack = document.getElementById("listTrack");
+    trackPositionTop.onclick = () => {
+        selectedItem.scrollIntoView({ block: "center", behavior: "smooth" });
+    
+    }
+    trackPositionBottom.onclick = () => {
+        selectedItem.scrollIntoView({ block: "center", behavior: "smooth" });
+    
+    }
+    listTracks.prepend(trackPositionBottom);
+    listTracks.prepend(trackPositionTop);
+    listTrack.onscroll = function (event) {
+        checkTrackPosition();
+    };
 }
 
 document.body.onmouseenter = () => { State.isAutoScroll = false; }
@@ -224,16 +292,12 @@ let toggleListLike = (isLike) => {
         State.track.liked = isLike;
         State.likeItem.classList.remove("list-dislike");
         State.likeItem.classList.add("list-like");
-        // contentItemName.style.maxWidth = "200px";
         contentItemName.style.maxWidth = contentItemName.innerWidth - 35 + "px";
-
     } else {
         State.track.liked = isLike;
         State.likeItem.classList.remove("list-like");
         if (State.likeFromPlaylist == true) {
             State.likeItem.classList.add("list-dislike");
-            //contentItemName.style.maxWidth = "200px";
-
             State.likeFromPlaylist = false;
         } else {
             contentItemName.style.maxWidth = "";
@@ -241,6 +305,7 @@ let toggleListLike = (isLike) => {
     }
 
 }
+
 let setDislikedStyle = (item, isDisliked) => {
     if (isDisliked) {
         item.childNodes[0].style.filter = "opacity(0.5)";
@@ -250,6 +315,7 @@ let setDislikedStyle = (item, isDisliked) => {
         item.childNodes[1].style.filter = "";
     }
 }
+
 let toggleListDisliked = (isDisliked) => {
     let contentItemName = document.querySelectorAll(".content-item-name")[State.index];
     if (isDisliked) {
@@ -320,9 +386,77 @@ let selectItem = (item, index) => {
     previousSelectItem = item;
     selectedItem = item;
     State.index = index;
+    let getSelectedItem = document.getElementsByClassName("selected-item")[0];
+    if (getSelectedItem) { // the selectedItem did not fully rendered
+        checkTrackPosition();
+    }
     if (State.isAutoScroll) {
         selectedItem.scrollIntoView({ block: "center", behavior: "smooth" });
     }
+}
+
+let trackPositionId;
+let isTrackPosition = false;
+let checkTrackPosition = (from) => {
+    let top = selectedItem.getClientRects()[0].top;
+    if (Extension.currentWindow().name != "extension") {
+        top  = top - 120; // 120px top in popup
+    }
+    if (top < 0) {
+        if (isTrackPosition == false) {
+            clearTimeout(trackPositionId);
+            isTrackPosition = true;
+            trackPositionId = setTimeout(() => {
+                if (isTrackPosition) {
+                    let = keyframe = {
+                        opacity: [0, 1]
+                    };
+                    trackPositionTop.style.display = "block";
+                    trackPositionBottom.style.display = "none";
+                    trackPositionTop.animate(keyframe, { duration: 700 })
+                }
+
+
+            }, 200);
+        }
+        return;
+    }
+
+    if (selectedItem.getClientRects()[0].top > innerHeight) {
+        if (isTrackPosition == false) {
+            clearTimeout(trackPositionId);
+
+            isTrackPosition = true;
+            trackPositionId = setTimeout(() => {
+                if (isTrackPosition) {
+                    let = keyframe = {
+                        opacity: [0, 1]
+                    };
+                    trackPositionTop.style.display = "none";
+                    trackPositionBottom.style.display = "block";
+                    trackPositionBottom.animate(keyframe, { duration: 700 })
+                }
+            }, 200);
+        }
+        return;
+    }
+    // remove track position
+    if (isTrackPosition == false) { return; }
+    clearTimeout(trackPositionId);
+    isTrackPosition = false;
+    let = keyframe = {
+        opacity: [1, 0]
+    };
+    trackPositionBottom.animate(keyframe, { duration: 700 }).onfinish = () => {
+        if (isTrackPosition == false) {
+            trackPositionBottom.style.display = "none";
+        }
+    };
+    trackPositionTop.animate(keyframe, { duration: 700 }).onfinish = () => {
+        if (isTrackPosition == false) {
+            trackPositionTop.style.display = "none";
+        }
+    };
 }
 
 let scrollToSelected = () => {
@@ -392,6 +526,6 @@ let animateListImage = (item) => {
     CurrentAnimation.left = left;
     CurrentAnimation.top = top;
     CurrentAnimation.isFromList = true;
-    item.style.dispaly = "none";
+    //item.style.dispaly = "none";
     modalCover[0].animate(keyframe, options);
 }
