@@ -2,10 +2,9 @@ let SidePanel = {
     onload() {
         let setProgress =() => {
             setTimeout(()=>{
-                sliderPrgress.setPosition({scale: 50});
-                setVolume(0.5);
-                changeState(getIsPlay())
-           // console.log("time out");
+                sliderPrgress.setPosition(State.progress);
+                setVolume(State.volume);
+                changeState(State.isPlay)
             },100);
         }
         togglePlaylist(true);

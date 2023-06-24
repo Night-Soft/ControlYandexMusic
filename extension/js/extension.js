@@ -64,14 +64,6 @@ let Extension = {
             }
         });
     },
-    addTransition: () => {
-        transition[0].style.transition = "0.7s"
-        transition[1].style.transition = "0.7s"
-        transition[2].style.transition = "0.7s"
-        transition[3].style.transition = "0.7s"
-        transition[4].style.transition = "0.7s"
-        transition[5].style.transition = "0.7s"
-    },
     createConnection: async() => {
         return new Promise((resolve, reject) => {
             getYandexMusicTab().then((result) => {
@@ -98,6 +90,9 @@ let Extension = {
                 }
             });
         });
+    },
+    currentWindow() {
+        return { name: "extension" }
     },
     isConnected: undefined
 };
@@ -141,15 +136,15 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 changeState(request.isPlaying);
                 toggleLike(request.currentTrack.liked);
                 toggleDislike(request.currentTrack.disliked);
-                getDuration(request.currentTrack.duration);
-                getProgress(request.progress.position);
-                getIsPlay(request.isPlaying);
+                State.duration = request.currentTrack.duration;
+                State.progress = request.progress.position;
+                State.isPlay = request.isPlaying;
                 setTrackProgress();
                 trackUpdater();
                 break;
             case 'togglePause':
                 changeState(request.isPlaying);
-                trackUpdater(getDuration(), getProgress(), getIsPlay(request.isPlaying));
+                trackUpdater(State.duration, State.progress, State.isPlay = request.isPlaying);
                 break;
             case 'toggleLike':
                 if (request.isLiked) {
@@ -169,7 +164,7 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 break;
             case "STATE":
                 changeState(request.isPlaying);
-                trackUpdater(getDuration(), getProgress(), getIsPlay(request.isPlaying));
+                trackUpdater(State.duration, State.progress, State.isPlay = request.isPlaying);
                 break;
             case "VOLUME":
                 setVolume(request.volume);
@@ -199,7 +194,7 @@ chrome.runtime.onMessageExternal.addListener( // injected script
         }
         if (request.hasOwnProperty('progress')) {
             if (Object.keys(request).length == 1) {
-                getProgress(request.progress.position);
+                State.progress = request.progress.position;
                 trackUpdater();
             }
         }

@@ -25,6 +25,7 @@ body {
     background-color: var(--mainRed);
     margin: 3px 0;
     border-radius: 5px;
+    transition: 0.4s;
 }
 
 .bar-list1::before {
@@ -78,11 +79,16 @@ body {
     height: auto;
     top: 115px;
     bottom: 0px;
-    border-radius: 5px;
+    border-radius: 5px 5px 0px 0px;
 }
 
 .content-list-menu-popup {
     width: 100%;
+}
+
+.control:hover {
+    background-color: unset;
+    filter: drop-shadow(0px 0px 4px rgb(0 0 0 / 40%));
 }
 
 .control-popup {
@@ -94,6 +100,7 @@ body {
     width: 30px;
     height: 30px;
     background-size: 28px;
+    filter: drop-shadow(0px 0px 2px rgb(0 0 0 / 20%));
 }
 
 .slider-progress-popup {
@@ -223,6 +230,39 @@ body {
     min-width: 25px;
     height: 25px;
     border-radius: 5px;
+}
+
+.track-position-top {
+    display: none;
+    left: 0px;
+    width: calc(100% - 10px);
+    top: 113px;
+    -webkit-clip-path: inset(7px 0 0 0);
+    clip-path: inset(7px 0 0 0);
+
+}
+
+.track-position-bottom {
+    display: none;
+    left: 0px;
+    width: calc(100% - 10px);
+    -webkit-clip-path: inset(0 0 7px 0);
+    clip-path: inset(0 0 7px 0);
+    bottom: -7px;
+
+}
+
+.track-position-top:hover::after {
+    background: rgb(255 136 26 / 100%);
+
+}
+
+.track-position-bottom:hover::after {
+    background: rgb(255 136 26 / 100%);
+}
+.list-track {
+    background-color: unset;
+
 }
 
 .list-like {
@@ -367,5 +407,9 @@ body {
     .list-dislike {
         min-width: 24px;
         height: 24px
+    }
+    .track-position-top {
+        top: 107px;
+    
     }
 }

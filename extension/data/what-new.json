@@ -1,5 +1,9 @@
 {
     "versions": [
+        ["3.2.0", {
+            "messageEn": "• Added light color theme.",
+            "messageRu": "• Добавлена светлая цветовая тема."
+        }],
         ["3.1.0", {
             "messageEn": "• As of Chrome 114, the extension is available in the side panel. Select it from the dropdown list. <br> • The duration of each track has been added to the playlist.",
             "messageRu": "• Начиная с Chrome версии 114, расширение доступно на боковой панели. Выберите его из выпадающего списка. <br> • Продолжительность каждого трека добавлена в плейлист."

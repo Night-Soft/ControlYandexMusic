@@ -30,7 +30,7 @@ let getTranslateLoaded = () => {
 
         } else {
             Translate.onload();
-            Extension.addTransition();
+            //Extension.addTransition();
             //WhatNew.openNews();
             // var end = window.performance.now();
             // time = window.performance.now() - start;
