@@ -1,11 +1,14 @@
 let checkboxAllNotifications = document.getElementById('checkboxAllNotifications');
 let playPauseNotify = document.getElementById('n1');
 let prevNextNotify = document.getElementById('n2');
-let checkBoxDarkTheme = document.getElementById("n3");
 let checkBoxIncreaseCover = document.getElementById("n4");
 let checkBoxDislikeButton = document.getElementById("n5");
 let checkBoxSavePos = document.getElementById("n6");
 let checkBoxReassign = document.getElementById("n7");
+
+let defaultTheme = document.getElementById("DefaultTheme");
+let lightTheme = document.getElementById("LightTheme");
+let darkTheme = document.getElementById("DarkTheme")
 
 let grooveBox = document.querySelector(".groove-box");
 let contentReassign = document.getElementsByClassName("content-reassign")[0];
@@ -45,10 +48,23 @@ prevNextNotify.onclick = () => {
     sendEventBackground({ writeOptions: true, options: { isPrevNextNotify: prevNextNotify.checked } });
     setOptions({ isPrevNextNotify: prevNextNotify.checked });
 }
-checkBoxDarkTheme.onclick = () => {
+
+defaultTheme.onclick = () => {
     document.body.style.setProperty("--transitionDuration", "1s");
-    sendEventBackground({ writeOptions: true, options: { isDarkTheme: checkBoxDarkTheme.checked } });
-    setOptions({ isDarkTheme: checkBoxDarkTheme.checked });
+    sendEventBackground({ writeOptions: true, options: { theme: "default" } });
+    setOptions({ theme: "default" });
+}
+
+lightTheme.onclick = () => {
+    document.body.style.setProperty("--transitionDuration", "1s");
+    sendEventBackground({ writeOptions: true, options: { theme: "light" } });
+    setOptions({ theme: "light" });
+}
+
+darkTheme.onclick = () => {
+    document.body.style.setProperty("--transitionDuration", "1s");
+    sendEventBackground({ writeOptions: true, options: { theme: "dark" } });
+    setOptions({ theme: "dark" });
 }
 
 checkBoxIncreaseCover.onclick = function() {
@@ -154,15 +170,34 @@ let setOptions = (options) => {
     if (options.oldVersionDescription != undefined) {
         Options.oldVersionDescription = options.oldVersionDescription;
     }
-    if (options.isDarkTheme != undefined) {
-        Options.isDarkTheme = options.isDarkTheme;
-        checkBoxDarkTheme.checked = options.isDarkTheme;
-        if (options.isDarkTheme) {
-            setDarkTheme();
-        } else {
-            setDarkTheme(false);
+    if (options.theme != undefined) {
+        switch (options.theme) {
+            case "default":
+                Options.theme = options.theme;
+                defaultTheme.checked = true;
+                setTheme("default");
+                break;
+            case "light":
+                Options.theme = options.theme;
+                lightTheme.checked = true;
+                setTheme("light");
+                break;
+            case "dark":
+                Options.theme = options.theme;
+                darkTheme.checked = true;
+                setTheme("dark");
+                break;
         }
     }
+    if (options.isDarkTheme != undefined) { // remove it on next update 
+        Options.theme = "dark";
+        if (options.isDarkTheme == true) {
+            sendEventBackground({ writeOptions: true, options: { theme: "dark", remove: ["isDarkTheme"] } });
+            setTheme("dark");
+            darkTheme.checked = true;
+        }
+    }
+
     if (options.isCoverIncrease != undefined) {
         Options.isCoverIncrease = options.isCoverIncrease;
         checkBoxIncreaseCover.checked = options.isCoverIncrease;
@@ -179,10 +214,10 @@ let setOptions = (options) => {
             setIncreaseCover(true);
             checkBoxIncreaseCover.checked = true;
             dislike.style.display = "block";
-            disabledOptions([contentLabel[4]], [checkBoxIncreaseCover], !checkBoxDislikeButton.checked);
+            disabledOptions([contentLabel[3]], [checkBoxIncreaseCover], !checkBoxDislikeButton.checked);
         } else {
             dislike.style.display = "none";
-            disabledOptions([contentLabel[4]], [checkBoxIncreaseCover], !checkBoxDislikeButton.checked);
+            disabledOptions([contentLabel[3]], [checkBoxIncreaseCover], !checkBoxDislikeButton.checked);
             if (Options.isCoverIncrease == false) {
                 setIncreaseCover(false);
                 checkBoxIncreaseCover.checked = false;
