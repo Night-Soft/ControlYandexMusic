@@ -218,6 +218,7 @@ a {
     align-self: center;
     background-size: 30px;
     margin-left: 1px;
+    transition: 500ms;
 }
 
 .content-groove-volume {
@@ -377,6 +378,17 @@ a {
     border-radius: 5px;
 }
 
+.loaded {
+    background-color: #c1c1c1;
+    top: 0px;
+    width: 0%;
+    position: absolute;
+    z-index: 0;
+    border-radius: 10px;
+    transition: 0.7s;
+    height: var(--progress-height);
+}
+
 .content-time {
     display: flex;
     flex-direction: row;
@@ -504,9 +516,11 @@ a {
 }
 
 .slider-groove-current {
+    position: relative;
     border-radius: 10px;
     width: 50%;
     height: 5px;
+    transition: 350ms;
     background-color: var(--progress);
 }
 
@@ -517,7 +531,7 @@ a {
     --progress-handle-size: 24px;
     --volume-height: 7px;
     --mainRed: #ff3333;
-    --slider: #c2c2c2;
+    --slider: #EBEBEB;
     --progress: #ffdd00;
     --handleWhite: #ffffff;
     --backgroundControl: rgba(252, 252, 255, 0.17);
@@ -556,7 +570,7 @@ a {
     border-radius: 50%;
     background: var(--handleWhite);
     cursor: pointer;
-    transition: 70ms;
+    transition: 350ms;
     box-shadow: 0px 0px 3px 0px rgba(0, 0, 0, 0.25)
 
 }
@@ -838,7 +852,7 @@ a {
     transition: 0.4s;
 }
 .item-track-content:hover {
-    transform: translateX(25px);
+    padding-left: 25px
 }
 .title-list {
     text-align: center;
@@ -955,8 +969,6 @@ a {
     cursor: pointer;
     z-index: +2;
 }
-
-.transiton {}
 
 .change .bar1 {
     -webkit-transform: rotate(-45deg) translate(-8px, 6px);
@@ -1375,6 +1387,7 @@ label {
 }
 @supports(-webkit-appearance: none) or (-moz-appearance: none) {
     .switcher {
+        appearance: none;
         -webkit-appearance: none;
         -moz-appearance: none;
         height: 20px;
@@ -1675,8 +1688,6 @@ label {
     background-color: #1ed61e;
 }
 
-#No {}
-
 #New {
     background-color: #efbf00;
     color: white;
@@ -1742,10 +1753,34 @@ label {
 
 .loader-container {
     display: none;
-    margin: 30px;
+    margin: auto;
     align-self: center;
     -webkit-animation: scale-in-center 2s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
     animation: scale-in-center 2s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+}
+
+.loader-await-loading {
+    display: none;
+    position: absolute;
+    right: 0px;
+    width: 0%;
+    height: var(--progress-height);
+    border-radius: 10px;
+    background:
+        linear-gradient(90deg, rgba(0, 0, 0, 0) 33%, #ffd000 50%, rgba(0, 0, 0, 0) 66%) #ffffff00;
+    background-size: 300% 100%;
+    animation: await-loading 1s infinite linear;
+}
+
+@keyframes await-loading {
+    0% {
+        background-position: right
+    }
+}
+
+.loader-in-progress {   height: var(--progress-handle-size);
+    width: var(--progress-handle-size);
+    margin: unset;
 }
 
 .slide-bottom {
@@ -1955,16 +1990,6 @@ label {
         transform: scale(1);
         opacity: 1;
     }
-}
-
-.scale-shift-in-center {
-    /* -webkit-animation: scale-shift-in-center 0.7s cubic-bezier(.85, .2, 1, 1) both;
-    animation: scale-shift-in-center 0.7s cubic-bezier(.85, .2, 1, 1) both; */
-}
-
-.scale-shift-in-center-reverse {
-    /* -webkit-animation: scale-shift-in-center 0.7s cubic-bezier(.85, .2, 1, 1) both reverse;
-    animation: scale-shift-in-center 0.7s cubic-bezier(.85, .2, 1, 1) both reverse; */
 }
 
 @-webkit-keyframes scale-shift-in-center {

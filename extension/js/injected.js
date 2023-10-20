@@ -4,123 +4,6 @@ let YandexMusicControl = {
     actionHandler: undefined
 }
 
-window.addEventListener("message", function(event) {
-    if (event.source != window) { return; }
-    switch (event.data.function) {
-        case 'getCurrentTrack':
-            getTracks();
-            break;
-        case 'togglePause':
-            togglePause();
-            break;
-        case 'previous':
-            previous();
-            break;
-        case 'next':
-            next();
-            break;
-        case 'setTime':
-            externalAPI.setPosition(event.data.time);
-            break;
-        case 'toggleLike':
-            toggleLike();
-            break;
-        case 'toggleDislike':
-            toggleDislike();
-            break;
-        default:
-            break;
-    }
-    switch (event.data.commandKey) {
-        case 'previous-key':
-            previousKey();
-            break;
-        case 'togglePause-key':
-            togglePauseKey();
-            break;
-        case 'next-key':
-            nextKey();
-            break;
-        case 'toggleLike-key':
-            toggleLikeKey();
-            break;
-    }
-    if (event.data.id) {
-        YandexMusicControl.id = event.data.id;
-        YandexMusicControl.port = chrome.runtime.connect(YandexMusicControl.id);
-        setMediaSession();
-    }
-    if (event.data.play) {
-        externalAPI.play(parseInt(event.data.play))
-    }
-    if (event.data.toggleVolume) {
-        externalAPI.toggleMute();
-        chrome.runtime.sendMessage(YandexMusicControl.id, {
-            volume: externalAPI.getVolume(),
-        }, );
-    }
-    if (event.data.toggleRepeat) {
-        chrome.runtime.sendMessage(YandexMusicControl.id, {
-            repeat: externalAPI.toggleRepeat(),
-        });
-    }
-    if (event.data.toggleShuffle) {
-        chrome.runtime.sendMessage(YandexMusicControl.id, {
-            shuffle: externalAPI.toggleShuffle(),
-        });
-    }
-    if (event.data.hasOwnProperty('setVolume')) {
-        externalAPI.setVolume(event.data.setVolume);
-    }
-    if (event.data.hasOwnProperty('getProgress')) {
-        chrome.runtime.sendMessage(YandexMusicControl.id, {
-            progress: externalAPI.getProgress(),
-        });
-    }
-});
-window.onpagehide = (event) => {
-    chrome.runtime.sendMessage(YandexMusicControl.id, {
-        pagehide: true,
-    });
-}
-// window.onload = () => {
-//     setTimeout(() => {
-//     }, 5000)
-// }
-let previousProgress = 0, currentProgress = 0;
-
-externalAPI.on(externalAPI.EVENT_TRACK, function(event) {
-    previousProgress = 0;
-    getTracks(true); //this
-    setMediaSession();
-});
-externalAPI.on(externalAPI.EVENT_TRACKS_LIST, function(event) {
-    getTracks();
-});
-externalAPI.on(externalAPI.EVENT_STATE, function(event) {
-    chrome.runtime.sendMessage(YandexMusicControl.id, {
-        event: "STATE",
-        isPlaying: externalAPI.isPlaying(),
-        progress: externalAPI.getProgress(),
-    });
-});
-externalAPI.on(externalAPI.EVENT_VOLUME, function(event) {
-    chrome.runtime.sendMessage(YandexMusicControl.id, {
-        event: "VOLUME",
-        volume: externalAPI.getVolume()
-    });
-});
-
-externalAPI.on(externalAPI.EVENT_PROGRESS, function(event) {
-    currentProgress = externalAPI.getProgress().position;
-    if (previousProgress + 1 < currentProgress || previousProgress - 1 > currentProgress) {
-        chrome.runtime.sendMessage(YandexMusicControl.id, {
-            progress: externalAPI.getProgress(),
-        });
-    }
-    previousProgress = currentProgress;
-});
-
 let getArtists = (list) => {
     let getArtistsTitle = (listArtists) => {
         let artists = "";
@@ -178,6 +61,7 @@ let setMediaSession = () => {
     //setActionHandler();
 
 }
+
 let setActionHandler = () => {
     if ('mediaSession' in navigator) {
         navigator.mediaSession.setActionHandler('play', function() {
@@ -301,4 +185,154 @@ let toggleLikeKey = () => {
     });
     //getTracks();
 }
+
+window.addEventListener("message", function(event) {
+    if (event.source != window) { return; }
+    switch (event.data.function) {
+        case 'getCurrentTrack':
+            getTracks();
+            break;
+        case 'togglePause':
+            togglePause();
+            break;
+        case 'previous':
+            previous();
+            break;
+        case 'next':
+            next();
+            break;
+        case 'setTime':
+            externalAPI.setPosition(event.data.time);
+            break;
+        case 'toggleLike':
+            toggleLike();
+            break;
+        case 'toggleDislike':
+            toggleDislike();
+            break;
+        default:
+            break;
+    }
+    switch (event.data.commandKey) {
+        case 'previous-key':
+            previousKey();
+            break;
+        case 'togglePause-key':
+            togglePauseKey();
+            break;
+        case 'next-key':
+            nextKey();
+            break;
+        case 'toggleLike-key':
+            toggleLikeKey();
+            break;
+    }
+    if (event.data.id) {
+        YandexMusicControl.id = event.data.id;
+        YandexMusicControl.port = chrome.runtime.connect(YandexMusicControl.id);
+        setMediaSession();
+    }
+    if (event.data.play) {
+        externalAPI.play(parseInt(event.data.play))
+    }
+    if (event.data.toggleVolume) {
+        externalAPI.toggleMute();
+        chrome.runtime.sendMessage(YandexMusicControl.id, {
+            volume: externalAPI.getVolume(),
+        }, );
+    }
+    if (event.data.toggleRepeat) {
+        chrome.runtime.sendMessage(YandexMusicControl.id, {
+            repeat: externalAPI.toggleRepeat(),
+        });
+    }
+    if (event.data.toggleShuffle) {
+        chrome.runtime.sendMessage(YandexMusicControl.id, {
+            shuffle: externalAPI.toggleShuffle(),
+        });
+    }
+    if (event.data.hasOwnProperty('setVolume')) {
+        externalAPI.setVolume(event.data.setVolume);
+    }
+    if (event.data.hasOwnProperty('getProgress')) {
+        chrome.runtime.sendMessage(YandexMusicControl.id, {
+            progress: externalAPI.getProgress(),
+        });
+    }
+});
+
+window.onpagehide = (event) => {
+    chrome.runtime.sendMessage(YandexMusicControl.id, {
+        pagehide: true,
+    });
+}
+
+externalAPI.on(externalAPI.EVENT_TRACKS_LIST, function(event) {
+    getTracks();
+});
+externalAPI.on(externalAPI.EVENT_STATE, function(event) {
+    chrome.runtime.sendMessage(YandexMusicControl.id, {
+        event: "STATE",
+        isPlaying: externalAPI.isPlaying(),
+        progress: externalAPI.getProgress(),
+    });
+});
+externalAPI.on(externalAPI.EVENT_VOLUME, function(event) {
+    chrome.runtime.sendMessage(YandexMusicControl.id, {
+        event: "VOLUME",
+        volume: externalAPI.getVolume()
+    });
+});
+
+let prevPosition = 0,
+    position = 0,
+    loaded = 0,
+    prevLoaded = 0,
+    sendPositon = false,
+    sendLoaded = false;
+externalAPI.on(externalAPI.EVENT_TRACK, function(event) {
+    prevPosition = 0;
+
+    getTracks(true); //this
+    setMediaSession();
+});
+
+const sendProgress = new ExecutionDelay({
+    func(progress, message) {
+        console.log("progress.sended " + message);
+        chrome.runtime.sendMessage(YandexMusicControl.id, {
+            progress: progress,
+        });
+    },
+    isThrottling: true
+});
+
+externalAPI.on(externalAPI.EVENT_PROGRESS, function() {
+    ;({ position, loaded } = externalAPI.getProgress())
+
+    if (prevPosition + 1 < position || prevPosition - 1 > position) {
+        sendPositon = true;
+    }
+    prevPosition = position;
+
+    if (loaded > prevLoaded) {
+        sendPositon = false;
+        sendLoaded = true;
+    }
+    prevLoaded = loaded;
+
+    if (sendPositon) {
+        sendProgress.execute(externalAPI.getProgress(), 'execute');
+        sendPositon = false;
+        return;
+    }
+
+    if (sendLoaded) {
+        sendProgress.setArgumetns(externalAPI.getProgress(), 'start');
+        sendProgress.start();
+        sendLoaded = false;
+    }
+
+});
+
 setActionHandler();

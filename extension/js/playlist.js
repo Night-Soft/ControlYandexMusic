@@ -21,7 +21,8 @@ let State = { // current
     isAutoScroll: false,
     _volume: 0.5,
     _duration: 0,
-    _progress: 0,
+    _position: 0,
+    _loaded: 0,
     _isPlay: undefined,
     
     get duration() {
@@ -33,12 +34,21 @@ let State = { // current
         }
     },
 
-    get progress() {
-        return this._progress;
+    get position() {
+        return this._position;
     },
-    set progress(value) {
+    set position(value) {
         if (Number.isFinite(value)) {
-            this._progress = value;
+            this._position = value;
+        }
+    },
+
+    get loaded() {
+        return this._loaded;
+    },
+    set loaded(value) {
+        if (Number.isFinite(value)) {
+            this._loaded = value;
         }
     },
 
@@ -54,9 +64,9 @@ let State = { // current
     get isPlay() {
         return this._isPlay;
     },
-    set isPlay(bool) {
-        if (typeof bool  === "boolean") {
-            this._isPlay = bool;
+    set isPlay(value) {
+        if (typeof value  === "boolean") {
+            this._isPlay = value;
         } else {
             this._isPlay = false;
         }
@@ -110,6 +120,7 @@ let setTracksList = (list, index) => {
     } catch (error) {}
     createListElement(list, index);
 }
+
 let createListElement = (list, index) => {
     let ifHour = false;
     for (let i = 0; i < list.length; i++) {
@@ -219,7 +230,7 @@ let createListElement = (list, index) => {
 
         let trackTime = document.createElement("span");
         trackTime.classList.add("track-time");
-        trackTime.innerHTML = getStringDuration(list[i].duration);
+        trackTime.innerHTML = getDurationAsString(list[i].duration);
         itemTrack.appendChild(trackTime);
 
         if (index != undefined && index == i) {

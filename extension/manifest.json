@@ -6,7 +6,7 @@
     "default_locale": "en",
     "version": "3.2.0",
     "web_accessible_resources": [{
-        "resources": ["js/injected.js", "./what-new.json"],
+        "resources": ["js/ExecutionDelay.js", "js/injected.js", "./what-new.json"],
         "matches": ["https://music.yandex.ua/*", "https://music.yandex.ru/*", "https://music.yandex.by/*", "https://avatars.yandex.net/*"]
     }],
     "icons": {

@@ -28,6 +28,9 @@ let notificationTrackName = document.getElementsByClassName("notification-track-
 let contentListMenu = document.getElementsByClassName("content-list-menu")[0];
 let modalListMenu = document.getElementsByClassName("modal-list-menu")[0];
 
+let loadedLine = document.getElementsByClassName("loaded")[0];
+
+
 let port = {
     isConnected: false
 };
@@ -127,7 +130,7 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 toggleLike(request.currentTrack.liked);
                 toggleDislike(request.currentTrack.disliked);
                 State.duration = request.currentTrack.duration;
-                State.progress = request.progress.position;
+                State.position = request.progress.position;
                 State.isPlay = request.isPlaying;
                 setTrackProgress();
                 trackUpdater();
@@ -135,7 +138,7 @@ chrome.runtime.onMessageExternal.addListener( // injected script
             case 'togglePause':
                 changeState(request.isPlaying);
                 State.isPlay = request.isPlaying;
-                trackUpdater(State.duration, State.progress, State.isPlay);
+                trackUpdater(State.duration, State.position, State.isPlay);
                 break;
             case 'toggleLike':
                 if (request.isLiked) {
@@ -155,9 +158,9 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 break;
             case "STATE":
                 changeState(request.isPlaying);
-                State.progress = request.progress.position;
+                State.position = request.progress.position;
                 State.isPlay = request.isPlaying;
-                trackUpdater(State.duration, State.progress, State.isPlay);
+                trackUpdater(State.duration, State.position, State.isPlay);
                 break;
             case "VOLUME":
                 setVolume(request.volume);
@@ -170,6 +173,7 @@ chrome.runtime.onMessageExternal.addListener( // injected script
             updateTracksList(request.trackInfo);
             State.track = request.trackInfo.tracksList[request.trackInfo.index];
             State.disliked = request.trackInfo.tracksList[request.trackInfo.index].disliked;
+           // this
             State.likeItem = document.querySelectorAll(".item-track")[request.trackInfo.index].lastChild;
         }
         if (request.hasOwnProperty('controls')) {
@@ -186,10 +190,13 @@ chrome.runtime.onMessageExternal.addListener( // injected script
             updateShuffle(request.shuffle);
         }
         if (request.hasOwnProperty('progress')) {
-            if (Object.keys(request).length == 1) {
-                State.progress = request.progress.position;
-                trackUpdater();
+            for (const prop in request.progress) {
+                if (Object.hasOwn(request.progress, prop)) {
+                    State[prop] = request.progress[prop];
+                }
             }
+            updateProgress();
+            trackUpdater();
         }
         if (request.pagehide) {
             if (reload == true) return;

@@ -46,6 +46,8 @@ let listsSortcutKeys = document.getElementsByClassName("list-shortcut-keys")[0];
 let selectedShortcutKey = document.getElementsByClassName("select-shortcut-key")[0];
 let contentListMenu = document.getElementsByClassName("content-list-menu")[0];
 let modalListMenu = document.getElementsByClassName("modal-list-menu")[0];
+let loadedLine = document.getElementsByClassName("loaded")[0];
+
 
 let port = {
     isConnected: false
@@ -137,14 +139,14 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 toggleLike(request.currentTrack.liked);
                 toggleDislike(request.currentTrack.disliked);
                 State.duration = request.currentTrack.duration;
-                State.progress = request.progress.position;
+                State.position = request.progress.position;
                 State.isPlay = request.isPlaying;
                 setTrackProgress();
                 trackUpdater();
                 break;
             case 'togglePause':
                 changeState(request.isPlaying);
-                trackUpdater(State.duration, State.progress, State.isPlay = request.isPlaying);
+                trackUpdater(State.duration, State.position, State.isPlay = request.isPlaying);
                 break;
             case 'toggleLike':
                 if (request.isLiked) {
@@ -164,7 +166,7 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 break;
             case "STATE":
                 changeState(request.isPlaying);
-                trackUpdater(State.duration, State.progress, State.isPlay = request.isPlaying);
+                trackUpdater(State.duration, State.position, State.isPlay = request.isPlaying);
                 break;
             case "VOLUME":
                 setVolume(request.volume);
@@ -193,10 +195,13 @@ chrome.runtime.onMessageExternal.addListener( // injected script
             updateShuffle(request.shuffle);
         }
         if (request.hasOwnProperty('progress')) {
-            if (Object.keys(request).length == 1) {
-                State.progress = request.progress.position;
-                trackUpdater();
+            for (const prop in request.progress) {
+                if (Object.hasOwn(request.progress, prop)) {
+                    State[prop] = request.progress[prop];
+                }
             }
+            updateProgress();
+            trackUpdater();
         }
         return true;
     });

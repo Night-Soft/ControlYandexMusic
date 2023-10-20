@@ -1,12 +1,3 @@
-// let DarkColors = {
-//     gradient: "linear-gradient(0deg, #121212 0%, #222222 100%)",
-//     dark: "#222222",
-//     white: "#EEEEEE",
-//     grey: "929292",
-//     red: "#DB0000",
-//     yellow: "#EDCD00"
-// }
-
 let Themes = {
     default: {
         bodyBackground: "linear-gradient(0deg, #FF5555 0%, #ffdd00 100%)",
@@ -91,7 +82,7 @@ let setTheme = (theme = "default", windowName = "default") => {
 
             case "light":
                 rootCss.style.setProperty('--mainRed', '#FF3333');
-                rootCss.style.setProperty('--slider', '#c2c2c2');
+                rootCss.style.setProperty('--slider', '#EBEBEB');
                 rootCss.style.setProperty('--progress', '#ffdd00');
                 rootCss.style.setProperty('--handleWhite', '#ffffff');
                 rootCss.style.setProperty('--backgroundControl', 'rgba(252, 252, 255, 0.17)');
@@ -126,7 +117,7 @@ let setTheme = (theme = "default", windowName = "default") => {
             default:
                 document.body.style.setProperty("--color", Themes.default.color);
                 rootCss.style.setProperty('--mainRed', '#FF3333');
-                rootCss.style.setProperty('--slider', '#c2c2c2');
+                rootCss.style.setProperty('--slider', '#EBEBEB');
                 rootCss.style.setProperty('--progress', '#ffdd00');
                 rootCss.style.setProperty('--handleWhite', '#ffffff');
                 rootCss.style.setProperty('--backgroundControl', 'rgba(252, 252, 255, 0.17)');
@@ -160,33 +151,6 @@ let setTheme = (theme = "default", windowName = "default") => {
                 break;
         }
         return;
-        if (isDark) {
-            setDarkText();
-            document.body.style.setProperty("--bodyOpacity", 1); // set dark background
-            btnPopup.style.backgroundImage = "url(../img/popup-dark.svg)";
-            darkTitle[0].setStyle({ color: DarkColors.white, background: DarkColors.dark });
-            listTrack.style.color = DarkColors.white;
-            darkContentMenu.setStyle({ background: DarkColors.dark, color: DarkColors.white });
-            rootCss.style.setProperty('--mainRed', '#DB0000');
-            rootCss.style.setProperty('--slider', '#929292');
-            rootCss.style.setProperty('--progress', '#EDCD00');
-            rootCss.style.setProperty('--handleWhite', '#EEEEEE');
-            rootCss.style.setProperty('--backgroundControl', 'rgba(252, 252, 255, 0.1)');
-        } else {
-            setDarkText(false);
-            document.body.style.setProperty("--bodyOpacity", 0); // set default background
-            btnPopup.style.backgroundImage = "";
-            darkTitle[0].style.background = "";
-            darkTitle[0].style.color = "";
-            listTrack.style.color = "";
-            darkContentMenu.style.background = "";
-            darkContentMenu.style.color = "";
-            rootCss.style.setProperty('--mainRed', '#FF3333');
-            rootCss.style.setProperty('--slider', '#c2c2c2');
-            rootCss.style.setProperty('--progress', '#ffdd00');
-            rootCss.style.setProperty('--handleWhite', '#ffffff');
-            rootCss.style.setProperty('--backgroundControl', 'rgba(252, 252, 255, 0.17)');
-        }
     } catch (error) {}
 }
 

@@ -2,7 +2,7 @@ let SidePanel = {
     onload() {
         let setProgress =() => {
             setTimeout(()=>{
-                sliderPrgress.setPosition(State.progress);
+                sliderPrgress.setPosition(State.position);
                 setVolume(State.volume);
                 changeState(State.isPlay)
             },100);
