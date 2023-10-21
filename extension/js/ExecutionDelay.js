@@ -87,11 +87,9 @@ const ExecutionDelay = class {
         if (typeof this.#func != 'function') { throw new Error('The function is missing.'); }
         if (args.length > 0) { this.#args = args; }
         this.#func.apply(this.#context, this.#args);
-        console.log('Execute now!');
     }
 
     stop(cause = "run() stopped.") {
-        console.log(cause);
         clearTimeout(this.#timeoutId);
         this.#isTimeout = false;
         if (typeof this.#fulfilled == 'function') {

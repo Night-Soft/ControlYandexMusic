@@ -179,7 +179,7 @@ chrome.runtime.onMessageExternal.addListener( // injected script
             updateTracksList(request.trackInfo);
             State.track = request.trackInfo.tracksList[request.trackInfo.index];
             State.disliked = request.trackInfo.tracksList[request.trackInfo.index].disliked;
-            State.likeItem = document.querySelectorAll(".item-track")[request.trackInfo.index].lastChild;
+            State.likeItem = likeItems[request.trackInfo.index];
         }
         if (request.hasOwnProperty('controls')) {
             updateRepeat(request.controls.repeat);
@@ -720,9 +720,9 @@ let showNotification = (text, time) => {
     }
     notification.animate(keyframe, options);
     if (time == undefined) {
-        time = text.length * 80 + options.duration * 2 + 100;
-        if (time <= options.duration * 2 + 100) { // + 100ms for focus 
-            time = options.duration * 2 + 100;
+        time = text.length * 84 + options.duration * 2 + 100;
+        if (time <= options.duration * 2 + 500) { // + 500ms for focus 
+            time = options.duration * 2 + 500;
         }
     }
     notificationTimer = setTimeout(() => {
@@ -734,7 +734,6 @@ let showNotification = (text, time) => {
         notification.animate(keyframe, options);
         notificationTimer;
     }, time);
-
 }
 
 let endAnimation = (ev) => {
@@ -884,7 +883,7 @@ let getUrl = (url, size = 50) => {
 let testImage = (url, size = 400, callback) => {
     try {
         modalCover[0].src = getUrl(url, size);
-        modalCover[0].onerror = function() {
+        modalCover[0].onerror = function () {
             if (size > 100) {
                 if (size == 100) {
                     size += -50;
@@ -897,7 +896,6 @@ let testImage = (url, size = 400, callback) => {
         modalCover[0].onload = () => {
             modal[0].style.display = "flex";
             callback.animate(callback.parameter); // call animation
-
         }
 
     } catch (error) {

@@ -30,7 +30,6 @@ let modalListMenu = document.getElementsByClassName("modal-list-menu")[0];
 
 let loadedLine = document.getElementsByClassName("loaded")[0];
 
-
 let port = {
     isConnected: false
 };
@@ -174,7 +173,7 @@ chrome.runtime.onMessageExternal.addListener( // injected script
             State.track = request.trackInfo.tracksList[request.trackInfo.index];
             State.disliked = request.trackInfo.tracksList[request.trackInfo.index].disliked;
            // this
-            State.likeItem = document.querySelectorAll(".item-track")[request.trackInfo.index].lastChild;
+            State.likeItem = likeItems[request.trackInfo.index];
         }
         if (request.hasOwnProperty('controls')) {
             updateRepeat(request.controls.repeat);
@@ -607,8 +606,7 @@ let toggleDislike = (isDisliked, notifyMe = false) => {
     }
 }
 
-let notificationTimer;
-let showNotification = (text) => {
+let showNotification = (text, time) => {
     clearTimeout(notificationTimer);
     if (text != undefined) {
         textNotification.innerHTML = text;
@@ -624,15 +622,21 @@ let showNotification = (text) => {
         fill: "both"
     }
     notification.animate(keyframe, options);
+    if (time == undefined) {
+        time = text.length * 84 + options.duration * 2 + 100;
+        if (time <= options.duration * 2 + 500) { // + 500ms for focus 
+            time = options.duration * 2 + 500;
+        }
+    }
     notificationTimer = setTimeout(() => {
         notification.classList.remove("slide-bottom");
+
         let keyframe = {
             transform: ['translateY(0%)', 'translateY(-100%)'],
         };
         notification.animate(keyframe, options);
         notificationTimer;
-    }, 5000);
-
+    }, time);
 }
 
 let getYandexMusicTab = () => {
@@ -755,7 +759,7 @@ let getUrl = (url, size = 50) => {
 let testImage = (url, size = 400, callback) => {
     try {
         modalCover[0].src = getUrl(url, size);
-        modalCover[0].onerror = function() {
+        modalCover[0].onerror = function () {
             if (size > 100) {
                 if (size == 100) {
                     size += -50;

@@ -9,6 +9,7 @@ let previousSlider;
 let selectedItem;
 let likeItem;
 let isFirstScroll = false;
+let likeItems = [];
 
 let State = { // current
     track: undefined,
@@ -114,6 +115,7 @@ let setTracksList = (list, index) => {
     setTitle(requestSourceInfo);
     let allItem = document.querySelectorAll(".item-track");
     clearList(allItem);
+    likeItems = [];
     try {
         trackPositionTop.remove();
         trackPositionBottom.remove();    
@@ -162,6 +164,7 @@ let createListElement = (list, index) => {
             setDislikedStyle(itemTrackContent, true);
             listLike.classList.add("list-disliked");
         }
+        likeItems.push(listLike);
 
         itemTrack.onmouseenter = (ev) => {
             ev.stopPropagation();
@@ -386,7 +389,7 @@ let getArtists = (list, amount = 3) => {
 
 let selectItem = (item, index) => {
     try {
-        if (!State.track.liked) {
+        if (State.track.liked == false) {
             State.likeItem.classList.remove("list-dislike");
         }
     } catch (error) {}

@@ -1,5 +1,9 @@
 {
     "versions": [
+        ["3.3.0", {
+            "messageEn": "• Added track loading bar.",
+            "messageRu": "• Добавлена полоса загрузки трека."
+        }],
         ["3.2.0", {
             "messageEn": "• Added light color theme.",
             "messageRu": "• Добавлена светлая цветовая тема."

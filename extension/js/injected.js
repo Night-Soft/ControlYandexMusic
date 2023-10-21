@@ -298,8 +298,7 @@ externalAPI.on(externalAPI.EVENT_TRACK, function(event) {
 });
 
 const sendProgress = new ExecutionDelay({
-    func(progress, message) {
-        console.log("progress.sended " + message);
+    func(progress) {
         chrome.runtime.sendMessage(YandexMusicControl.id, {
             progress: progress,
         });
@@ -322,13 +321,13 @@ externalAPI.on(externalAPI.EVENT_PROGRESS, function() {
     prevLoaded = loaded;
 
     if (sendPositon) {
-        sendProgress.execute(externalAPI.getProgress(), 'execute');
+        sendProgress.execute(externalAPI.getProgress());
         sendPositon = false;
         return;
     }
 
     if (sendLoaded) {
-        sendProgress.setArgumetns(externalAPI.getProgress(), 'start');
+        sendProgress.setArgumetns(externalAPI.getProgress());
         sendProgress.start();
         sendLoaded = false;
     }

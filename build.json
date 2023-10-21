@@ -1,5 +1,5 @@
 {
-    "version": "3.2.0",
+    "version": "3.3.0",
     "release": {
         "name": "__MSG_appName__",
         "icons": {
@@ -17,8 +17,8 @@
         "action": {
             "default_icon": "img/icon-pre-release.png"
         }
-      },
-      "dev": {
+    },
+    "dev": {
         "name": "Yandex Music dev",
         "icons": {
             "200": "img/icon-dev.png"
@@ -26,11 +26,11 @@
         "action": {
             "default_icon": "img/icon-dev.png"
         }
-      },
-      "ignore": [
+    },
+    "ignore": [
         "extension/img/icon-pre-release.png",
         "extension/img/icon-dev.png",
         "extension/js/gaq.js",
         "extension/js/gtag.js"
-      ]
+    ]
 }

@@ -99,13 +99,13 @@
         "message": "Dark"
     },
     "increaseCover": {
-        "message": "Reduce the control buttons and increase the cover."
+        "message": "Reduce the control buttons and increase the cover"
     },
     "whatNew": {
         "message": "What's new?"
     },
     "addDislikeButton": {
-        "message": "Add a dislike button?"
+        "message": "Add a dislike button"
     },
     "addedToBlackList": {
         "message": "The track will no longer appear in your recommendations!"

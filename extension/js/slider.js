@@ -161,7 +161,7 @@ let Slider = class {
         if (bool == this.Tooltip.isShown) return;
         if (bool) {
             this.Tooltip.isShown = true;
-            this.Tooltip.element.style.display = "block";
+            this.Tooltip.element.style.display = "flex";
         } else {
             this.Tooltip.isShown = false;
             this.Tooltip.element.style.display = "none";
