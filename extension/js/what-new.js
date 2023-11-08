@@ -1,60 +1,42 @@
 let WhatNew = {
-    openNews: (isTimer = false) => {
+    openNews(isTimer = false) {
         let showNew = () => {
             modalNews.style.display = "flex";
-            let i = 7;
-            if (isTimer) {
-                yesNews.innerHTML += " " + i;
-                yesNews.disabled = true;
-                let setTimer = () => {
-                    if (i == 1) {
-                        yesNews.disabled = false;
-                        yesNews.classList.remove("yesNews-disable")
-                        yesNews.onclick = () => { modalNews.style.display = "none"; }
-                    }
-                    if (i == 0) {
-                        yesNews.innerHTML = yesNews.innerHTML.slice(0, -2);
-                        clearInterval(delay);
-                        return;
-                    }
-                    yesNews.innerHTML = yesNews.innerHTML.slice(0, -1);
-                    yesNews.innerHTML += i - 1;
-                    if (i >= 0) { i--; }
+            yesNews.classList.remove("yesNews-disable");
+            yesNews.onclick = () => { modalNews.style.display = "none"; }
+        }
+        this.setLocale(chrome.i18n.getMessage("locale"), showNew);
 
+    },
+    getWhatNew: async () => {
+        try {
+            return (await fetch("../data/what-new.json")).json();
+        } catch (error) {
+            return Promise.reject(error);
+        }
+    },
+    async createNewEdge(){
+        let edge = await this.whatNew(true);
+        let chromeB = await this.whatNew(false);
+       // return;
+        let math = [];
+        for (edgeVer of edge) {
+            for (let i = 0; i < chromeB.length; i++) {
+                if (edgeVer[0] == chromeB[i][0]) {
+                    console.log(chromeB[i][0], "math");
+                    math.push(i)
                 }
-                let delay = setInterval(setTimer, 1000);
-            } else {
-                yesNews.disabled = false;
-                yesNews.classList.remove("yesNews-disable");
-                yesNews.onclick = () => { modalNews.style.display = "none"; }
             }
         }
-        WhatNew.setLocale(WhatNew.getLocale(), showNew);
-
-    },
-    getLocale: () => {
-        let locale = chrome.i18n.getMessage("locale");
-        return locale;
-    },
-    getWhatNew: async() => {
-        let response = fetch("../data/what-new.json");
-        return new Promise(function(resolve, reject) {
-            response.then((data) => {
-                data.json().then((value) => {
-                    value["success"] = true;
-                    resolve(value);
-                });
-            }, (data) => {
-                console.log("error", data);
-                data["success"] = false;
-                reject(data)
-            });
+        let newEdge = chromeB.slice();
+        math.forEach((version, index) => {
+            console.log(version, index);
+            newEdge[version] = edge[index]
         });
+        return newEdge;
     },
-    setLocale: (locale, callback) => {
-        let whatNewJson = WhatNew.getWhatNew().then((value) => {
-            if (!value["success"]) { return; }
-            whatNewJson = value;
+    setLocale(locale, callback) {
+        this.getWhatNew().then((whatNewJson) => {
             let version = document.getElementById("Version");
             version.innerHTML = chrome.i18n.getMessage("shortName") + " " + chrome.runtime.getManifest().version;
             let listChangesCoontent = document.getElementsByClassName("list-changes-coontent")[0];
