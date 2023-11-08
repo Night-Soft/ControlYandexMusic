@@ -1,13 +1,13 @@
-const { PerformanceObserver, performance } = require('node:perf_hooks');
+const { performance } = require('node:perf_hooks');
 const fs = require("fs");
-const { version } = require("process");
+//const { version } = require("process");
 const beautify = require('beautify');
 
 const red = '\x1b[0;31m';
 const green = '\x1b[0;32m';
 const clear = '\x1b[0m';
 
-const enter = () => {
+const enter = async () => {
   if (process.argv.length <= 2) {
     console.log(red + "Parameters undefined!" + clear);
     return;
@@ -15,7 +15,8 @@ const enter = () => {
   for (let i = 2; i < process.argv.length; i++) {
     switch (process.argv[i]) {
       case "-release":
-        buildRelease("release");
+        await buildRelease("release");
+        await buildRelease('release', "edge");
         break;
       case "-pre-release":
         preRelease("pre-release");
@@ -41,8 +42,6 @@ const readJson = async (path) => {
 }
 
 const createManifest = async (version = "release") => {
-  console.log(green + version + clear);
-
   const merge = (target, source) => {
     for (const key of Object.keys(source)) {
       if (source[key] instanceof Object) {
@@ -107,9 +106,9 @@ const preRelease = async (version = "pre-release") => {
   });
 }
 
-const buildRelease = async (version = "release") => {
+const buildRelease = async (version = "release", browserName = "chrome") => {
   const timeStart = performance.now();
-  console.log(green + "Build release." + clear);
+  console.log(green + `Build ${browserName} release.` + clear);
 
   const JSZip = require("jszip");
   const fs = require('fs');
@@ -135,9 +134,16 @@ const buildRelease = async (version = "release") => {
   let manifest, ignore;
 
   await createManifest(version).then(result => {
-    manifest = result.manifest; ignore = result.ignore;
+    manifest = result.manifest;
+    ignore = result.ignore;
     ignore.push("extension/manifest.json")
   });
+  let whatNewJson;
+  if (browserName != 'chrome') {
+    browserName = browserName.toLowerCase();
+    whatNewJson = await createWhatNew(browserName);
+    ignore.push("extension/data/what-new.json");
+  }
   let zip = new JSZip();
   readFiles("extension/").forEach((file) => {
     for (let i = 0; i < ignore.length; i++) {
@@ -150,25 +156,64 @@ const buildRelease = async (version = "release") => {
     file = file.replace("extension/", "");
     zip.file(file, fileData);
   });
+  if (whatNewJson) {
+    zip.file("data/what-new.json", beautify(JSON.stringify(whatNewJson), { format: 'json' }));
+  }
   zip.file("manifest.json", beautify(JSON.stringify(manifest), { format: 'json' }));
-  zip.file('Readme.txt', fs.readFileSync("Readme.txt"))
-  const zipName = 'Yandex Music Control ' + manifest.version + ".zip";
-  zip.generateNodeStream({
-    type: 'nodebuffer', compression: "DEFLATE",
-    compressionOptions: {
-      level: 6
-    },
-    streamFiles: true
-  }).pipe(fs.createWriteStream(zipName))
-    .on('finish', function () {
-      console.log(zipName + " written.");
-      console.log(green + version + " built in " + (performance.now() - timeStart).toFixed(3) + clear);
+  zip.file('Readme.txt', fs.readFileSync("Readme.txt"));
 
-    });
+  if (browserName != 'chrome') {
+    browserName = browserName.replace(browserName[0], " " + browserName[0].toUpperCase());
+  } else {
+    browserName = "";
+  }
+  const zipName = `Yandex Music Control ${manifest.version}${browserName}.zip`;
+
+  await new Promise((resolve, reject) => {
+    zip.generateNodeStream({
+      type: 'nodebuffer', compression: "DEFLATE",
+      compressionOptions: {
+        level: 6
+      },
+      streamFiles: true
+    }).pipe(fs.createWriteStream(zipName))
+      .on('finish', function () {resolve('zip created') });
+  });
+  console.log(zipName + " created.");
+  console.log(green + version  + " built in " + (performance.now() - timeStart).toFixed(3) + clear);
+
 }
 
 const buildDev = () => {
   console.log(green + "Start build -dev." + clear)
+}
+
+const createWhatNew = async function (browserName) {
+  let path;
+  switch (browserName) {
+    case 'edge':
+      path = "./extension/data/what-new Edge.json";
+      break;
+  }
+
+  let newWhatNew = await readJson(path);
+  const whatNew = await readJson("./extension/data/what-new.json");
+  newWhatNew = newWhatNew.versions;
+  const whatNewVer = whatNew.versions;
+
+  const math = [];
+  for (ver of newWhatNew) {
+    for (let i = 0; i < whatNewVer.length; i++) {
+      if (ver[0] == whatNewVer[i][0]) {
+        math.push(i);
+      }
+    }
+  }
+
+  math.forEach((version, index) => {
+    whatNew.versions[version] = newWhatNew[index];
+  });
+  return whatNew;
 }
 
 enter();
