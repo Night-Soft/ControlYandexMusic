@@ -1,17 +1,3 @@
-let SidePanel = {
-    onload() {
-        let setProgress =() => {
-            setTimeout(()=>{
-                sliderPrgress.setPosition(State.position);
-                setVolume(State.volume);
-                changeState(State.isPlay)
-            },100);
-        }
-        togglePlaylist(true);
-        JsOnload.addOnload("Slider", setProgress);
-    }
-}
-
 const popupBtn = document.getElementsByClassName("popup-btn")[0];
 popupBtn.onclick = () => {
     sendEventBackground({ createPopup: true},
@@ -25,4 +11,3 @@ popupBtn.onclick = () => {
 }
 
 sendEventBackground({sidePanel: true});
-SidePanel.onload();

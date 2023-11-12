@@ -148,6 +148,24 @@
     },
     "allNotifications": {
         "message": "Notification every time a track is switched."
+    },
+    "repeatOf": {
+        "message": "Repeat is turned off"
+    },
+    "repeatOn": {
+        "message": "Track repeat enabled"
+    },
+    "playListRepeatOn": {
+        "message": "Playlist repeat enabled"
+    },
+    "playbackRow": {
+        "message": "Playback in a row"
+    },
+    "randomOrder": {
+        "message": "Random order"
+    },
+    "playlistEmpty": {
+        "message": "Your playlist is empty!"
     }
 
 }

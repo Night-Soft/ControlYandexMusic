@@ -98,7 +98,7 @@ a {
 }
 
 .control:hover {
-    background-color: rgba(85, 82, 99, 0.25);
+    background-color: var(--hoverColor);
 }
 
 .control:active {
@@ -161,64 +161,47 @@ a {
     display: flex;
     height: 150px;
 }
+.toggle {}
 
-.toggle-shuffle {
-    cursor: pointer;
-    background-image: url(../img/shuffle.svg);
-    background-repeat: no-repeat, repeat;
-    background-position: center;
-    background-size: 25px;
-    opacity: 0.7;
-}
-
-.toggle-shuffle:hover {
-    /* filter: invert(0%) sepia(72%) saturate(2%) hue-rotate(123deg) brightness(108%) contrast(100%); */
-    background-color: rgba(85, 82, 99, 0.25);
+.toggle:hover {
+    background-color: var(--toggleHover);
     border-radius: 15px;
-    opacity: 1;
-}
-
-.toggle-repeat {
-    cursor: pointer;
-    background-image: url(../img/repeat.svg);
-    background-repeat: no-repeat, repeat;
-    background-position-x: center;
-    background-position-y: -6px;
-    background-size: 25px;
-    opacity: 0.7;
-}
-
-.toggle-repeat:hover {
-    /* filter: invert(0%) sepia(72%) saturate(2%) hue-rotate(123deg) brightness(108%) contrast(100%); */
-    background-color: rgba(85, 82, 99, 0.25);
-    border-radius: 15px;
-    opacity: 1;
-}
-
-.toggle-volume {
-    cursor: pointer;
-    background-image: url(../img/volume-max.svg);
-    background-repeat: no-repeat, repeat;
-    background-position: center;
-    background-position-y: -5px;
-    background-size: 25px;
-    opacity: 0.7;
-}
-
-.toggle-volume:hover {
-    /* filter: invert(0%) sepia(72%) saturate(2%) hue-rotate(123deg) brightness(108%) contrast(100%); */
-    background-color: rgba(85, 82, 99, 0.25);
-    border-radius: 15px;
-    opacity: 1;
 }
 
 .control-toggle {
     width: 40px;
     height: 20px;
     align-self: center;
-    background-size: 30px;
+    -webkit-mask-size: 30px;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    background-color: #C1C1C1;
     margin-left: 1px;
     transition: 500ms;
+}
+.toggle-active {
+    background-color: #ffd000;
+}
+
+.toggle-shuffle {
+    cursor: pointer;
+    opacity: 0.7;
+    -webkit-mask-image: url(../img/shuffle.svg);
+}
+
+.toggle-repeat {
+    cursor: pointer;
+    -webkit-mask-image: url(../img/repeat.svg);
+    -webkit-mask-position-x: center;
+    -webkit-mask-position-y: -6px;
+    opacity: 0.7;
+}
+
+.toggle-volume {
+    cursor: pointer;
+    -webkit-mask-image: url(../img/volume-max.svg);
+    -webkit-mask-position-y: -5px;
+    opacity: 0.7;
 }
 
 .content-groove-volume {
@@ -293,6 +276,7 @@ a {
 
 .modal {
     display: none;
+    justify-content: center;
     position: fixed;
     z-index: 3;
     left: 0;
@@ -333,14 +317,25 @@ a {
 }
 
 .modal-cover {
+    align-self: center;
+    object-fit: contain;
+    height: 100%;
+    width: 100%;
+    position: relative;
+    border-radius: 0px;
     margin: auto;
-    border-radius: 20px;
-    width: 80%;
-    height: 96%;
     background-repeat: no-repeat, repeat;
     background-position: center;
     background-size: cover;
     cursor: pointer;
+}
+.image-container {
+    display: flex;
+    align-self: center;
+    position: relative;
+    height: 90%;
+    width: 90%;
+
 }
 
 .groove-box {
@@ -376,7 +371,7 @@ a {
     border-radius: 5px;
 }
 
-.loaded {
+.loading-bar {
     background-color: #c1c1c1;
     top: 0px;
     width: 0%;
@@ -387,6 +382,24 @@ a {
     height: var(--progress-height);
 }
 
+.loading-waiting-bar {
+    display: none;
+    position: absolute;
+    right: 0px;
+    width: 0%;
+    height: var(--progress-height);
+    border-radius: 10px;
+    background:
+        linear-gradient(90deg, rgba(0, 0, 0, 0) 33%, #ffd000 50%, rgba(0, 0, 0, 0) 66%) #ffffff00;
+    background-size: 300% 100%;
+    animation: await-loading 1s infinite linear;
+}
+
+@keyframes await-loading {
+    0% {
+        background-position: right
+    }
+}
 .content-time {
     display: flex;
     flex-direction: row;
@@ -482,7 +495,9 @@ a {
 .slider-content {
     align-self: center;
 }
-
+.volume-content {
+    display: none;
+}
 .slider-content-list {
     width: 100%;
     margin: 5px 0px;
@@ -536,6 +551,8 @@ a {
     --ifHour: calc(100% - 84px);
     --selectedItemColor: #ff881a;
     --opacityColor: rgba(0, 0, 0, 0.4);
+    --hoverColor: rgb(32 48 71 / 30%);
+    --toggleHover: rgb(32 48 71 / 30%);
 }
 
 .slider-groove-progress {
@@ -547,7 +564,6 @@ a {
 .slider-groove-current-progress {
     height: var(--progress-height);
 }
-
 
 /* volume */
 
@@ -662,7 +678,20 @@ a {
 .popup-btn-container {
     position: absolute;
     right: 50px;
-    top: 3px;
+    top: 2px;
+    padding: 0px 4px 0px 4px;
+    border-radius: 5px 5px 5px 5px;
+
+}
+
+.popup-btn-container:hover {
+    filter: drop-shadow(0px 0px 2px rgb(255 255 255 / 25%));
+    background-color: var(--hoverColor);
+}
+
+.popup-btn-container:active {
+    filter: drop-shadow(0px 0px 2px rgb(255 255 255 / 25%));
+    background-color: rgba(85, 82, 99, 0.45);
 }
 
 .popup-btn {
@@ -725,8 +754,8 @@ a {
     background-image: url(../img/disliked.svg);
     background-repeat: no-repeat, repeat;
     background-position: center;
-    min-width: 40px;
-    height: 40px;
+    min-width: 30px;
+    height: 30px;
     position: absolute;
     right: 5px;
     background-size: contain;
@@ -855,7 +884,7 @@ a {
 .title-list {
     text-align: center;
     font-size: 1.3rem;
-    margin: 5px 0px 5px 0px;
+    margin: 5px 40px 5px 0px;
 }
 
 .item-cover {
@@ -1058,7 +1087,7 @@ a {
     padding: 15px;
     height: 130px;
     color: white;
-    border-radius: 5px;
+    border-radius: 5px 5px 0px 0px;
 }
 
 label {
@@ -1463,7 +1492,14 @@ label {
 #n2 {
     align-self: center;
 }
-
+.donate-container {
+    display: none; /* flex */
+    flex-direction: row;
+    justify-content: center;
+    width: 100%;
+    background-color: #172334;
+    border-radius: 10px;
+}
 .donationalerts {
     transition: 0.5s;
     background: #172334;
@@ -1492,12 +1528,14 @@ label {
 }
 
 .donationalerts-menu {
-    display: none;
-    justify-content: space-around;
+    display: flex;  /* flex */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     transition: 0.5s;
     background: #172334;
-    width: 65%;
-    height: 65%;
+    width: 50%;
+    height: 60px;
     background-size: 40px;
     margin: auto;
     cursor: pointer;
@@ -1508,12 +1546,7 @@ label {
 }
 
 .donationalerts-menu:hover {
-    color: white;
-    text-align: center;
-    background-size: 40px;
-    background-position: center 30px;
-    width: 100%;
-    font-size: 1.5rem;
+    background-color: #004D65;
 }
 
 .donationalerts-image {
@@ -1561,7 +1594,7 @@ label {
 }
 
 .paypal-menu {
-    display: none;
+    display: block;
     background: #172334;
     background-image: url(../img/payplal.png);
     color: white;
@@ -1570,8 +1603,8 @@ label {
     background-position: center 30px;
     transition: 0.5s;
     background-repeat: no-repeat, repeat;
-    width: 40%;
-    height: 65%;
+    width: 50%;
+    height: 60px;
     margin: auto;
     cursor: pointer;
     border-radius: 10px;
@@ -1579,12 +1612,8 @@ label {
 }
 
 .paypal-menu:hover {
-    color: white;
-    text-align: center;
-    background-size: 130px;
-    background-position: center 30px;
-    width: 56%;
-    font-size: 1.5rem;
+    background-color: #004D65;
+    background-blend-mode: screen;
 }
 
 .no-connect {
@@ -1757,29 +1786,11 @@ label {
     animation: scale-in-center 2s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
 }
 
-.loader-await-loading {
-    display: none;
-    position: absolute;
-    right: 0px;
-    width: 0%;
-    height: var(--progress-height);
-    border-radius: 10px;
-    background:
-        linear-gradient(90deg, rgba(0, 0, 0, 0) 33%, #ffd000 50%, rgba(0, 0, 0, 0) 66%) #ffffff00;
-    background-size: 300% 100%;
-    animation: await-loading 1s infinite linear;
-}
-
-@keyframes await-loading {
-    0% {
-        background-position: right
-    }
-}
-
-.loader-in-progress {   height: var(--progress-handle-size);
+/* .loader-in-progress {
+    height: var(--progress-handle-size);
     width: var(--progress-handle-size);
     margin: unset;
-}
+} */
 
 .slide-bottom {
     -webkit-animation: slide-bottom 700ms;

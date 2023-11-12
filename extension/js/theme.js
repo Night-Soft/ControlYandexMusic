@@ -1,3 +1,17 @@
+let darkTitle = document.querySelectorAll(".title");
+let darkduration = document.querySelectorAll(".duration");
+let darkCurrentTime = document.querySelectorAll(".current-time");
+let darkContentMenu = document.querySelectorAll(".content-menu")[0];
+let control = document.querySelectorAll(".control");
+
+let listTrack = document.querySelectorAll(".list-track")[0];
+let listContent = document.getElementById("listTrack");
+
+let btnPopup = document.getElementsByClassName("popup-btn")[0];
+
+let elementsText = [darkTitle, darkduration, darkCurrentTime];
+let rootCss = document.querySelector(':root');
+
 let Themes = {
     default: {
         bodyBackground: "linear-gradient(0deg, #FF5555 0%, #ffdd00 100%)",
@@ -21,21 +35,12 @@ let Themes = {
        // color: "#202c3d",
 
     }
+    
 }
-
-let darkTitle = document.querySelectorAll(".title");
-let darkduration = document.querySelectorAll(".duration");
-let darkCurrentTime = document.querySelectorAll(".current-time");
-let darkContentMenu = document.querySelectorAll(".content-menu")[0];
-let control = document.querySelectorAll(".control");
-
-let listTrack = document.querySelectorAll(".list-track")[0];
-let listContent = document.getElementById("listTrack");
-
-let btnPopup = document.getElementsByClassName("popup-btn")[0];
-
-let elementsText = [darkTitle, darkduration, darkCurrentTime];
-let rootCss = document.querySelector(':root');
+const Filter = {
+    black: "brightness(0%) contrast(100%)",
+    white: "invert(0%) sepia(72%) saturate(2%) hue-rotate(123deg) brightness(108%) contrast(100%)"
+}
 //linear-gradient(0deg, #121212 0%, #222222 100%);
 let setTheme = (theme = "default", windowName = "default") => {
     try {
@@ -50,6 +55,8 @@ let setTheme = (theme = "default", windowName = "default") => {
                 rootCss.style.setProperty('--progress', '#EDCD00');
                 rootCss.style.setProperty('--handleWhite', '#EEEEEE');
                 rootCss.style.setProperty('--backgroundControl', 'rgba(252, 252, 255, 0.1)');
+                rootCss.style.setProperty('--toggleHover', 'rgb(32 48 71 / 30%)');
+
                
                 rootCss.style.setProperty('--selectedItemColor', "");
                 listTrack.style.background = "";
@@ -87,6 +94,7 @@ let setTheme = (theme = "default", windowName = "default") => {
                 rootCss.style.setProperty('--handleWhite', '#ffffff');
                 rootCss.style.setProperty('--backgroundControl', 'rgba(252, 252, 255, 0.17)');
                 rootCss.style.setProperty('--selectedItemColor', Themes.light.selectedItemColor);
+                rootCss.style.setProperty('--toggleHover', '#ffffff');
 
                 document.body.style.setProperty("--bodyOpacity", 1); // set default background
                 document.body.style.setProperty("--bodyGradient", Themes.light.bodyBackground); // set default background
@@ -122,6 +130,7 @@ let setTheme = (theme = "default", windowName = "default") => {
                 rootCss.style.setProperty('--handleWhite', '#ffffff');
                 rootCss.style.setProperty('--backgroundControl', 'rgba(252, 252, 255, 0.17)');
                 document.body.style.setProperty("--bodyOpacity", 0); // set default background
+                rootCss.style.setProperty('--toggleHover', 'rgb(32 48 71 / 30%)');
 
                 rootCss.style.setProperty('--selectedItemColor', "");
                 listTrack.style.background = "";
@@ -173,12 +182,12 @@ let setIncreaseCover = (isIncrease = false) => {
         rootCss.style.setProperty('--pixselsForReduce', '20px');
         rootCss.style.setProperty('--coverBackgroundSize', '35px');
         Options.isReduce = true;
-        try { changeState(State.isPlay); } catch (error) { console.log(error); }
+        try { setPlaybackStateStyle(State.isPlay || false); } catch (error) { console.log(error); }
     } else {
         rootCss.style.setProperty('--pixselsForReduce', '0px');
         rootCss.style.setProperty('--coverBackgroundSize', '45px');
         Options.isReduce = false;
-        try { changeState(State.isPlay); } catch (error) { console.log(error); }
+        try { setPlaybackStateStyle(State.isPlay || false); } catch (error) { console.log(error); }
     }
 }
 

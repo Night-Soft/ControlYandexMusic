@@ -239,3 +239,5 @@ let setOptions = (options) => {
 
     }
 }
+
+FileReady.on('Options');

@@ -9,8 +9,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/popup.css">
     <link rel="stylesheet" href="css/side-panel.css">
-    <script src="js/FileReady.js"></script>
-    <script async src="js/theme.js"></script>
+    <script defer src="js/theme.js"></script>
 </head>
 
 <body>
@@ -21,7 +20,9 @@
         <div class="popup-btn"></div>
     </div>
     <div class="modal ">
-        <img class="modal-cover"></img>
+        <div class="image-container">
+            <img class="modal-cover"></img>
+        </div>
     </div>
     <!-- <div class="hamburger-menu-list">
         <div class="bar-list1 transition"></div>
@@ -36,11 +37,17 @@
         </div>
     </div>
     <div class="content-toggle">
-        <div class="toggle-shuffle control-toggle"> </div>
-        <div class="toggle-repeat control-toggle"> </div>
+        <div class="toggle">
+            <div class="toggle-shuffle control-toggle"></div>
+        </div>
+        <div class="toggle">
+            <div class="toggle-repeat control-toggle"> </div>
+        </div>
         <div class="content-groove-volume">
-            <div class="toggle-volume control-toggle"> </div>
-            <div class="slider-content">
+            <div class="toggle">
+                <div class="toggle-volume control-toggle"></div>
+            </div>
+            <div class="slider-content volume-content">
                 <div class="slider">
                     <div class="slider-groove slider-groove-volume">
                         <div class="slider-groove-current slider-groove-current-volume"></div>
@@ -59,8 +66,8 @@
                 <span class="current-time">00:00</span>
                 <div class="slider  slider-progress slider-progress-popup">
                     <div class="slider-groove slider-groove-progress">
-                        <div class="loaded"></div>
-                        <div class="loader-await-loading"></div>
+                        <div class="loading-bar"></div>
+                        <div class="loading-waiting-bar"></div>
                         <div class="slider-groove-current slider-groove-current-progress"></div>
                     </div>
                     <div class="handle-helper">
@@ -103,10 +110,12 @@
             </div>
         </div>
     </div>
-    <script src="js/popup.js "></script>
-    <script src="js/side-panel.js"></script>
-    <script async src="js/playlist.js"></script>
-    <script src="js/slider.js"></script>
+    <script defer src="js/general.js"></script>
+    <script defer src="js/ExecutionDelay.js"></script>
+    <script defer src="js/popup.js "></script>
+    <script defer src="js/side-panel.js"></script>
+    <script defer src="js/player.js"></script>
+    <script defer src="js/slider.js"></script>
 </body>
 
 </html>

@@ -148,6 +148,24 @@
     },
     "allNotifications": {
         "message": "Уведомление каждый раз, когда трек меняется."
+    },
+    "repeatOf": {
+        "message": "Повтор выключен"
+    },
+    "repeatOn": {
+        "message": "Повтор трека включен"
+    },
+    "playListRepeatOn": {
+        "message": "Повтор списка воспроизведения включен"
+    },
+    "playbackRow": {
+        "message": "Воспроизведение подряд"
+    },
+    "randomOrder": {
+        "message": "Случайный порядок"
+    },
+    "playlistEmpty": {
+        "message": "Ваш плейлист пуст!"
     }
 
 

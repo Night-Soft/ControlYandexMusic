@@ -1,5 +1,10 @@
 let tracksListTitle = document.getElementsByClassName("title-list")[0];
 let listTracks = document.getElementsByClassName("list-track")[0];
+let loadingBar = document.getElementsByClassName("loading-bar")[0];
+let toggleShuffle = document.querySelector(".toggle-shuffle");
+let toggleRepeat = document.querySelector(".toggle-repeat");
+let toggleVolume = document.getElementsByClassName("toggle-volume")[0];
+let contentGrooveVolume = document.getElementsByClassName("content-groove-volume")[0];
 let trackPositionTop;
 let trackPositionBottom;
 let requestSourceInfo;
@@ -10,12 +15,12 @@ let selectedItem;
 let likeItem;
 let isFirstScroll = false;
 let likeItems = [];
+let itemTracks = [];
 
 let State = { // current
     track: undefined,
     index: undefined, // Number
     disliked: undefined,
-    isPlay: undefined,
     likeItem: undefined,
     coverLink: undefined,
     coverItem: undefined,
@@ -32,6 +37,8 @@ let State = { // current
     set duration(value) {
         if (Number.isFinite(value)) {
             this._duration = value;
+            sliderProgress.maxScale = value;
+            durationSpan.innerHTML = getDurationAsString(value);
         }
     },
 
@@ -40,7 +47,19 @@ let State = { // current
     },
     set position(value) {
         if (Number.isFinite(value)) {
+            value = Number.parseFloat(value.toFixed(6));
+            if (value < 0) { 
+                value = 0 
+            } else if (value > this._duration) {
+                value = this._duration;
+            }
             this._position = value;
+            this._currentTime = Date.now();
+            currentTime.innerHTML = getDurationAsString(value);
+            sliderProgress.setPosition(value);
+            if (this._isPlay == true && this.isUpdateTimer == false && value > 0) {
+                this.positionUpdater();
+            }
         }
     },
 
@@ -50,6 +69,7 @@ let State = { // current
     set loaded(value) {
         if (Number.isFinite(value)) {
             this._loaded = value;
+            loadingBar.style.width = (value * 100 / this._duration) + "%";
         }
     },
 
@@ -59,6 +79,7 @@ let State = { // current
     set volume(value) {
         if (Number.isFinite(value)) {
             this._volume = value;
+            setVolume(value);
         }
     },
 
@@ -68,9 +89,73 @@ let State = { // current
     set isPlay(value) {
         if (typeof value  === "boolean") {
             this._isPlay = value;
+            setPlaybackStateStyle(value);
+            this.positionUpdater();
         } else {
             this._isPlay = false;
+            this.stopUpdater();
+            setPlaybackStateStyle(false);
         }
+    },
+    isGetProgress: false,
+    getProgress(){
+        if (this.isGetProgress == true) { return; }
+        this.isGetProgress = true;
+        let getProgressCounter = 0;
+        this._getProgressId = setInterval(() => {
+            if (getProgressCounter >= 170) { // 170 request in 34 seconds
+                this.stopGetProgress();
+                this.stopUpdater();
+                sendEvent("togglePause"); // set to pause
+            }
+            getProgressCounter++;
+            sendEvent({ getProgress: true }, false, true);
+        }, 200);
+    },
+    stopGetProgress(){
+        this.isGetProgress = false;
+        clearInterval(this._getProgressId);
+    },
+
+    isUpdateTimer: false,
+    _currentTime: 0,
+    _positionUpdaterId: undefined,
+    _getProgressId: undefined,
+    positionUpdater() {
+        this.stopUpdater();
+        if (this._isPlay == false) return;
+        if (this._position == 0) {
+            this.getProgress();
+            return;
+        }
+        this.stopGetProgress();
+
+        this._currentTime = Date.now();
+        const updateTimer = () => {
+            if (this._position >= this._duration) {
+                this.isPlay = false;
+                return;
+            }
+            if (Date.now() - this._currentTime >= 500) {
+                this.position += (Date.now() - this._currentTime) / 1000;
+                this._currentTime = Date.now();
+            }
+            if (this._position > this._duration) { this.position = this._duration; }
+            if (this._position + 1 > this._loaded && this._position > 1) {
+                this.stopUpdater();
+                toggleLoadingWaitingBar(true);
+                return;
+            }
+        } 
+        this._positionUpdaterId = setInterval(updateTimer, 500);
+        this.isUpdateTimer = true;
+    },
+    stopUpdater() {
+        try {
+            this.isUpdateTimer = false;
+            clearInterval(this._positionUpdaterId);
+            toggleLoadingWaitingBar(false);
+        } catch (error) { console.log(error); }
     }
 }
 
@@ -135,7 +220,7 @@ let createListElement = (list, index) => {
         itemCover.style.backgroundImage = "url(" + getUrl(list[i].cover) + ")";
         itemCover.onclick = (ev) => {
             State.coverItem = itemCover;
-            openCover(itemCover, getUrl(list[i].cover, 400), animateListImage);
+            openCover(itemCover, getUrl(list[i].cover, 400), openCoverAnimate);
         }
 
         let contentItemName = document.createElement("DIV");
@@ -161,9 +246,10 @@ let createListElement = (list, index) => {
         if (list[i].liked) {
             listLike.classList.add("list-like");
         } else if (list[i].disliked) {
-            setDislikedStyle(itemTrackContent, true);
             listLike.classList.add("list-disliked");
+            setDislikedStyle(itemTrack, true);
         }
+        listLikeControl(listLike, list[i], i);
         likeItems.push(listLike);
 
         itemTrack.onmouseenter = (ev) => {
@@ -181,9 +267,6 @@ let createListElement = (list, index) => {
                     }
                     listLike.removeEventListener("animationend", State.endShowLikeReverse);
                     listLike.addEventListener("animationend", State.endShowLike);
-                }
-                if (State.index == i) {
-                    listLikeControl(listLike, list[i], i);
                 }
             }
         }
@@ -203,8 +286,6 @@ let createListElement = (list, index) => {
                     listLike.addEventListener("animationend", State.endShowLikeReverse);
                     listLike.style.animation = "show-like 1s reverse";
                 }
-                listLike.onclick = null;
-                listLike.onLongPress = null;
             }
         }
 
@@ -214,7 +295,7 @@ let createListElement = (list, index) => {
                     sendEvent("togglePause");
                 } else {
                     sendEvent({ play: `${i}` }, false, true); // send as object
-                    stopUpdater();
+                    State.stopUpdater();
                     if (!requestTracksList[i].liked && !list[i].disliked) {
                         listLike.classList.add("list-dislike");
                         listLike.style.animation = "show-like 1s normal";
@@ -225,7 +306,6 @@ let createListElement = (list, index) => {
                         listLike.addEventListener("animationend", endShowLike);
 
                     }
-                    listLikeControl(listLike, list[i], i);
                 }
             }
         }
@@ -322,11 +402,9 @@ let toggleListLike = (isLike) => {
 
 let setDislikedStyle = (item, isDisliked) => {
     if (isDisliked) {
-        item.childNodes[0].style.filter = "opacity(0.5)";
-        item.childNodes[1].style.filter = "opacity(0.5)";
+        item.style.filter = "opacity(0.5)";
     } else {
-        item.childNodes[0].style.filter = "";
-        item.childNodes[1].style.filter = "";
+        item.style.filter = "";
     }
 }
 
@@ -363,10 +441,10 @@ const equals = (a, b) => {
     return true;
 };
 
-let getArtists = (list, amount = 3) => {
+let getArtists = (list, numberOf = 3) => {
     let getArtistsTitle = (listArtists) => {
         let artists = "";
-        for (let i = 0; i < amount; i++) {
+        for (let i = 0; i < numberOf; i++) {
             if (listArtists[i] == undefined && i != 0) {
                 artists = artists.slice(0, -2);
                 return artists;
@@ -413,7 +491,7 @@ let trackPositionId;
 let isTrackPosition = false;
 let checkTrackPosition = (from) => {
     let top = selectedItem.getClientRects()[0].top;
-    if (Extension.currentWindow().name != "extension") {
+    if (Extension.windowName != "extension") {
         top  = top - 120; // 120px top in popup
     }
     if (top < 0) {
@@ -488,58 +566,154 @@ let clearList = (list) => {
     }
 }
 
-let animateListImage = (item) => {
-    function offset(el) {
-        let rect = el.getBoundingClientRect(),
-            scrollLeft = window.pageXOffset || document.documentElement.scrollLeft,
-            scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        return { top: rect.top + scrollTop, left: rect.left + scrollLeft }
+/**
+ * @param {number} volume min 0 max 1.
+ */
+let setVolume = (volume) => {
+    volume = volume * 100;
+    let isVolume;
+    if (sliderVolumeContent.offsetWidth == 0) {
+        sliderVolumeContent.style.display = "block"; // for slider can get offset
+        isVolume = false;
     }
+    sliderVolume.setPosition(volume);
+    if (volume >= 50) {
+        toggleVolume.style.webkitMaskImage = "url(img/volume-max.svg)";
+    } else if (volume < 50 && volume != 0) {
+        toggleVolume.style.webkitMaskImage = "url(img/volume-middle.svg)";
+    }
+    if (volume <= 0) {
+        toggleVolume.style.webkitMaskImage = "url(img/volume-mute.svg)";
+    }
+    if (isVolume == false) {
+        sliderVolumeContent.style.display = "none";
+    }
+}
 
-    let width = item.offsetWidth;
-    let height = item.offsetHeight;
-    let itemOffset = offset(item);
-    let left = -(window.innerWidth / 2 - width / 2 - itemOffset.left);
-    let top = -(window.innerHeight / 2 - height / 2 - itemOffset.top);
-    let keyframe;
-    if (typeof(fromPopup) != 'undefined') {
-        let sizeCover, borderRadius;
-        let style = getComputedStyle(item);
-        borderRadius = parseInt(style.borderRadius.slice(0, -2));
-        if (window.innerHeight > window.innerWidth) {
-            sizeCover = window.innerWidth - Math.ceil(15 * window.innerWidth / 100);
-            modalCover[0].style.width = sizeCover + "px";
-            modalCover[0].style.height = sizeCover + "px";
-        } else {
-            sizeCover = window.innerHeight - Math.ceil(15 * window.innerHeight / 100);
-            modalCover[0].style.width = sizeCover + "px";
-            modalCover[0].style.height = sizeCover + "px";
+let updateRepeat = (repeat, isUpdate = false) => {
+    if (repeat == null) {
+        toggleRepeat.style.display = "none";
+        return;
+    }
+    if (repeat === true) {
+        if (isUpdate) showNotification(chrome.i18n.getMessage("playListRepeatOn"), 5000);
+        if (toggleRepeat.classList.contains('toggle-active') == false) {
+            toggleRepeat.classList.add('toggle-active');
         }
-        keyframe = {
-            width: [width + 'px', sizeCover + 'px'],
-            height: [height + 'px', sizeCover + 'px'],
-            transform: ['translate(' + left + 'px, ' + top + 'px)', 'translate(0px, 0px)'],
-            borderRadius: [borderRadius + 'px', '20px'],
-            easing: ['cubic-bezier(.85, .2, 1, 1)']
+        toggleRepeat.style.webkitMaskImage = "url(img/repeat.svg)"
+        toggleRepeat.style.opacity = "1";
+    } else {
+        if (isUpdate) showNotification(chrome.i18n.getMessage("repeatOf"), 5000);
+        if (toggleRepeat.classList.contains('toggle-active')) {
+            toggleRepeat.classList.remove('toggle-active');
+        }
+        toggleRepeat.style.webkitMaskImage = "url(img/repeat.svg)"
+        toggleRepeat.style.opacity = "";
+    }
+    if (repeat === 1) {
+        if (isUpdate) showNotification(chrome.i18n.getMessage("repeatOn"), 5000);
+        if (toggleRepeat.classList.contains('toggle-active') == false) {
+            toggleRepeat.classList.add('toggle-active');
+        }
+        toggleRepeat.style.webkitMaskImage = "url(img/repeat-one.svg)";
+        toggleRepeat.style.opacity = "1";
+    }
+}
+
+let updateShuffle = (shuffle, isUpdate = false) => {
+    if (shuffle == null) {
+        toggleShuffle.style.display = "none";
+        return;
+    }
+    if (shuffle === true) {
+        if (isUpdate) showNotification(chrome.i18n.getMessage("randomOrder"), 6000);
+        if (toggleShuffle.classList.contains('toggle-active') == false) {
+            toggleShuffle.classList.add('toggle-active');
+        }
+        toggleShuffle.style.opacity = "1";
+    } else {
+        if (isUpdate) showNotification(chrome.i18n.getMessage("playbackRow"), 6000);
+        if (toggleShuffle.classList.contains('toggle-active')) {
+            toggleShuffle.classList.remove('toggle-active');
+        }
+        toggleShuffle.style.opacity = "";
+    }
+}
+
+toggleShuffle.onclick = (event) => {
+    sendEvent({ toggleShuffle: true }, false, true);
+}
+toggleRepeat.onclick = (event) => {
+    sendEvent({ toggleRepeat: true }, false, true);
+
+}
+toggleVolume.onclick = (event) => {
+    sendEvent({ toggleVolume: true }, false, true);
+
+}
+
+toggleVolume.onwheel = (event) => {
+    sliderVolume.showTooltip(true);
+    if (event.deltaY < 0) {
+        if (sliderVolume.scale <= sliderVolume.maxScale) {
+            sliderVolume.scale += 4;
+            if (sliderVolume.scale > sliderVolume.maxScale) sliderVolume.scale = sliderVolume.maxScale;
+            sliderVolume.setTooltipPosition(sliderVolume.scale);
+            sendEvent({ setVolume: sliderVolume.scale / 100 }, false, true);
         }
     } else {
-        keyframe = {
-            width: [width + 'px', 80 + '%'],
-            height: [height + 'px', 96 + '%'],
-            transform: ['translate(' + left + 'px, ' + top + 'px)', 'translate(0px, 0px)'],
-            borderRadius: ['10px', '20px'],
-            easing: ['cubic-bezier(.85, .2, 1, 1)']
-        };
+        if (sliderVolume.scale >= 0) {
+            sliderVolume.scale -= 4;
+            if (sliderVolume.scale < 0) sliderVolume.scale = 0;
+            sliderVolume.setTooltipPosition(sliderVolume.scale);
+            sendEvent({ setVolume: sliderVolume.scale / 100 }, false, true);
+        }
     }
+}
+
+let isVolume = false;
+const showVolumeDelay = new ExecutionDelay(() => {
+    sliderVolumeContent.style.display = "block";
+    isVolume = true;
+    let keyframe = {
+        opacity: [0, 1]
+    };
 
     let options = {
-        duration: 500,
+        duration: 300,
     }
-    CurrentAnimation.keyframe = keyframe;
-    CurrentAnimation.options = options;
-    CurrentAnimation.left = left;
-    CurrentAnimation.top = top;
-    CurrentAnimation.isFromList = true;
-    //item.style.dispaly = "none";
-    modalCover[0].animate(keyframe, options);
+    sliderVolumeContent.animate(keyframe, options);
+}, {
+    delay: 150,
+    isThrottling: true
+});
+
+const hideVolumeDelay = new ExecutionDelay(() => {
+    isVolume = false;
+    let keyframe = {
+        opacity: [1, 0]
+    };
+    let options = {
+        duration: 300,
+    }
+    sliderVolumeContent.animate(keyframe, options).onfinish = () => {
+        sliderVolumeContent.style.display = "none";
+    };
+}, {
+    delay: 850,
+    isThrottling: true
+});
+
+toggleVolume.onmouseenter = () => {
+    if (isVolume == false) { showVolumeDelay.start(); }
+    if (hideVolumeDelay.isStarted) { hideVolumeDelay.stop(); }
+}
+
+contentGrooveVolume.onmouseenter = () => {
+    if (hideVolumeDelay.isStarted) { hideVolumeDelay.stop(); }
+ }
+contentGrooveVolume.onmouseleave = (event) => {
+    if(event.toElement == null) return;
+    if (showVolumeDelay.isStarted) { showVolumeDelay.stop(); }
+    if (isVolume) { hideVolumeDelay.start(); }
 }

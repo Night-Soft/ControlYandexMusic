@@ -14,7 +14,7 @@ payPal.onclick = () => {
     window.open("https://www.paypal.com/paypalme2/NightSoftware");
 }
 donationAlerts.onclick = () => {
-    window.open("https://www.donationalerts.com/r/nightsoftware");
+    window.open("https://www.donationalerts.com/r/nightapp");
 }
 if (language == "ru") {
     title.innerHTML = chrome.i18n.getMessage("title");

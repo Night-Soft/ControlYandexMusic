@@ -1,7 +1,10 @@
 let Slider = class {
     onmousemovedown(event) { }
     onmousedown(event) { }
+    onmouseup(event) { }
     onmousemove(event) { }
+    onmouseenter(event) { }
+    onmouseleave(event) {}
     onwheel(event) { }
     constructor(groove, currentGroove, handle, tooltip) {
         this.groove = groove;
@@ -17,9 +20,10 @@ let Slider = class {
         this.maxScale = 100;
         this.isMouseEnter = false;
         this.isOwnDataHelper = false;
-
+        this.toggleTransiton(false);
         this.setDelayTooltip(false);
         this.setPosition(this.scale);
+        this.toggleTransiton(true);
 
         groove.addEventListener("mousemove", this.#mousemove.bind(this));
         groove.addEventListener("mouseleave", this.#mouseleave.bind(this));
@@ -27,7 +31,7 @@ let Slider = class {
         groove.addEventListener("mouseup", this.#mouseup.bind(this));
         groove.addEventListener("wheel", this.#wheel.bind(this));
 
-        this.groove.addEventListener("mouseenter", this.#delayTootip);
+        groove.addEventListener("mouseenter", this.#delayTootip);
 
 
     }
@@ -56,18 +60,22 @@ let Slider = class {
         this.onmousemove(event);
     }
     #mouseleave(event) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (event.toElement == null) { return; }
         this.isMouseEnter = false;
         this.showTooltip(false);
         this.groove.removeEventListener("mousemove", this.#mousemoveDown);
         this.toggleTransiton(true);
+        this.onmouseleave(event);
     }
     #mousedown(event) {
         event.preventDefault();
         if (event.button != 0) { return; }
         this.setPosition(event);
-        this.onmousedown(event);
         this.groove.addEventListener("mousemove", this.#mousemoveDown);
         this.toggleTransiton(false);
+        this.onmousedown(event);
 
     }
     #mousemoveDown = (event) => {
@@ -78,6 +86,7 @@ let Slider = class {
     #mouseup(event) {
         this.toggleTransiton(true);
         this.groove.removeEventListener("mousemove", this.#mousemoveDown);
+        this.onmouseup(event);
 
      }
      #delayTootip = (event) => {
@@ -97,6 +106,7 @@ let Slider = class {
                 this.setTooltipPosition(event);
             }
         }
+        this.onmouseenter(event);
     };
     toggleTransiton(enable = false) {
         if (enable) {
@@ -144,6 +154,7 @@ let Slider = class {
             return;
         }
         if (this.Tooltip.isTooltip) {
+        
             let x = (event.x - this.groove.offsetLeft) * 100 / this.groove.offsetWidth;
             this.Tooltip.element.style.left = `calc(${x}% - ${this.Tooltip.element.offsetWidth}px / 2)`;
             if (this.isOwnDataHelper) return;
@@ -185,174 +196,24 @@ let sliderVolumeElement = document.getElementsByClassName("slider")[0];
 let currentGrooveVol = document.getElementsByClassName("slider-groove-current")[0];
 let handleVol = document.getElementsByClassName("slider-handle")[0];
 let tooltipVol = document.getElementsByClassName("slider-helper")[0];
+let sliderVolumeContent = document.getElementsByClassName("slider-content")[0];
 
 let sliderVolume = new Slider(sliderVolumeElement, currentGrooveVol, handleVol, tooltipVol);
-sliderVolume.onmousemovedown = () => {
+
+const sendVolumeDelay = new ExecutionDelay(() => {
     sendEvent({ setVolume: sliderVolume.scale / 100 }, false, true);
-    updateToggleVolumeIcon(sliderVolume.scale);
-}
+}, {
+    delay: 200,
+    isThrottling: true
+});
+
+sliderVolume.onmousemovedown = () => { sendVolumeDelay.start(); }
+
 sliderVolume.onmousedown = () => {
     sendEvent({ setVolume: sliderVolume.scale / 100 }, false, true);
-    updateToggleVolumeIcon(sliderVolume.scale);
 }
 sliderVolume.onwheel = () => {
     sendEvent({ setVolume: sliderVolume.scale / 100 }, false, true);
-    updateToggleVolumeIcon(sliderVolume.scale);
-}
-
-let toggleShuffle = document.querySelector(".toggle-shuffle");
-let toggleRepeat = document.querySelector(".toggle-repeat");
-let toggleVolume = document.getElementsByClassName("toggle-volume")[0];
-let sliderVolumeContent = document.getElementsByClassName("slider-content")[0];
-let contentGrooveVolume = document.getElementsByClassName("content-groove-volume")[0];
-
-let whiteFilter = "invert(0%) sepia(72%) saturate(2%) hue-rotate(123deg) brightness(108%) contrast(100%)";
-let mouseEnter = false;
-let isVolAnim = false;
-contentGrooveVolume.onmouseenter = (event) => {
-    mouseEnter = true;
-    endVolumeAnim();
-    sliderVolume.toggleTransiton(false);
-    setTimeout(() => {
-        if (mouseEnter == true) {
-            sliderVolumeContent.style.display = "block";
-            let keyframe = {
-                // width: ['0px', '60px'],
-                opacity: [0.3, 1]
-            };
-            let options = {
-                duration: 300,
-            }
-            sliderVolumeContent.animate(keyframe, options).onfinish = () => {
-                sliderVolume.toggleTransiton(true);
-            };
-            isVolAnim = true;
-        }
-    }, 150);
-}
-
-let endVolumeAnim = (ev) => {
-    sliderVolumeContent.removeEventListener("animationend", endVolumeAnim);
-    sliderVolumeContent.classList.remove("hide-volume");
-    sliderVolumeContent.style.display = "none";
-    sliderVolumeContent.style.animation = null;
-}
-
-contentGrooveVolume.onmouseleave = () => {
-    mouseEnter = false;
-    if (isVolAnim == true) {
-        sliderVolumeContent.addEventListener("animationend", endVolumeAnim);
-        sliderVolumeContent.style.animation = "hide-volume 300ms";
-        isVolAnim = false;
-        sliderVolume.showTooltip(false);
-    }
-}
-
-/**
- * @param {number} volume min 0 max 1.
- */
-let setVolume = (volume) => {
-    State.volume = volume;
-    volume = volume * 100;
-    let isVolume;
-    if (sliderVolumeContent.style.display != "block") {
-        sliderVolumeContent.style.display = "block"; // for slider can get offset
-        isVolume = false;
-    }
-    if (volume >= 50) {
-        sliderVolume.setPosition(volume);
-        updateToggleVolumeIcon(volume);
-    } else if (volume < 50 && volume != 0) {
-        sliderVolume.setPosition(volume);
-        updateToggleVolumeIcon(volume);
-    }
-    if (volume <= 0) {
-        sliderVolume.setPosition(volume);
-        updateToggleVolumeIcon(volume);
-    }
-    if (isVolume == false) {
-        sliderVolumeContent.style.display = "none";
-    }
-}
-
-let updateRepeat = (repeat) => {
-    if (repeat == null) {
-        toggleRepeat.style.display = "none";
-        return;
-    }
-    if (repeat === true) {
-        toggleRepeat.style.backgroundImage = "url(img/repeat.svg)"
-        toggleRepeat.style.filter = whiteFilter;
-        toggleRepeat.style.opacity = "1";
-    } else {
-        toggleRepeat.style.backgroundImage = "url(img/repeat.svg)"
-        toggleRepeat.style.filter = "";
-        toggleRepeat.style.opacity = "";
-    }
-    if (repeat === 1) {
-        toggleRepeat.style.backgroundImage = "url(img/repeat-one.svg)";
-        toggleRepeat.style.filter = whiteFilter;
-        toggleRepeat.style.opacity = "1";
-    }
-}
-
-let updateShuffle = (shuffle) => {
-    if (shuffle == null) {
-        toggleShuffle.style.display = "none";
-        return;
-    }
-    if (shuffle === true) {
-        toggleShuffle.style.filter = whiteFilter;
-        toggleShuffle.style.opacity = "1";
-    } else {
-        toggleShuffle.style.filter = "";
-        toggleShuffle.style.opacity = "";
-    }
-}
-
-toggleShuffle.onclick = (event) => {
-    sendEvent({ toggleShuffle: true }, false, true);
-}
-toggleRepeat.onclick = (event) => {
-    sendEvent({ toggleRepeat: true }, false, true);
-
-}
-toggleVolume.onclick = (event) => {
-    sendEvent({ toggleVolume: true }, false, true);
-
-}
-toggleVolume.onwheel = (event) => {
-    sliderVolume.showTooltip(true);
-    if (event.deltaY < 0) {
-        if (sliderVolume.scale <= sliderVolume.maxScale) {
-            sliderVolume.scale += 4;
-            if (sliderVolume.scale > sliderVolume.maxScale) sliderVolume.scale = sliderVolume.maxScale;
-            sliderVolume.setPosition(sliderVolume.scale);
-            sliderVolume.setTooltipPosition(sliderVolume.scale);
-            sendEvent({ setVolume: sliderVolume.scale / 100 }, false, true);
-            updateToggleVolumeIcon(sliderVolume.scale);
-        }
-    } else {
-        if (sliderVolume.scale >= 0) {
-            sliderVolume.scale -= 4;
-            if (sliderVolume.scale < 0) sliderVolume.scale = 0;
-            sliderVolume.setPosition(sliderVolume.scale);
-            sliderVolume.setTooltipPosition(sliderVolume.scale);
-            sendEvent({ setVolume: sliderVolume.scale / 100 }, false, true);
-            updateToggleVolumeIcon(sliderVolume.scale);
-        }
-    }
-}
-
-let updateToggleVolumeIcon = (scale) => {
-    if (scale >= 50) {
-        toggleVolume.style.backgroundImage = "url(img/volume-max.svg)";
-    } else if (scale < 50 && scale != 0) {
-        toggleVolume.style.backgroundImage = "url(img/volume-middle.svg)";
-    }
-    if (scale <= 0) {
-        toggleVolume.style.backgroundImage = "url(img/volume-mute.svg)";
-    }
 }
 
 // slider progress and time of track
@@ -367,176 +228,72 @@ let durationSpan = document.querySelector(".duration"); // below image
 
 let progressUpdater, currentUnixTime;
 
-let sliderPrgress = new Slider(sliderProgressElement, progressGrooveCurrent, progressHandle, progressHelper);
-sliderPrgress.isOwnDataHelper = true;
-sliderPrgress.setDelayTooltip(150);
+let sliderProgress = new Slider(sliderProgressElement, progressGrooveCurrent, progressHandle, progressHelper);
+sliderProgress.isOwnDataHelper = true;
+sliderProgress.setDelayTooltip(150);
 
-sliderPrgress.onmousemove = (event) => {
-    sliderPrgress.setTooltipData(getDurationAsString(getSeconds(event.x - sliderPrgress.groove.offsetLeft)));
-}
+const sendPositionDelay = new ExecutionDelay((event) => {
+    sliderProgress.setTooltipData(getDurationAsString(getSeconds(event.x - sliderProgress.groove.offsetLeft)));
+    setTime(getSeconds(event.x - sliderProgress.groove.offsetLeft));
+}, {
+    delay: 200,
+    isThrottling: true
+});
 
-sliderPrgress.onmousemovedown = (event) => {
-    sliderPrgress.setTooltipData(getDurationAsString(getSeconds(event.x - sliderPrgress.groove.offsetLeft)));
-    setTime(getSeconds(event.x - sliderPrgress.groove.offsetLeft));
-}
-
-sliderPrgress.onmousedown = (event) => {
-    setTime(getSeconds(event.x - sliderPrgress.groove.offsetLeft));
-}
-
-sliderPrgress.onwheel = (event) => {
-    let seconds;
-    if (event.deltaY < 0) {
-        seconds = getSeconds(sliderPrgress.currentGroove.offsetWidth) + 4;
-        setTime(seconds); // to do
-    } else {
-        seconds = getSeconds(sliderPrgress.currentGroove.offsetWidth) - 4;
-        setTime(seconds); // to do
+let seconds;
+sliderProgress.onmousemove = (event) => {
+    seconds = getSeconds(event.x - sliderProgress.groove.offsetLeft);
+    if (seconds > State.duration) {
+        seconds = State.duration;
+    } else if (seconds < 0) {
+        seconds = 0;
     }
-    sliderPrgress.setTooltipData(getDurationAsString(seconds));
+    sliderProgress.setTooltipData(getDurationAsString(seconds));
+}
+
+sliderProgress.onmousemovedown = (event) => {
+    sendPositionDelay.setArgumetns(event).start();
+}
+
+sliderProgress.onmousedown = (event) => {
+    setTime(getSeconds(event.x - sliderProgress.groove.offsetLeft));
+}
+
+sliderProgress.onwheel = (event) => {
+    let seconds = event.deltaY < 0 ? 4 : -4;
+    sliderProgress.setTooltipData(getDurationAsString(State.position + seconds));
+    setTime(State.position + seconds);
 }
 
 const getSeconds = function (currentPosition, duration = State.duration) {
-    let currentSeconds = currentPosition * 100 / sliderPrgress.groove.offsetWidth * duration / 100;
-    return currentSeconds;
+    return parseFloat((currentPosition / sliderProgress.groove.offsetWidth * duration).toFixed(6));
 }
 
 function setTime(seconds) {
-    State.position = seconds
-    trackUpdater();
+    State.position = seconds;
     sendEvent({
         data: "setTime",
         time: seconds,
     });
 }
 
-function setTrackProgress(duration = State.duration, progress = State.position, isPlaying = State.isPlay) {
-    //set duration time progress
-    sliderPrgress.maxScale = duration;
-    durationSpan.innerHTML = getDurationAsString(duration);
-    //set current time progress
-    currentTime.innerHTML = getDurationAsString(progress);
-    // set progress to slider
-    updateProgress();
-}
-
-const awaitLoadingTrack = document.getElementsByClassName('loader-await-loading')[0];
-let awaitLoadingId;
-const showAwaitLoading = function (show = true, percent) {
-    clearTimeout(awaitLoadingId)
+const loadingWaitingBar = document.getElementsByClassName('loading-waiting-bar')[0];
+let loadingBarId;
+const toggleLoadingWaitingBar = function (show = true, isTimeout = true) {
+    clearTimeout(loadingBarId)
     if (show) {
-        awaitLoadingId = setTimeout(() => {
-            awaitLoadingTrack.style.width = (100 - percent) + '%';
-            awaitLoadingTrack.style.display = 'block';
-        }, 1500);
-    } else {
-        awaitLoadingTrack.style.display = '';
-    }
-}
-
-const updateProgress = function() {
-    sliderPrgress.setPosition(State.position);
-    const x = State.loaded * 100 / sliderPrgress.maxScale;
-    loadedLine.style.width = x + "%";
-}
-const stopUpdater = () => {
-    try {
-        showAwaitLoading(false);
-        clearInterval(progressUpdater);
-    } catch (error) { console.log(error); }
-}
-
-
-let getProgressCouter = 0;
-let getProgressId;
-function trackUpdater(duration = State.duration, progress = State.position, isPlay = State.isPlay) {
-    stopUpdater();
-    if (!isPlay) return;
-    if (progress == 0) {
-        if (getProgressCouter <= 170) { // 150 request in 30 seconds
-            clearInterval(getProgressId);
-            getProgressId = setTimeout(() => {
-                sendEvent({ getProgress: true }, false, true);
-                getProgressCouter++;
-            }, 200);
+        if (isTimeout) {
+            loadingBarId = setTimeout(() => {
+                const percent = 100 - State.position * 100 / State.duration;
+                loadingWaitingBar.style.width = percent + '%';
+                loadingWaitingBar.style.display = 'block';
+            }, 1500);
         } else {
-            sendEvent("togglePause"); // set to pause
-            getProgressCouter = 0;
+            const percent = 100 - State.position * 100 / State.duration;
+            loadingWaitingBar.style.width = percent + '%';
+            loadingWaitingBar.style.display = 'block';
         }
-        return;
-    }    
-    getProgressCouter = 0;
-    changeState(isPlay);
-    if (isPlay) progressUpdater = setInterval(updaterTimer, 500);
-    sliderPrgress.maxScale = duration;
-    currentUnixTime = Date.now();
-    progress = Number.parseFloat(progress.toFixed(6));
-    function updaterTimer() {
-        if (progress >= duration) {
-            clearInterval(progressUpdater);
-            changeState(false);
-            return;
-        }
-        if (Date.now() - currentUnixTime >= 500) {
-            progress += (Date.now() - currentUnixTime) / 1000;
-            currentUnixTime = Date.now();
-        }
-        //set current time progress
-        if (progress > duration) { progress = duration; }
-        if (progress + 1 > State.loaded && progress > 1) {
-            stopUpdater();
-            const percent = progress * 100 / duration;
-            showAwaitLoading(true, percent);
-            return;
-        }
-        progress = Number.parseFloat(progress.toFixed(6));
-        currentTime.innerHTML = getDurationAsString(progress);
-        sliderPrgress.setPosition(progress);
-    }
-}
-
-let splitSeconds = (currentSeconds) => {
-    let hours = 0;
-    let minutes = 0;
-    let seconds = 0;
-    if (currentSeconds / 3600 > 0) {
-        hours = Math.floor(currentSeconds / 3600);
-        currentSeconds = currentSeconds - (hours * 3600);
-    }
-    if (currentSeconds > 59) {
-        minutes = Math.floor(currentSeconds / 60);
-        seconds = Math.floor(currentSeconds - minutes * 60);
     } else {
-        seconds = Math.ceil(currentSeconds);
+        loadingWaitingBar.style.display = '';
     }
-    return { hours: hours, minutes: minutes, seconds: seconds }
 }
-
-let twoDigits = function (seconds, minutes, hours) {
-    const formatedTime = [];
-    for (let i = 0; i < arguments.length; i++) {
-        let time = arguments[i];
-        if (time > 0 && time < 10) {
-            formatedTime.push("0" + time);
-        } else if (i == 0 && time == 0) {
-            formatedTime.push("00");
-        }
-        else if (time > 0) {
-            formatedTime.push(time);
-        }
-    }
-    if (formatedTime.length == 1) { formatedTime.push("00") }
-    return formatedTime.reverse().join(":");
-}
-
-let getDurationAsString = (duration = 0) => {
-    const {seconds, minutes, hours} = splitSeconds(duration);
-    return twoDigits(seconds, minutes, hours);
-}
-
-try {
-    JsOnload.onload("Slider", false); // side-panel.js
-} catch (error) {
-    //console.log(error);
-}
-    

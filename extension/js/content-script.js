@@ -73,19 +73,21 @@ chrome.runtime.onConnect.addListener(function(port) {
 });
 
 let injectJS = (id) => {
+    let ExecutionDelay = document.createElement('script');
+    ExecutionDelay.src = chrome.runtime.getURL('js/ExecutionDelay.js');
+    ExecutionDelay.onload = function () {
+        (document.head || document.documentElement).appendChild(injected);
+        this.remove();
+    };
+
     let injected = document.createElement('script');
     injected.src = chrome.runtime.getURL('js/injected.js');
-    injected.onload = function() {
+    injected.onload = function () {
         window.postMessage({ id: id });
         this.remove();
     };
 
-    let ExecutionDelay = document.createElement('script');
-    ExecutionDelay.src = chrome.runtime.getURL('js/ExecutionDelay.js');
-    ExecutionDelay.onload = function () { this.remove();  };
-
     (document.head || document.documentElement).appendChild(ExecutionDelay);
-    (document.head || document.documentElement).appendChild(injected);
 }
 
 let getId = () => {

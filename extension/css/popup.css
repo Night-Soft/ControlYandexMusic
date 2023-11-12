@@ -11,7 +11,7 @@ body {
     --progress-handle-size: 16px;
     --volume-height: 7px;
     --mainRed: #ff3333;
-    --slider: #c2c2c2;
+    --slider: #EBEBEB;
     --progress: #ffdd00;
     --handleWhite: #ffffff;
     --backgroundControl: rgba(252, 252, 255, 0.17);
@@ -154,11 +154,25 @@ body {
 }
 
 .modal {
+    justify-content: center;
     z-index: 4;
 }
 
 .modal-cover {
-    height: 200px;
+    align-self: center;
+    object-fit: contain;
+    height: 100%;
+    width: 100%;
+    position: relative;
+    border-radius: 0px;
+}
+.image-container {
+    display: flex;
+    align-self: center;
+    position: relative;
+    height: 90%;
+    width: 90%;
+
 }
 
 .content-track-artist {
@@ -232,6 +246,10 @@ body {
     border-radius: 5px;
 }
 
+.title-list {
+    margin-right: 32px;
+}
+
 .track-position-top {
     display: none;
     left: 0px;
@@ -281,8 +299,8 @@ body {
 }
 
 .list-disliked {
-    min-width: 25px;
-    height: 25px;
+    min-width: 30px;
+    height: 30px;
     border-radius: 5px;
 }
 

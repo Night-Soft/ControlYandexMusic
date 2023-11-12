@@ -29,6 +29,7 @@ let closeSide = document.getElementsByClassName("close-side")[0];
 let aMenu = document.getElementsByTagName("a")[0];
 let payPal = document.getElementsByClassName("paypal-menu")[0];
 let donationAlerts = document.getElementsByClassName("donationalerts-menu")[0];
+let donateContainer = document.getElementsByClassName("donate-container")[0];
 let sideHelp = document.getElementsByClassName("side-help")[0];
 let noConnect = document.getElementsByClassName("no-connect")[0];
 let loaderContainer = document.getElementsByClassName("loader-container")[0];
@@ -46,8 +47,6 @@ let listsSortcutKeys = document.getElementsByClassName("list-shortcut-keys")[0];
 let selectedShortcutKey = document.getElementsByClassName("select-shortcut-key")[0];
 let contentListMenu = document.getElementsByClassName("content-list-menu")[0];
 let modalListMenu = document.getElementsByClassName("modal-list-menu")[0];
-let loadedLine = document.getElementsByClassName("loaded")[0];
-
 
 let port = {
     isConnected: false
@@ -93,9 +92,7 @@ let Extension = {
             });
         });
     },
-    currentWindow() {
-        return { name: "extension" }
-    },
+    windowName: "extension",
     isConnected: undefined
 };
 
@@ -134,19 +131,22 @@ chrome.runtime.onMessageExternal.addListener( // injected script
     (request, sender, sendResponse) => {
         switch (request.event) {
             case 'currentTrack': // get from the key
+                if (request.trackInfo.index == -1) {
+                    showNotification(chrome.i18n.getMessage("playlistEmpty"), 7000);
+                    return;
+                }
                 setMediaData(request.currentTrack.title, getArtists(request.currentTrack, 5), request.currentTrack.cover);
-                changeState(request.isPlaying);
                 toggleLike(request.currentTrack.liked);
                 toggleDislike(request.currentTrack.disliked);
-                State.duration = request.currentTrack.duration;
-                State.position = request.progress.position;
+                if (request.progress.duration == 0 && request.progress.position == 0) {
+                    sliderProgress.maxScale = 1;
+                    sliderProgress.setPosition(0);
+                }
                 State.isPlay = request.isPlaying;
-                setTrackProgress();
-                trackUpdater();
+                State.volume = request.volume;
                 break;
             case 'togglePause':
-                changeState(request.isPlaying);
-                trackUpdater(State.duration, State.position, State.isPlay = request.isPlaying);
+                State.isPlay = request.isPlaying;
                 break;
             case 'toggleLike':
                 if (request.isLiked) {
@@ -165,16 +165,20 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 toggleListDisliked(request.disliked.disliked);
                 break;
             case "STATE":
-                changeState(request.isPlaying);
-                trackUpdater(State.duration, State.position, State.isPlay = request.isPlaying);
+                State.isPlay = request.isPlaying;
+                State.position = request.progress.position;
                 break;
             case "VOLUME":
-                setVolume(request.volume);
+                State.volume = request.volume;
                 break;
             default:
                 break;
         }
-
+        if (request.hasOwnProperty('progress')) {
+            State.duration = request.progress.duration;
+            State.position = request.progress.position;
+            State.loaded = request.progress.loaded;
+        }
         if (request.trackInfo) {
             updateTracksList(request.trackInfo);
             State.track = request.trackInfo.tracksList[request.trackInfo.index];
@@ -185,61 +189,15 @@ chrome.runtime.onMessageExternal.addListener( // injected script
             updateRepeat(request.controls.repeat);
             updateShuffle(request.controls.shuffle);
         }
-        if (request.hasOwnProperty('volume')) {
-            setVolume(request.volume);
-        }
         if (request.hasOwnProperty('repeat')) {
-            updateRepeat(request.repeat);
+            updateRepeat(request.repeat, true);
         }
         if (request.hasOwnProperty('shuffle')) {
-            updateShuffle(request.shuffle);
-        }
-        if (request.hasOwnProperty('progress')) {
-            for (const prop in request.progress) {
-                if (Object.hasOwn(request.progress, prop)) {
-                    State[prop] = request.progress[prop];
-                }
-            }
-            updateProgress();
-            trackUpdater();
+            updateShuffle(request.shuffle, true);
         }
         return true;
     });
 
-let LongPressButton = class {
-    constructor(button, func, delay = 750) {
-        this.button = button;
-        this.func = func;
-        this.delay = delay;
-        this.longpresStart = true;
-        this.longpressTimer;
-        this.onclickFunc;
-
-        button.onmousedown = (event) => {
-            if (event.button == 2) { return; }
-            this.longpresStart = true;
-            this.longpressTimer = setTimeout(() => {
-                this.longpresStart = false;
-                if (button.onclick != null) {
-                    this.onclickFunc = button.onclick;
-                    this.button.onclick = null;
-                }
-                this.func();
-            }, this.delay);
-        };
-
-        button.onmouseup = (event) => {
-            if (event.button == 2) { return; }
-            if (this.longpresStart) {
-                clearTimeout(this.longpressTimer);
-                this.longpresStart = false;
-                if (this.onclickFunc != null) {
-                    this.button.onclick = this.onclickFunc;
-                }
-            }
-        };
-    }
-}
 
 btnYes.onclick = () => {
     if (reload == false) {
@@ -276,19 +234,16 @@ btnNew.onclick = () => {
 
 previous[0].onclick = () => {
     sendEvent("previous");
-    stopUpdater();
-    pushEvent(previous[0].className, "clicked")
+    State.stopUpdater();
 };
 
 pause[0].onclick = () => {
     sendEvent("togglePause");
-    pushEvent(pause[0].className, "clicked")
 };
 
 next[0].onclick = () => {
     sendEvent("next");
-    stopUpdater();
-    pushEvent(next[0].className, "clicked")
+    State.stopUpdater();
 };
 like[0].onLongPress = new LongPressButton(like[0], () => {
     sendEvent("toggleDislike");
@@ -296,7 +251,6 @@ like[0].onLongPress = new LongPressButton(like[0], () => {
 
 like[0].onclick = () => {
     sendEvent("toggleLike");
-    pushEvent(like[0].className, "clicked");
 }
 
 dislike.onLongPress = new LongPressButton(dislike, () => {
@@ -315,7 +269,6 @@ trackImage[0].onclick = () => {
     modalCover[0].addEventListener("animationend", removeClass);
     modal[0].classList.add("modal-background");
     openCover(trackImage[0], urlCover);
-    pushEvent("Cover open", "clicked")
 };
 
 modal[0].onclick = function() {
@@ -326,28 +279,7 @@ modal[0].onclick = function() {
     }
     modal[0].addEventListener("animationend", removeClass);
     modal[0].classList.add("modal-background-reverse");
-    let options = {
-        duration: 500,
-        direction: 'reverse',
-    }
-    if (CurrentAnimation.isFromList) {
-        let offset = (el) => {
-            let rect = el.getBoundingClientRect(),
-                scrollLeft = window.pageXOffset || document.documentElement.scrollLeft,
-                scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-            return {
-                top: rect.top + scrollTop,
-                left: rect.left + scrollLeft
-            }
-        }
-        let itemOffset = offset(State.coverItem);
-        let left = -(window.innerWidth / 2 - State.coverItem.offsetWidth / 2 - itemOffset.left);
-        let top = -(window.innerHeight / 2 - State.coverItem.offsetHeight / 2 - itemOffset.top);
-        CurrentAnimation.keyframe.transform = ['translate(' + parseInt(left) + 'px, ' +
-            parseInt(top) + 'px)', 'translate(0px, 0px)'
-        ];
-    }
-    modalCover[0].animate(CurrentAnimation.keyframe, options);
+    openCoverAnimate(CoverAnimation.element, true);
 }
 
 // list settings
@@ -360,8 +292,6 @@ about.onclick = () => {
     chrome.tabs.create({
         url: "about.html"
     })
-    pushEvent(about.className)
-
 }
 
 popupBtn.onclick = () => {
@@ -552,15 +482,13 @@ shortCuts.onclick = () => {
 }
 
 supportMenu.onclick = () => {}
-    // payPal.onclick = () => {
-    //     pushEvent("payPal");
-    //     window.open("https://www.paypal.com/paypalme2/NightSoftware");
+payPal.onclick = () => {
+    window.open("https://www.paypal.com/paypalme2/NightSoftware");
 
-// }
+}
 
 donationAlerts.onclick = () => {
-    pushEvent("donationAlerts");
-    window.open("https://www.donationalerts.com/r/nightsoftware");
+    window.open("https://www.donationalerts.com/r/nightapp");
 }
 
 donationAlerts.onmouseenter = () => {
@@ -568,14 +496,12 @@ donationAlerts.onmouseenter = () => {
 }
 
 sideHelp.onmouseenter = (event) => {
-    //payPal.style.display = "block";
-    donationAlerts.style.display = "flex";
+    donateContainer.style.display = "flex";
     sideHelp.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
 }
 
 sideHelp.onmouseleave = () => {
-    //payPal.style.display = "none";
-    donationAlerts.style.display = "none";
+    donateContainer.style.display = "none";
 }
 
 aMenu.onclick = () => {
@@ -602,6 +528,7 @@ let toggleListMenu = () => {
     let removeOpacity = () => {
         modalListMenu.classList.remove("opacity");
         modalListMenu.removeEventListener("animationend", removeOpacity);
+        isMenuListOpen = true;
         scrollToSelected();
     }
     let removeOpacityReverse = () => { // run after 0.7s
@@ -619,7 +546,6 @@ let toggleListMenu = () => {
         modalListMenu.classList.add("opacity");
         contentListMenu.classList.add("slide-left");
         modalListMenu.style.display = "block";
-        isMenuListOpen = true;
     } else {
         modalListMenu.classList.add("opacity-reverse");
         modalListMenu.addEventListener("animationend", removeOpacityReverse);
@@ -628,112 +554,6 @@ let toggleListMenu = () => {
         contentListMenu.addEventListener("animationend", endListAnimation);
 
     }
-}
-
-let showNoConnected = () => {
-    getYandexMusicTab().then((result) => {
-        if (Extension.isConnected == false) {
-            if (result) {
-                appDetected.innerHTML = chrome.i18n.getMessage("appDetected");
-                appQuestion.innerHTML = chrome.i18n.getMessage("appQuestion");
-                bntNo.style.display = "none";
-                loaderContainer.style.display = "none";
-                btnNew.style.display = "";
-                yesNoNew.style.display = "flex";
-                btnYes.innerHTML = chrome.i18n.getMessage("reload");
-                noConnect.style.display = "flex";
-                appQuestion.style.display = "";
-                noConnect.classList.add("puff-in-center");
-                reload = true;
-            } else {
-                appDetected.innerHTML = chrome.i18n.getMessage("appNoDetected");
-                appQuestion.innerHTML = chrome.i18n.getMessage("appNoQuestion");
-                loaderContainer.style.display = "none";
-                btnNew.style.display = "none";
-                bntNo.style.display = "none";
-                btnYes.innerHTML = chrome.i18n.getMessage("yes");
-                yesNoNew.style.display = "flex";
-                noConnect.style.display = "flex";
-                appQuestion.style.display = "";
-                reload = false;
-            }
-        }
-    });
-}
-
-let openNewTab = (tabId) => {
-    if (tabId != undefined) {
-        chrome.tabs.reload(tabId);
-        loaderContainer.style.display = "block";
-        appDetected.innerHTML = chrome.i18n.getMessage("waitWhilePage");
-        appQuestion.style.display = "none";
-        yesNoNew.style.display = "none";
-        return;
-    }
-    chrome.tabs.create({
-        url: "https://music.yandex.ru/home",
-        active: false
-    });
-    loaderContainer.style.display = "block";
-    appDetected.innerHTML = chrome.i18n.getMessage("waitWhilePage");
-    appQuestion.style.display = "none";
-    yesNoNew.style.display = "none";
-}
-
-let toggleLike = (isLike) => {
-    if (isLike) {
-        like[0].style.backgroundImage = "url(img/like.png)";
-    } else {
-        like[0].style.backgroundImage = "url(img/no-like.png)";
-    }
-}
-
-let toggleDislike = (isDisliked, notifyMe = false) => {
-    if (isDisliked) {
-        dislike.style.backgroundImage = "url(img/disliked.svg)";
-        if (notifyMe) {
-            showNotification(chrome.i18n.getMessage("addedToBlackList"));
-        }
-    } else {
-        dislike.style.backgroundImage = "url(img/dislike.svg)";
-        if (notifyMe) {
-            showNotification(chrome.i18n.getMessage("removeFromBlackList"));
-        }
-    }
-}
-
-let notificationTimer;
-let showNotification = (text, time) => {
-    clearTimeout(notificationTimer);
-    if (text != undefined) {
-        textNotification.innerHTML = text;
-    } else {
-        textNotification.innerHTML = chrome.i18n.getMessage("addedToBlackList");
-    }
-    notification.style.display = "flex";
-    let keyframe = {
-        transform: ['translateY(-100%)', 'translateY(0%)'],
-    };
-    let options = {
-        duration: 450,
-        fill: "both"
-    }
-    notification.animate(keyframe, options);
-    if (time == undefined) {
-        time = text.length * 84 + options.duration * 2 + 100;
-        if (time <= options.duration * 2 + 500) { // + 500ms for focus 
-            time = options.duration * 2 + 500;
-        }
-    }
-    notificationTimer = setTimeout(() => {
-        notification.classList.remove("slide-bottom");
-
-        let keyframe = {
-            transform: ['translateY(0%)', 'translateY(-100%)'],
-        };
-        notification.animate(keyframe, options);
-        notificationTimer;
-    }, time);
 }
 
 let endAnimation = (ev) => {
@@ -748,19 +568,19 @@ let toggleMenu = () => {
     let removeOpacity = () => {
         modalSide.classList.remove("opacity");
         modalSide.removeEventListener("animationend", removeOpacity);
+        isMenuOpen = true;
     }
     let removeOpacityReverse = () => { // run aferr 0.7s
         modalSide.classList.remove("opacity-reverse");
         modalSide.style.display = "none"
         modalSide.removeEventListener("animationend", removeOpacityReverse);
     }
-    if (isMenuOpen == false) { // Menu is open! Why is exactly so that? I don't know, it just happened!
+    if (isMenuOpen == false) {
         modalSide.addEventListener("animationend", removeOpacity);
         modalSide.classList.add("opacity");
         containerMenu.style.display = "flex";
         modalSide.style.display = "block"
         containerMenu.className = containerMenu.className.replace(" slide-out", " slide-right");
-        isMenuOpen = true;
     } else {
         modalSide.classList.add("opacity-reverse");
         modalSide.addEventListener("animationend", removeOpacityReverse);
@@ -773,23 +593,6 @@ let addAnimListener = () => {
     if (isMenuOpen == true) {
         containerMenu.addEventListener("animationend", endAnimation);
     }
-}
-
-let getYandexMusicTab = () => {
-    return new Promise(function(resolve, reject) {
-        chrome.tabs.query({
-            windowType: "normal"
-        }, function(tabs) {
-            for (let i = tabs.length - 1; i >= 0; i--) {
-                if (tabs[i].url.startsWith("https://music.yandex")) {
-                    resolve(tabs[i].id);
-                    break;
-                } else if (i == 0) {
-                    resolve(false);
-                }
-            }
-        });
-    });
 }
 
 let onMessageAddListener = () => {
@@ -818,12 +621,6 @@ let onMessageAddListener = () => {
     }
 }
 
-let sendEvent = (event, isResponse = false, forceObject = false) => {
-    if (typeof(event) != "object") event = { data: event };
-    if (forceObject) event = { data: event };
-    port.postMessage(event);
-}
-
 let setRightFontSize = (fontSize = 1.4) => {
     let heightArtist = aritstName[0].offsetHeight;
     let heightTrack = trackName[0].offsetHeight;
@@ -847,10 +644,7 @@ let setMediaData = (trackTitle, trackArtists, iconTrack) => {
     trackImage[0].style.backgroundImage = "url(" + urlCover + ")";
 }
 
-let changeState = (isPlaying) => {
-    if (State.isPlay != isPlaying) {
-        State.isPlay = isPlaying;
-    }
+let setPlaybackStateStyle = (isPlaying) => {
     if (isPlaying == false) {
         pause[0].style.backgroundImage = "url(img/play.png)";
         if (Options.isReduce) {
@@ -865,72 +659,4 @@ let changeState = (isPlaying) => {
     }
 }
 
-let getUrl = (url, size = 50) => {
-    if (url == undefined) {
-        url = "img/icon.png"
-        return url;
-    } else {
-        let endSlice = url.lastIndexOf("/") - url.length + 1;
-        if (!url.startsWith("https://")) {
-            url = "https://" + url
-        }
-        url = url.slice(0, endSlice); // -
-        url += size + "x" + size;
-        return url;
-    }
-}
-
-let testImage = (url, size = 400, callback) => {
-    try {
-        modalCover[0].src = getUrl(url, size);
-        modalCover[0].onerror = function () {
-            if (size > 100) {
-                if (size == 100) {
-                    size += -50;
-                    testImage(getUrl(url, size), size)
-                }
-                size += -100;
-                testImage(getUrl(url, size), size);
-            }
-        };
-        modalCover[0].onload = () => {
-            modal[0].style.display = "flex";
-            callback.animate(callback.parameter); // call animation
-        }
-
-    } catch (error) {
-        console.log(error);
-    }
-}
-
-let animateMainImage = (item) => {
-    let width = item.offsetWidth;
-    let height = item.offsetHeight;
-    let left = -(window.innerWidth / 2 - width / 2 - item.offsetLeft);
-    let top = -(window.innerHeight / 2 - height / 2 - item.offsetTop);
-
-    let keyframe = {
-        width: [width + 'px', 80 + '%'],
-        height: [height + 'px', 96 + '%'],
-        transform: ['translate(' + left + 'px, ' + top + 'px)', 'translate(0px, 0px)'],
-        borderRadius: ['15px', '20px'],
-        easing: ['cubic-bezier(.85, .2, 1, 1)']
-    }
-    let options = {
-        duration: 500,
-        fill: 'both'
-    }
-
-    CurrentAnimation.keyframe = keyframe;
-    CurrentAnimation.options = options;
-    CurrentAnimation.isFromList = false;
-    modalCover[0].animate(keyframe, options);
-}
-
-let openCover = (item, url, animate = animateMainImage) => {
-    testImage(url, 400, { animate: animate, parameter: item });
-}
-
-let pushEvent = (target, event) => {
-    //gtag('event', target, event);
-}
+FileReady.on('Extension');

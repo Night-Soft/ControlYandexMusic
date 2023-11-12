@@ -7,8 +7,8 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Yandex Music</title>
     <link rel="stylesheet" href="css/style.css">
-    <script async src="js/theme.js"></script>
-    <script async src="js/load.js"></script>
+    <script src="js/FileReady.js"></script>
+    <script defer src="js/theme.js"></script>
     <!-- <script async src="js/gaq.js"></script> -->
 </head>
 
@@ -125,12 +125,14 @@
                 <div id="contactMe" class="side ">Contact Me</div>
                 <div class="side-help ">
                     <span id="help" class="title-help title-help-menu">Say thanks to the developer</span>
-                    <!-- <div class="paypal-menu">
-                        <span class="paypal-title">PayPal</span>
-                    </div> -->
-                    <div class="donationalerts-menu">
-                        <span class="donationalerts-title">Donation Alerts</span>
-                        <div class="donationalerts-image"></div>
+                    <div class="donate-container">
+                        <div class="paypal-menu">
+                            <span class="paypal-title">PayPal</span>
+                        </div>
+                        <div class="donationalerts-menu">
+                            <span class="donationalerts-title">Donation Alerts</span>
+                            <div class="donationalerts-image"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -157,18 +159,26 @@
         </div>
     </div>
     <div class="modal ">
-        <img class="modal-cover"></img>
+        <div class="image-container">
+            <img class="modal-cover"></img>
+        </div>
     </div>
     <div class="groove-box">
         <div class="groove-content">
             <div class="content-time">
                 <span class="current-time">0:0</span>
                 <div class="content-toggle">
-                    <div class="toggle-shuffle control-toggle"> </div>
-                    <div class="toggle-repeat control-toggle"> </div>
+                    <div class="toggle">
+                        <div class="toggle-shuffle control-toggle"></div>
+                    </div>
+                    <div class="toggle">
+                        <div class="toggle-repeat control-toggle"> </div>
+                    </div>
                     <div class="content-groove-volume">
-                        <div class="toggle-volume control-toggle"> </div>
-                        <div class="slider-content">
+                        <div class="toggle">
+                            <div class="toggle-volume control-toggle"></div>
+                        </div>
+                        <div class="slider-content volume-content">
                             <div class="slider">
                                 <div class="slider-groove slider-groove-volume">
                                     <div class="slider-groove-current slider-groove-current-volume"></div>
@@ -183,11 +193,11 @@
                 </div>
                 <span class="duration">0:0</span>
             </div>
-            <div class="slider-content">
+            <div class="slider-content ">
                 <div class="slider  slider-progress">
                     <div class="slider-groove slider-groove-progress">
-                        <div class="loaded"> </div>
-                        <div class="loader-await-loading"></div>
+                        <div class="loading-bar"> </div>
+                        <div class="loading-waiting-bar"></div>
                         <div class="slider-groove-current slider-groove-current-progress"></div>
                     </div>
                     <div class="handle-helper">
@@ -234,12 +244,15 @@
         </div>
 
     </div>
-    <script async src="js/extension.js "></script>
-    <script async src="js/what-new.js"></script>
-    <script async src="js/options.js "></script>
-    <script async src="js/translate.js"></script>
-    <script async src="js/playlist.js"></script>
-    <script src="js/slider.js"></script>
+    <script defer src="js/general.js"></script>
+    <script defer src="js/ExecutionDelay.js"></script>
+    <script defer src="js/options.js "></script>
+    <script defer src="js/slider.js"></script>
+    <script defer src="js/player.js"></script>
+    <script defer src="js/what-new.js"></script>
+    <script defer src="js/extension.js "></script>
+    <script defer src="js/translate.js"></script>
+
 </body>
 
 </html>

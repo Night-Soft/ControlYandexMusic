@@ -297,12 +297,11 @@ externalAPI.on(externalAPI.EVENT_TRACK, function(event) {
     setMediaSession();
 });
 
-const sendProgress = new ExecutionDelay({
-    func(progress) {
-        chrome.runtime.sendMessage(YandexMusicControl.id, {
-            progress: progress,
-        });
-    },
+const sendProgress = new ExecutionDelay((progress) => {
+    chrome.runtime.sendMessage(YandexMusicControl.id, {
+        progress: progress,
+    });
+}, {
     isThrottling: true
 });
 
@@ -327,8 +326,7 @@ externalAPI.on(externalAPI.EVENT_PROGRESS, function() {
     }
 
     if (sendLoaded) {
-        sendProgress.setArgumetns(externalAPI.getProgress());
-        sendProgress.start();
+        sendProgress.setArgumetns(externalAPI.getProgress()).start();
         sendLoaded = false;
     }
 

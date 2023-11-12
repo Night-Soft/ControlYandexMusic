@@ -55,3 +55,5 @@ let Translate = {
         allNotifications.innerHTML = chrome.i18n.getMessage("allNotifications");
     }
 }
+
+FileReady.on("Translate");
