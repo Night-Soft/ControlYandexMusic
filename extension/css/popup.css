@@ -212,7 +212,7 @@ body {
 .control-toggle {
     align-self: unset;
     height: 15px;
-    background-size: 25px;
+    -webkit-mask-size: 25px;
 }
 
 .content-groove-volume {
@@ -340,17 +340,17 @@ body {
     .groove-box {
         width: calc(100% - 35px);
     }
-    .slider-helper {
+    .slider-toltip {
         margin-top: 12px;
-        cursor: none;
+        z-index: +1;
     }
-    .slider-helper::before {
+    .slider-toltip::before {
         border-radius: 3px;
         bottom: 16px;
         rotate: 180deg;
         width: 3px;
         height: 20px;
-        left: 13px;
+        left: 50%;
         background: white;
         border-left: unset;
         border-right: unset;
@@ -359,6 +359,12 @@ body {
         border-top-color: inherit;
     }
     .slider-groove-progress {
+        cursor: none;
+    }
+    .slider-progress-popup {
+        cursor: none;
+    }
+    .progress-handle {
         cursor: none;
     }
 }
@@ -379,7 +385,7 @@ body {
     }
     .control-toggle {
         height: 20px;
-        background-size: 30px;
+        -webkit-mask-size: 30px;
     }
     .modal-list-menu-popup {
         top: 120px;

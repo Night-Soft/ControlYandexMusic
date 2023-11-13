@@ -301,9 +301,7 @@ const sendProgress = new ExecutionDelay((progress) => {
     chrome.runtime.sendMessage(YandexMusicControl.id, {
         progress: progress,
     });
-}, {
-    isThrottling: true
-});
+}, { isThrottling: true });
 
 externalAPI.on(externalAPI.EVENT_PROGRESS, function() {
     ;({ position, loaded } = externalAPI.getProgress())
@@ -326,7 +324,7 @@ externalAPI.on(externalAPI.EVENT_PROGRESS, function() {
     }
 
     if (sendLoaded) {
-        sendProgress.setArgumetns(externalAPI.getProgress()).start();
+        sendProgress.start(externalAPI.getProgress());
         sendLoaded = false;
     }
 

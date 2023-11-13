@@ -143,7 +143,7 @@ let State = { // current
             if (this._position > this._duration) { this.position = this._duration; }
             if (this._position + 1 > this._loaded && this._position > 1) {
                 this.stopUpdater();
-                toggleLoadingWaitingBar(true);
+                toggleLoadingWaitingBarDelay.start(true);
                 return;
             }
         } 
@@ -154,7 +154,9 @@ let State = { // current
         try {
             this.isUpdateTimer = false;
             clearInterval(this._positionUpdaterId);
-            toggleLoadingWaitingBar(false);
+            if (toggleLoadingWaitingBarDelay.isStarted) {
+                toggleLoadingWaitingBarDelay.execute(false);
+            }
         } catch (error) { console.log(error); }
     }
 }

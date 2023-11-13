@@ -1,5 +1,5 @@
 let WhatNew = {
-    openNews(isTimer = false) {
+    openNews() {
         let showNew = () => {
             modalNews.style.display = "flex";
             yesNews.classList.remove("yesNews-disable");
@@ -14,26 +14,6 @@ let WhatNew = {
         } catch (error) {
             return Promise.reject(error);
         }
-    },
-    async createNewEdge(){
-        let edge = await this.whatNew(true);
-        let chromeB = await this.whatNew(false);
-       // return;
-        let math = [];
-        for (edgeVer of edge) {
-            for (let i = 0; i < chromeB.length; i++) {
-                if (edgeVer[0] == chromeB[i][0]) {
-                    console.log(chromeB[i][0], "math");
-                    math.push(i)
-                }
-            }
-        }
-        let newEdge = chromeB.slice();
-        math.forEach((version, index) => {
-            console.log(version, index);
-            newEdge[version] = edge[index]
-        });
-        return newEdge;
     },
     setLocale(locale, callback) {
         this.getWhatNew().then((whatNewJson) => {

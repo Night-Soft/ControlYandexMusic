@@ -19,7 +19,7 @@ let Slider = class {
         this.scale = 50;
         this.maxScale = 100;
         this.isMouseEnter = false;
-        this.isOwnDataHelper = false;
+        this.isOwnDataToltip = false;
         this.toggleTransiton(false);
         this.setDelayTooltip(false);
         this.setPosition(this.scale);
@@ -146,7 +146,7 @@ let Slider = class {
             if (this.Tooltip.isTooltip) {
                 let x = event * 100 / this.maxScale;
                 this.Tooltip.element.style.left = `calc(${x}% - ${this.Tooltip.element.offsetWidth}px / 2)`;
-                if (this.isOwnDataHelper) return;
+                if (this.isOwnDataToltip) return;
                 if (x <= this.maxScale && x >= 0) { // percent
                     this.setTooltipData(Math.floor(x));
                 }
@@ -157,7 +157,7 @@ let Slider = class {
         
             let x = (event.x - this.groove.offsetLeft) * 100 / this.groove.offsetWidth;
             this.Tooltip.element.style.left = `calc(${x}% - ${this.Tooltip.element.offsetWidth}px / 2)`;
-            if (this.isOwnDataHelper) return;
+            if (this.isOwnDataToltip) return;
             if (x <= this.maxScale && x >= 0) { // percent
                 this.setTooltipData(Math.floor(x));
             }
@@ -195,7 +195,7 @@ let Slider = class {
 let sliderVolumeElement = document.getElementsByClassName("slider")[0];
 let currentGrooveVol = document.getElementsByClassName("slider-groove-current")[0];
 let handleVol = document.getElementsByClassName("slider-handle")[0];
-let tooltipVol = document.getElementsByClassName("slider-helper")[0];
+let tooltipVol = document.getElementsByClassName("slider-toltip")[0];
 let sliderVolumeContent = document.getElementsByClassName("slider-content")[0];
 
 let sliderVolume = new Slider(sliderVolumeElement, currentGrooveVol, handleVol, tooltipVol);
@@ -209,7 +209,8 @@ const sendVolumeDelay = new ExecutionDelay(() => {
 
 sliderVolume.onmousemovedown = () => { sendVolumeDelay.start(); }
 
-sliderVolume.onmousedown = () => {
+sliderVolume.onmousedown = (event) => {
+    sliderVolume.setTooltipPosition(event);
     sendEvent({ setVolume: sliderVolume.scale / 100 }, false, true);
 }
 sliderVolume.onwheel = () => {
@@ -221,15 +222,15 @@ sliderVolume.onwheel = () => {
 let sliderProgressElement = document.getElementsByClassName("slider")[1];
 let progressGrooveCurrent = document.getElementsByClassName("slider-groove-current")[1];
 let progressHandle = document.getElementsByClassName("slider-handle")[1];
-let progressHelper = document.getElementsByClassName("slider-helper")[1];
+let progressToltip = document.getElementsByClassName("slider-toltip")[1];
 
 let currentTime = document.querySelector(".current-time"); // below image
 let durationSpan = document.querySelector(".duration"); // below image
 
 let progressUpdater, currentUnixTime;
 
-let sliderProgress = new Slider(sliderProgressElement, progressGrooveCurrent, progressHandle, progressHelper);
-sliderProgress.isOwnDataHelper = true;
+let sliderProgress = new Slider(sliderProgressElement, progressGrooveCurrent, progressHandle, progressToltip);
+sliderProgress.isOwnDataToltip = true;
 sliderProgress.setDelayTooltip(150);
 
 const sendPositionDelay = new ExecutionDelay((event) => {
@@ -252,7 +253,7 @@ sliderProgress.onmousemove = (event) => {
 }
 
 sliderProgress.onmousemovedown = (event) => {
-    sendPositionDelay.setArgumetns(event).start();
+    sendPositionDelay.start(event);
 }
 
 sliderProgress.onmousedown = (event) => {
@@ -278,22 +279,14 @@ function setTime(seconds) {
 }
 
 const loadingWaitingBar = document.getElementsByClassName('loading-waiting-bar')[0];
-let loadingBarId;
-const toggleLoadingWaitingBar = function (show = true, isTimeout = true) {
-    clearTimeout(loadingBarId)
+const toggleLoadingWaitingBarDelay = new ExecutionDelay((show = true)=>{
     if (show) {
-        if (isTimeout) {
-            loadingBarId = setTimeout(() => {
-                const percent = 100 - State.position * 100 / State.duration;
-                loadingWaitingBar.style.width = percent + '%';
-                loadingWaitingBar.style.display = 'block';
-            }, 1500);
-        } else {
-            const percent = 100 - State.position * 100 / State.duration;
-            loadingWaitingBar.style.width = percent + '%';
-            loadingWaitingBar.style.display = 'block';
-        }
+        const percent = 100 - State.position * 100 / State.duration;
+        loadingWaitingBar.style.width = percent + '%';
+        loadingWaitingBar.style.display = 'block';
+        return true;
     } else {
         loadingWaitingBar.style.display = '';
+        return false;
     }
-}
+}, { delay: 1000 });

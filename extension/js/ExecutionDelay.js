@@ -1,7 +1,7 @@
 const ExecutionDelay = class {
     #func;
-    #delay = 1000;
-    #isThrottling = false;
+    #delay;
+    #isThrottling;
     #context;
     #args;
     #timeoutId;
@@ -15,12 +15,12 @@ const ExecutionDelay = class {
         isThrottling = false
     } = {},
         ...args) {
-        const isFunction = this.setFunction(func, ...args);
         this.delay = delay;
         this.setContext(context);
         this.isThrottling = isThrottling;
 
-        if (isFunction) {
+        if (typeof func == 'function') {
+            this.setFunction(func, ...args);
             if (executeNow) this.execute();
             if (startNow) this.start();
         }
@@ -35,18 +35,19 @@ const ExecutionDelay = class {
     get isThrottling() { return this.#isThrottling; }
     set isThrottling(value) {
         if (typeof value !== 'boolean') { throw new ReferenceError(`The '${value}' is not 'boolean'`); }
+        if (value == false) { this.#args = undefined; }
         this.#isThrottling = value;
     }
 
     get isStarted() { return this.#isTimeout; }
 
+    getFunction() { return { function: this.#func, arguments: this.#args } }
     setFunction(func, ...args) {
-        if (typeof func != 'function') { return false; }
+        if (typeof func != 'function') { throw new Error(`The '${func}' is not a function.`); }
         this.#func = func;
         if (args.length > 0) this.#args = args;
         return true;
     }
-    getFunction() { return this.#func; }
 
     setArgumetns(...args) {
         if (args.length == 0) { return false }
@@ -56,7 +57,9 @@ const ExecutionDelay = class {
             execute: this.execute.bind(this)
         };
     }
+    clearArguments() { this.#args = undefined; }
 
+    getContext() { return this.#context; }
     setContext(context) {
         if (typeof context != 'object' && context != null) {
             throw new TypeError(`The context is '${typeof context}', must be 'object or null.`);
@@ -68,16 +71,20 @@ const ExecutionDelay = class {
         };
     }
 
-    async start(func = this.#func, { delay = this.#delay } = {}, ...args) {
-        if (typeof func != 'function') { throw new Error('The function is missing.'); }
-        if (args.length > 0) { this.#args = args; }
-        if (this.#isThrottling == true && this.#isTimeout == true) {
+    async start(...args) {
+        if (typeof this.#func != 'function') { throw new Error('The function is missing.'); }
+        if (this.#isThrottling == true) {
             let argsMessage = "";
-            if (args.length > 0) { argsMessage = "Arguments updated." }
-            return Promise.resolve({
-                isThrottling: true,
-                message: `The timer is still active. ${argsMessage}`
-            });
+            if (args.length > 0) {
+                this.#args = args;
+                argsMessage = "Arguments updated.";
+            }
+            if (this.#isTimeout == true) {
+                return Promise.resolve({
+                    isThrottling: true,
+                    message: `The timer is still active. ${argsMessage}`
+                });
+            }
         }
         clearTimeout(this.#timeoutId);
         return new Promise((resolve, reject) => {
@@ -86,27 +93,37 @@ const ExecutionDelay = class {
             this.#isTimeout = true;
             this.#timeoutId = setTimeout(async () => {
                 try {
-                    const result = await func.apply(this.#context, this.#args);
-                    const info = `Function completed with delay ${delay}.`;
+                    let result;
+                    if (this.#isThrottling) {
+                        result = await this.#func.apply(this.#context, this.#args);
+                    } else {
+                        if (args.length > 0) {
+                            result = await this.#func.apply(this.#context, args);
+                        } else {
+                            result = await this.#func.apply(this.#context, this.#args);
+                        }
+                    }
+                    const info = `Function completed with delay ${this.#delay}.`;
                     this.#isTimeout = false;
                     this.#fulfilled = undefined;
-                    result ? resolve({ result, info }) : resolve(info);
+                    resolve({ result, info });
                 } catch (error) {
                     this.#isTimeout = false;
                     this.#fulfilled = undefined;
                     reject(error);
                 }
 
-            }, delay);
+            }, this.#delay);
         });
     }
 
     execute(...args) {
         this.stop("Execute now!");
         if (typeof this.#func != 'function') { throw new Error('The function is missing.'); }
-        if (args.length > 0) { this.#args = args; }
-        const result = this.#func.apply(this.#context, this.#args);
-        if (result) return result;
+        if (args.length > 0) {
+            return this.#func.apply(this.#context, args);
+        }
+        return this.#func.apply(this.#context, this.#args);
     }
 
     stop(cause = "Forecd stopp.") {
