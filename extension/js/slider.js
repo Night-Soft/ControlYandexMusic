@@ -279,14 +279,33 @@ function setTime(seconds) {
 }
 
 const loadingWaitingBar = document.getElementsByClassName('loading-waiting-bar')[0];
-const toggleLoadingWaitingBarDelay = new ExecutionDelay((show = true)=>{
+const toggleLoadingWaitingBarDelay = new ExecutionDelay({ delay: 1000 });
+toggleLoadingWaitingBarDelay.setFunction(function (show = true) {
     if (show) {
         const percent = 100 - State.position * 100 / State.duration;
         loadingWaitingBar.style.width = percent + '%';
         loadingWaitingBar.style.display = 'block';
-        return true;
+        this.isShown = true;
     } else {
         loadingWaitingBar.style.display = '';
-        return false;
+        this.isShown = false;
     }
-}, { delay: 1000 });
+}).setContext(toggleLoadingWaitingBarDelay);
+
+Object.defineProperties(toggleLoadingWaitingBarDelay, {
+    '#isShown': {
+        value: false,
+        writable: true
+    },
+    isShown: {
+        enumerable: true,
+        get() { return this['#isShown']; },
+        set(value) {
+            if (typeof value === "boolean") {
+                this['#isShown'] = value;
+            } else {
+                this['#isShown'] = false;
+            }
+        }
+    }
+});

@@ -56,6 +56,7 @@ let setTheme = (theme = "default", windowName = "default") => {
                 rootCss.style.setProperty('--handleWhite', '#EEEEEE');
                 rootCss.style.setProperty('--backgroundControl', 'rgba(252, 252, 255, 0.1)');
                 rootCss.style.setProperty('--toggleHover', 'rgb(32 48 71 / 30%)');
+                rootCss.style.setProperty('--toggleActive', '#ffdd00');
 
                
                 rootCss.style.setProperty('--selectedItemColor', "");
@@ -95,6 +96,7 @@ let setTheme = (theme = "default", windowName = "default") => {
                 rootCss.style.setProperty('--backgroundControl', 'rgba(252, 252, 255, 0.17)');
                 rootCss.style.setProperty('--selectedItemColor', Themes.light.selectedItemColor);
                 rootCss.style.setProperty('--toggleHover', '#ffffff');
+                rootCss.style.setProperty('--toggleActive', '#ffdd00');
 
                 document.body.style.setProperty("--bodyOpacity", 1); // set default background
                 document.body.style.setProperty("--bodyGradient", Themes.light.bodyBackground); // set default background
@@ -131,6 +133,7 @@ let setTheme = (theme = "default", windowName = "default") => {
                 rootCss.style.setProperty('--backgroundControl', 'rgba(252, 252, 255, 0.17)');
                 document.body.style.setProperty("--bodyOpacity", 0); // set default background
                 rootCss.style.setProperty('--toggleHover', 'rgb(32 48 71 / 30%)');
+                rootCss.style.setProperty('--toggleActive', '#ffffff');
 
                 rootCss.style.setProperty('--selectedItemColor', "");
                 listTrack.style.background = "";

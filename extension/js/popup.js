@@ -22,6 +22,8 @@ let transition = document.getElementsByClassName("transition");
 let hamburgerMenuList = document.getElementsByClassName("hamburger-menu-list")[0];
 let dislike = document.getElementsByClassName("dislike")[0];
 let notification = document.getElementsByClassName("notification")[0];
+let notificationTimeLeft = document.getElementsByClassName("notification-time-left")[0];
+let closeNotification = document.getElementsByClassName("close-notification")[0];
 let textNotification = document.getElementsByClassName("h2-notification")[0];
 let notificationTrackName = document.getElementsByClassName("notification-track-name")[0];
 
@@ -101,15 +103,10 @@ chrome.runtime.onMessage.addListener( // background, content script
         if (request.options) {
             setOptions(request.options);
         }
-        if (request.getFrame) {
-            popupWindow.x = screenLeft;
-            popupWindow.y = screenTop;
-            window.moveTo(0, 0);
-            setTimeout(() => {
-                sendEventBackground({ frame: { height: screenTop, width: screenLeft } });
-                window.moveTo(popupWindow.x - screenLeft, popupWindow.y - screenTop);
-            }, 100);
-        }
+        if(request.event == "change_track") {
+            State.stopUpdater();
+            State.position = 0;
+        } 
     });
 
 chrome.runtime.onMessageExternal.addListener( // injected script
@@ -120,16 +117,26 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                     showNotification(chrome.i18n.getMessage("playlistEmpty"), 7000);
                     return;
                 }
+
                 setMediaData(request.currentTrack.title, getArtists(request.currentTrack, 5), request.currentTrack.cover);
                 setPlaybackStateStyle(request.isPlaying);
                 toggleLike(request.currentTrack.liked);
                 toggleDislike(request.currentTrack.disliked);
-                if (request.progress.duration == 0 && request.progress.position == 0) {
-                    sliderProgress.maxScale = 1;
-                    sliderProgress.setPosition(0);
-                }
+
                 State.isPlay = request.isPlaying;
                 State.volume = request.volume;
+                State.isRepeat = request.controls.repeat;
+                State.isShuffle = request.controls.shuffle;
+
+                if (request.progress.duration != 0) {
+                    State.setProgress(request.progress);
+                } else {
+                    State.stopUpdater();
+                    State.duration = request.currentTrack.duration;
+                    State.position = 0;
+                }
+
+                updateTracksList(request.trackInfo);
                 break;
             case 'togglePause':
                 State.isPlay = request.isPlaying;
@@ -150,43 +157,33 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 toggleDislike(request.disliked.disliked, true);
                 toggleListDisliked(request.disliked.disliked);
                 break;
+            case "TRACKS_LIST":
+                updateTracksList(request);
+                break;
             case "STATE":
                 State.isPlay = request.isPlaying;
                 State.position = request.progress.position;
                 break;
+            case "CONTROLS":
+                State.isRepeat = request.repeat;
+                State.isShuffle = request.shuffle;
+                break;
             case "VOLUME":
                 State.volume = request.volume;
                 break;
-            default:
+            case "SPEED":
+                State.speed = request.speed;
+                State.setProgress(request.progress);
+                break;
+            case "PROGRESS":
+                State.setProgress(request.progress);
+                break;
+            case "page_hide":
+                if (reload == true) return;
+                sendEventBackground({ isConnected: false })
+                window.close();
                 break;
         }
-        if (request.hasOwnProperty('progress')) {
-            State.duration = request.progress.duration;
-            State.position = request.progress.position;
-            State.loaded = request.progress.loaded;
-        }
-        if (request.trackInfo) {
-            updateTracksList(request.trackInfo);
-            State.track = request.trackInfo.tracksList[request.trackInfo.index];
-            State.disliked = request.trackInfo.tracksList[request.trackInfo.index].disliked;
-            State.likeItem = likeItems[request.trackInfo.index];
-        }
-        if (request.hasOwnProperty('controls')) {
-            updateRepeat(request.controls.repeat);
-            updateShuffle(request.controls.shuffle);
-        }
-        if (request.hasOwnProperty('repeat')) {
-            updateRepeat(request.repeat, true);
-        }
-        if (request.hasOwnProperty('shuffle')) {
-            updateShuffle(request.shuffle, true);
-        }
-        if (request.pagehide) {
-            if (reload == true) return;
-            sendEventBackground({ isConnected: false })
-            window.close();
-        }
-        return false;
     });
 
 let boundsChangedId;
@@ -277,10 +274,9 @@ trackImage[0].onclick = () => {
     modalCover[0].addEventListener("animationend", removeClass);
     modal[0].classList.add("modal-background");
     openCover(trackImage[0], urlCover);
-
 };
 
-modal[0].onclick = function () {
+modal[0].onclick = function() {
     let removeClass = () => {
         modal[0].classList.remove("modal-background-reverse");
         modal[0].removeEventListener("animationend", removeClass);
@@ -289,6 +285,19 @@ modal[0].onclick = function () {
     modal[0].addEventListener("animationend", removeClass);
     modal[0].classList.add("modal-background-reverse");
     openCoverAnimate(CoverAnimation.element, true);
+}
+
+closeNotification.onclick = function() {
+    notificationTimeLeft.removeEventListener("transitionend", NotificationControl.boundListener);
+    NotificationControl.closeNotification.apply(NotificationControl);
+}
+notification.onmouseenter = () => {
+    NotificationControl.stayShown();
+}
+notification.onmouseleave = () => {
+    if (NotificationControl.isShown) {
+        NotificationControl.hide(2500);
+    }
 }
 
 let list = document.getElementById("listTrack");

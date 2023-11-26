@@ -37,38 +37,99 @@ let LongPressButton = class {
     }
 }
 
-let notificationTimer;
-let showNotification = (text, timeMs) => {
-    clearTimeout(notificationTimer);
+/**
+ * 
+ * @param {string} text - your text
+ * @param {number} ms - milliseconds, how long to show the notification
+ */
+let showNotification = (text, ms) => {
     if (text != undefined) {
         textNotification.innerHTML = text;
-    } else {
-        textNotification.innerHTML = chrome.i18n.getMessage("addedToBlackList");
     }
-    notification.style.display = "flex";
-    let keyframe = {
-        transform: ['translateY(-100%)', 'translateY(0%)'],
-    };
-    let options = {
-        duration: 450,
-        fill: "both"
-    }
-    notification.animate(keyframe, options);
-    if (timeMs == undefined) {
-        timeMs = text.length * 84 + options.duration * 2 + 100;
-        if (timeMs <= options.duration * 2 + 500) { // + 500ms for focus 
-            timeMs = options.duration * 2 + 500;
+    if (ms == undefined) {
+        ms = text.length * 66 + 1000; // + 1000ms for focus
+        if (ms <= 3500) {  
+            ms = 3500;
         }
     }
-    notificationTimer = setTimeout(() => {
-        notification.classList.remove("slide-bottom");
+    console.log("ms", ms)
+    NotificationControl.show(ms);
+}
 
+const NotificationControl = {
+    createBoundListener() {
+        this.boundListener = this.closeNotification.bind(this);
+        notificationTimeLeft.addEventListener("transitionend", this.boundListener, { once: true });
+    },
+    boundListener() { },
+    fill(ms) {
+        notificationTimeLeft.removeEventListener("transitionend", this.boundListener);
+        notificationTimeLeft.style.backgroundColor = "#ffffff"
+        notificationTimeLeft.style.width = "100%";
+        notificationTimeLeft.style.transitionDuration = `${ms}ms`;
+    },
+    empty(ms) {
+        notificationTimeLeft.removeEventListener("transitionend", this.boundListener);
+        notificationTimeLeft.style.backgroundColor = "#ff3333";
+        notificationTimeLeft.style.width = "0%";
+        notificationTimeLeft.style.transitionDuration = `${ms}ms`;
+    },
+    isHiding: false,
+    isShown: false,
+    show(ms) {
+        if (this.isShown == false) {
+            console.log("show");
+            this.isShown = true;
+            requestAnimationFrame(() => {
+                notificationTimeLeft.style.backgroundColor = "#ffffff"
+                notificationTimeLeft.style.width = "100%";
+                notification.style.display = "flex";
+            });
+            let keyframe = {
+                transform: ['translateY(-100%)', 'translateY(0%)'],
+            };
+            let options = {
+                duration: 450,
+                fill: "both"
+            }
+            notification.animate(keyframe, options).onfinish = () => {
+                this.empty(ms);
+                this.createBoundListener();
+            };
+        } else {
+            this.fill(500);
+            notificationTimeLeft.addEventListener("transitionend", () => {
+                notificationTimeLeft.addEventListener("transitionend", () => {
+                    this.empty(ms);
+                    this.createBoundListener();
+                }, { once: true });
+            }, { once: true });
+        }
+    },
+    hide(ms) {
+        if (this.isHiding) { return; }
+        this.isHiding = true;
+        this.empty(ms);
+        this.createBoundListener();
+    },
+    stayShown() {
+        this.isHiding = false;
+        this.fill(500);
+    },
+    closeNotification() {
+        this.isShown = false;
+        this.isHiding = false;
         let keyframe = {
-            transform: ['translateY(0%)', 'translateY(-100%)'],
+            transform: ['translateY(0%)', 'translateY(-100%)']
         };
-        notification.animate(keyframe, options);
-        notificationTimer;
-    }, timeMs);
+        let options = {
+            duration: 450,
+            fill: "both"
+        }
+        notification.animate(keyframe, options).onfinish = () => {
+            notificationTimeLeft.style.transitionDuration = "";
+        };
+    }
 }
 
 let getYandexMusicTab = () => {
@@ -132,30 +193,6 @@ let testImage = (url, size = 400, callback) => {
     }
 }
 
-let animateMainImage = (item) => {
-    let width = item.offsetWidth;
-    let height = item.offsetHeight;
-    let left = -(window.innerWidth / 2 - width / 2 - item.offsetLeft);
-    let top = -(window.innerHeight / 2 - height / 2 - item.offsetTop);
-
-    let keyframe = {
-        width: [width + 'px', 80 + '%'],
-        height: [height + 'px', 96 + '%'],
-        transform: ['translate(' + left + 'px, ' + top + 'px)', 'translate(0px, 0px)'],
-        borderRadius: ['15px', '20px'],
-        easing: ['cubic-bezier(.85, .2, 1, 1)']
-    }
-    let options = {
-        duration: 500,
-        // fill: 'both'
-    }
-
-    CurrentAnimation.keyframe = keyframe;
-    CurrentAnimation.options = options;
-    CurrentAnimation.isFromList = false;
-    modalCover[0].animate(keyframe, options);
-}
-
 const CoverAnimation = {
     offset(el) {
         let rect = el.getBoundingClientRect(),
@@ -176,6 +213,7 @@ const CoverAnimation = {
     },
     element: undefined
 }
+
 const openCoverAnimate = function(element, reverse = false) {
     const {options, keyframe, offset} = CoverAnimation;
     CoverAnimation.element = element;
@@ -212,6 +250,7 @@ let toggleLike = (isLike) => {
         like[0].style.backgroundImage = "url(img/no-like.png)";
     }
 }
+
 let toggleDislike = (isDisliked, notifyMe = false) => {
     if (isDisliked) {
         dislike.style.backgroundImage = "url(img/disliked.svg)";
@@ -276,7 +315,6 @@ let showNoConnected = () => {
         }
     });
 }
-
 
 let splitSeconds = (currentSeconds) => {
     let hours = 0;

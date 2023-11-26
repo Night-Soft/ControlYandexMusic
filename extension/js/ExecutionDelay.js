@@ -7,6 +7,16 @@ const ExecutionDelay = class {
     #timeoutId;
     #fulfilled;
     #isTimeout = false;
+    /**
+ * @param {Function} func - The function to be executed with a delay.
+ * @param {Object} [options={}] - Options as an object for setting parameters.
+ * @param {number} [options.delay=1000] - The delay time in milliseconds (default: 1000ms).
+ * @param {Object|null} [options.context=null] - The context in which the function will be executed (default: null).
+ * @param {boolean} [options.startNow=false] - Initiates execution immediately upon initialization (default: false).
+ * @param {boolean} [options.executeNow=false] - Executes the function immediately upon initialization (default: false).
+ * @param {boolean} [options.isThrottling=false] - Sets whether function calls are throttled (default: false).
+ * @param  {...any} args - Additional arguments to be passed to the function.
+ */
     constructor(func, {
         delay = 1000,
         context = null,
@@ -41,12 +51,16 @@ const ExecutionDelay = class {
 
     get isStarted() { return this.#isTimeout; }
 
-    getFunction() { return { function: this.#func, arguments: this.#args } }
+    getFunction() { return { function: this.#func, arguments: this.#args, context: this.#context } }
     setFunction(func, ...args) {
         if (typeof func != 'function') { throw new Error(`The '${func}' is not a function.`); }
         this.#func = func;
         if (args.length > 0) this.#args = args;
-        return true;
+        return {
+            start: this.start.bind(this),
+            execute: this.execute.bind(this),
+            setContext: this.setContext.bind(this)
+        };
     }
 
     setArgumetns(...args) {
@@ -70,7 +84,11 @@ const ExecutionDelay = class {
             execute: this.execute.bind(this)
         };
     }
-
+    /**
+     * Initiates function execution after the specified delay.
+     * @param {...any} args - Optional arguments to be passed to the function.
+     * @returns {Promise<Object>} - A promise indicating the completion or an active timer.
+     */
     async start(...args) {
         if (typeof this.#func != 'function') { throw new Error('The function is missing.'); }
         if (this.#isThrottling == true) {
@@ -116,7 +134,11 @@ const ExecutionDelay = class {
             }, this.#delay);
         });
     }
-
+    /**
+     * Executes the function immediately without waiting for the delay.
+     * @param {...any} args - Optional arguments to be passed to the function.
+     * @returns {any} - The result of the executed function.
+     */
     execute(...args) {
         this.stop("Execute now!");
         if (typeof this.#func != 'function') { throw new Error('The function is missing.'); }
@@ -125,7 +147,10 @@ const ExecutionDelay = class {
         }
         return this.#func.apply(this.#context, this.#args);
     }
-
+    /**
+     * Stops the execution of the function.
+     * @param {string} cause - The cause for stopping the execution.
+     */
     stop(cause = "Forecd stopp.") {
         clearTimeout(this.#timeoutId);
         this.#isTimeout = false;

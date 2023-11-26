@@ -7,8 +7,6 @@ let toggleVolume = document.getElementsByClassName("toggle-volume")[0];
 let contentGrooveVolume = document.getElementsByClassName("content-groove-volume")[0];
 let trackPositionTop;
 let trackPositionBottom;
-let requestSourceInfo;
-let requestTracksList;
 let previousSelectItem;
 let previousSlider;
 let selectedItem;
@@ -16,6 +14,11 @@ let likeItem;
 let isFirstScroll = false;
 let likeItems = [];
 let itemTracks = [];
+
+const PlayerInfo = {
+    source: {},
+    tracks: []
+}
 
 let State = { // current
     track: undefined,
@@ -26,14 +29,15 @@ let State = { // current
     coverItem: undefined,
     isAutoScroll: false,
     _volume: 0.5,
+    _speed: 1,
     _duration: 0,
     _position: 0,
     _loaded: 0,
     _isPlay: undefined,
+    _isRepeat: undefined,
+    _isShuffle: undefined,
     
-    get duration() {
-        return this._duration;
-    },
+    get duration() { return this._duration; },
     set duration(value) {
         if (Number.isFinite(value)) {
             this._duration = value;
@@ -42,9 +46,7 @@ let State = { // current
         }
     },
 
-    get position() {
-        return this._position;
-    },
+    get position() { return this._position; },
     set position(value) {
         if (Number.isFinite(value)) {
             value = Number.parseFloat(value.toFixed(6));
@@ -58,14 +60,12 @@ let State = { // current
             currentTime.innerHTML = getDurationAsString(value);
             sliderProgress.setPosition(value);
             if (this._isPlay == true && this.isUpdateTimer == false && value > 0) {
-                this.positionUpdater();
+                this._positionUpdater();
             }
         }
     },
 
-    get loaded() {
-        return this._loaded;
-    },
+    get loaded() { return this._loaded; },
     set loaded(value) {
         if (Number.isFinite(value)) {
             this._loaded = value;
@@ -73,9 +73,15 @@ let State = { // current
         }
     },
 
-    get volume() {
-        return this._volume;
+    get speed() { return this._speed; },
+    set speed(value) {
+        if (Number.isFinite(value)) {
+            this._speed = value;
+            console.log("speed set", value);
+        }
     },
+
+    get volume() { return this._volume; },
     set volume(value) {
         if (Number.isFinite(value)) {
             this._volume = value;
@@ -83,64 +89,77 @@ let State = { // current
         }
     },
 
-    get isPlay() {
-        return this._isPlay;
-    },
+    get isPlay() { return this._isPlay; },
     set isPlay(value) {
-        if (typeof value  === "boolean") {
-            this._isPlay = value;
-            setPlaybackStateStyle(value);
-            this.positionUpdater();
+        if (typeof value === "boolean") {
+            if (value !== this._isPlay) {
+                this._isPlay = value;
+                setPlaybackStateStyle(value);
+                this._positionUpdater();
+            }
         } else {
             this._isPlay = false;
             this.stopUpdater();
             setPlaybackStateStyle(false);
         }
     },
-    isGetProgress: false,
-    getProgress(){
-        if (this.isGetProgress == true) { return; }
-        this.isGetProgress = true;
-        let getProgressCounter = 0;
-        this._getProgressId = setInterval(() => {
-            if (getProgressCounter >= 170) { // 170 request in 34 seconds
-                this.stopGetProgress();
-                this.stopUpdater();
-                sendEvent("togglePause"); // set to pause
+
+    get isRepeat() { return this._isRepeat; },
+    set isRepeat(value) {
+        if (typeof value === 'boolean' || value === 1) {
+            if (value !== this._isRepeat) {
+                if (this._isRepeat == undefined) {
+                    this._isRepeat = value;
+                    updateRepeat(value, false);
+                    return;
+                }
+                this._isRepeat = value;
+                updateRepeat(value, true);
             }
-            getProgressCounter++;
-            sendEvent({ getProgress: true }, false, true);
-        }, 200);
+        }
     },
-    stopGetProgress(){
-        this.isGetProgress = false;
-        clearInterval(this._getProgressId);
+    get isShuffle() { return this._isShuffle; },
+    set isShuffle(value) {
+        if (typeof value === 'boolean') {
+            if (value !== this._isShuffle) {
+                if (this._isShuffle == undefined) {
+                    this._isShuffle = value;
+                    updateShuffle(value, false);
+                    return;
+                }
+                this._isShuffle = value;
+                updateShuffle(value, true);
+            }
+        }
+    },
+
+    /**
+    * @param {object} progress - {duration, position, loaded}.
+    */
+    setProgress(progress){
+        if (typeof progress !== 'object') { return; }
+        this.duration = progress.duration;
+        this.position = progress.position;
+        this.loaded = progress.loaded;
     },
 
     isUpdateTimer: false,
     _currentTime: 0,
     _positionUpdaterId: undefined,
-    _getProgressId: undefined,
-    positionUpdater() {
+    _positionUpdater() {
         this.stopUpdater();
-        if (this._isPlay == false) return;
-        if (this._position == 0) {
-            this.getProgress();
-            return;
-        }
-        this.stopGetProgress();
+        if (this._isPlay == false || this._position == 0) return;
 
         this._currentTime = Date.now();
         const updateTimer = () => {
-            if (this._position >= this._duration) {
-                this.isPlay = false;
-                return;
-            }
             if (Date.now() - this._currentTime >= 500) {
-                this.position += (Date.now() - this._currentTime) / 1000;
+                this.position += (Date.now() - this._currentTime) / 1000 * this._speed;
                 this._currentTime = Date.now();
             }
-            if (this._position > this._duration) { this.position = this._duration; }
+            if (this._position >= this._duration) {
+                this.stopUpdater();
+                return;
+            }
             if (this._position + 1 > this._loaded && this._position > 1) {
                 this.stopUpdater();
                 toggleLoadingWaitingBarDelay.start(true);
@@ -154,7 +173,7 @@ let State = { // current
         try {
             this.isUpdateTimer = false;
             clearInterval(this._positionUpdaterId);
-            if (toggleLoadingWaitingBarDelay.isStarted) {
+            if (toggleLoadingWaitingBarDelay.isStarted || toggleLoadingWaitingBarDelay.isShown) {
                 toggleLoadingWaitingBarDelay.execute(false);
             }
         } catch (error) { console.log(error); }
@@ -170,9 +189,14 @@ let CurrentAnimation = {
 }
 
 let updateTracksList = (trackInfo) => {
-    setTitle(trackInfo.sourceInfo);
+    console.log(trackInfo);
+    State.track = trackInfo.tracksList[trackInfo.index];
+    State.disliked = trackInfo.tracksList[trackInfo.index].disliked;
+    State.likeItem = likeItems[trackInfo.index];
 
-    // remove null object from array
+    PlayerInfo.source = trackInfo.sourceInfo;
+
+    // remove null object from tracksList
     for (let i = trackInfo.tracksList.length; i >= 0; i--) {
         if (trackInfo.tracksList[i] == null) {
             trackInfo.tracksList.splice(i, 1);
@@ -182,7 +206,6 @@ let updateTracksList = (trackInfo) => {
 }
 
 let setTitle = (title) => {
-    requestSourceInfo = title;
     if (title.title != undefined) {
         tracksListTitle.innerHTML = title.title;
     } else {
@@ -196,10 +219,10 @@ let setTracksList = (list, index) => {
             let allItem = document.querySelectorAll(".item-track");
             selectItem(allItem[index], index);
         }
-        if (equals(list, requestTracksList)) { return; }
+        if (equals(list, PlayerInfo.tracks)) { return; }
     } catch (error) {}
-    requestTracksList = list;
-    setTitle(requestSourceInfo);
+    PlayerInfo.tracks = list;
+    setTitle(PlayerInfo.source);
     let allItem = document.querySelectorAll(".item-track");
     clearList(allItem);
     likeItems = [];
@@ -208,6 +231,7 @@ let setTracksList = (list, index) => {
         trackPositionBottom.remove();    
     } catch (error) {}
     createListElement(list, index);
+    State.likeItem = likeItems[index];
 }
 
 let createListElement = (list, index) => {
@@ -296,9 +320,9 @@ let createListElement = (list, index) => {
                 if (State.index == i) {
                     sendEvent("togglePause");
                 } else {
-                    sendEvent({ play: `${i}` }, false, true); // send as object
+                    sendEvent({ play: i }, false, true); // send as object
                     State.stopUpdater();
-                    if (!requestTracksList[i].liked && !list[i].disliked) {
+                    if (!PlayerInfo.tracks[i].liked && !list[i].disliked) {
                         listLike.classList.add("list-dislike");
                         listLike.style.animation = "show-like 1s normal";
                         let endShowLike = (ev) => {
@@ -555,7 +579,7 @@ let checkTrackPosition = (from) => {
 
 let scrollToSelected = () => {
     if (!isFirstScroll) {
-        if (requestTracksList != undefined) {
+        if (PlayerInfo.tracks != undefined) {
             selectedItem.scrollIntoView({ block: "center", behavior: "smooth" });
         }
         isFirstScroll = true;
@@ -604,7 +628,7 @@ let updateRepeat = (repeat, isUpdate = false) => {
         }
         toggleRepeat.style.webkitMaskImage = "url(img/repeat.svg)"
         toggleRepeat.style.opacity = "1";
-    } else {
+    } else if (repeat === false) {
         if (isUpdate) showNotification(chrome.i18n.getMessage("repeatOf"), 5000);
         if (toggleRepeat.classList.contains('toggle-active')) {
             toggleRepeat.classList.remove('toggle-active');

@@ -1,19 +1,18 @@
 chrome.runtime.onConnect.addListener(function(port) {
-    Object.defineProperty(port, 'sendResponse', {
-        value: (response) => {
-            port.postMessage({ response: response });
-        }
-    });
+    console.log(port);
     port.onMessage.addListener(function(request) {
+        console.log(request);
         switch (request.data) {
             case 'previous':
                 window.postMessage({ function: "previous" }, "*");
+                chrome.runtime.sendMessage({ event: "change_track" });
                 break;
             case 'togglePause':
                 window.postMessage({ function: "togglePause" }, "*");
                 break;
             case 'next':
                 window.postMessage({ function: "next" }, "*");
+                chrome.runtime.sendMessage({ event: "change_track" });
                 break;
             case 'toggleLike':
                 window.postMessage({ function: "toggleLike" })
@@ -25,7 +24,7 @@ chrome.runtime.onConnect.addListener(function(port) {
                 window.postMessage({ function: "setTime", time: request.time }, "*");
                 break;
             case 'extensionIsLoad':
-                port.sendResponse({ case: "extensionIsLoad", isConnect: true });
+                port.postMessage({ case: "extensionIsLoad", isConnect: true });
                 window.postMessage({ function: "getCurrentTrack" }, "*");
                 break;
             default:
@@ -34,12 +33,14 @@ chrome.runtime.onConnect.addListener(function(port) {
         switch (request.commandKey) {
             case 'previous-key':
                 window.postMessage({ commandKey: "previous-key" }, "*");
+                chrome.runtime.sendMessage({ event: "change_track" });
                 break;
             case 'togglePause-key':
                 window.postMessage({ commandKey: "togglePause-key" }, "*");
                 break;
             case 'next-key':
                 window.postMessage({ commandKey: "next-key" }, "*");
+                chrome.runtime.sendMessage({ event: "change_track" });
                 break;
             case 'toggleLike-key':
                 window.postMessage({ commandKey: "toggleLike-key" }, "*");
@@ -63,7 +64,7 @@ chrome.runtime.onConnect.addListener(function(port) {
                 window.postMessage({ toggleShuffle: request.data.toggleShuffle }, "*");
             }
             if (request.data.hasOwnProperty('setVolume')) {
-                window.postMessage({ setVolume: request.data.setVolume }, "*");
+                window.postMessage({ volume: request.data.setVolume }, "*");
             }
             if (request.data.hasOwnProperty('getProgress')) {
                 window.postMessage({ getProgress: request.data.getProgress }, "*");

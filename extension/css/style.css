@@ -180,7 +180,7 @@ a {
     transition: 500ms;
 }
 .toggle-active {
-    background-color: #ffd000;
+    background-color: var(--toggleActive);
 }
 
 .toggle-shuffle {
@@ -553,6 +553,7 @@ a {
     --opacityColor: rgba(0, 0, 0, 0.4);
     --hoverColor: rgb(32 48 71 / 30%);
     --toggleHover: rgb(32 48 71 / 30%);
+    --toggleActive: #ffffff;
 }
 
 .slider-groove-progress {
@@ -640,6 +641,52 @@ a {
     justify-content: center;
     z-index: +5;
     backdrop-filter: blur(4px);
+    overflow: hidden;
+}
+
+.close-notification {
+    position: absolute;
+    opacity: 0.9;
+    right: 0px;
+    transition: 0.4s;
+    top: 0px;
+    width: 20px;
+    height: 20px;
+    border-bottom-left-radius: 4px;
+    backdrop-filter: blur(4px);
+    background-color: rgb(32 48 71 / 30%);
+    cursor: pointer;
+  }
+  .close-notification:hover {
+    opacity: 1;
+  }
+  .close-notification:before, .close-notification:after {
+    position: absolute;
+    border-radius: 4px;
+    left: 9px;
+    content: ' ';
+    height: 20px;
+    width: 3px;
+    background-color: #ff3333;
+  }
+  .close-notification:before {
+    transform: rotate(45deg);
+  }
+  .close-notification:after {
+    transform: rotate(-45deg);
+  }
+  
+
+.notification-time-left {
+    position: absolute;
+    width: 100%;
+    transition-property: all;
+    transition-duration: 0s;
+    transition-timing-function: linear;
+    height: 3px;
+    right: 0px;
+    bottom: 0px;
+    background-color: white;
 }
 
 .h2-notification {
@@ -648,6 +695,7 @@ a {
     align-items: center;
     text-align: center;
     align-self: center;
+    margin: 3px 20px 7px;
     line-height: 20px;
 }
 
