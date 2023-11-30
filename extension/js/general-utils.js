@@ -37,6 +37,35 @@ let LongPressButton = class {
     }
 }
 
+let onMessageAddListener = () => {
+    const onDisconnect = () => {
+        Extension.isConnection = false;
+        port.isConnection = false;
+        State.stopUpdater();
+        setPlaybackStateStyle(false);
+        showNoConnected();
+    }
+
+    port.onDisconnect.addListener(onDisconnect);
+    port.onMessage.addListener(function (request) {
+        if (request.response) {
+            if (request.response.isConnect === true) {
+                Extension.isConnection = true;
+                port.isConnection = true;
+            } else {
+                onDisconnect();
+            }
+        }
+    });
+}
+
+const windowName = function () {
+    if (window.location.pathname == '/index.html') {
+        return "extension";
+    }
+    return window.location.pathname == '/side-panel.html' ? "side-panel" : "popup";
+}
+
 /**
  * 
  * @param {string} text - your text
@@ -52,8 +81,18 @@ let showNotification = (text, ms) => {
             ms = 3500;
         }
     }
-    console.log("ms", ms)
+    if (typeof NotificationControl.onclose.onfinish == "function") {
+        if (typeof NotificationControl.onclose.oncancel == "function") {
+            NotificationControl.onclose.oncancel();
+        }
+    }
+    const onclose = {
+        onfinish: null,
+        oncancel: null
+    }
+    NotificationControl.onclose = onclose;
     NotificationControl.show(ms);
+    return onclose;
 }
 
 const NotificationControl = {
@@ -74,11 +113,27 @@ const NotificationControl = {
         notificationTimeLeft.style.width = "0%";
         notificationTimeLeft.style.transitionDuration = `${ms}ms`;
     },
+    _onmouseenter: null,
+    _onmouseleave: null,
+    toggleControl(toggle = false) {
+        if (toggle == true) {
+            notification.onmouseenter = this._onmouseenter;
+            notification.onmouseleave = this._onmouseleave;
+            closeNotification.style.display = "";
+            notification.disabled = false;
+        } else {
+            this._onmouseenter = notification.onmouseenter;
+            this._onmouseleave = notification.onmouseleave;
+            notification.onmouseenter = null;
+            notification.onmouseleave = null;
+            closeNotification.style.display = "none";
+            notification.disabled = true;
+        }
+    },
     isHiding: false,
     isShown: false,
     show(ms) {
         if (this.isShown == false) {
-            console.log("show");
             this.isShown = true;
             requestAnimationFrame(() => {
                 notificationTimeLeft.style.backgroundColor = "#ffffff"
@@ -116,6 +171,10 @@ const NotificationControl = {
         this.isHiding = false;
         this.fill(500);
     },
+    onclose: {
+        onfinish: null,
+        oncancel: null
+    },
     closeNotification() {
         this.isShown = false;
         this.isHiding = false;
@@ -126,9 +185,15 @@ const NotificationControl = {
             duration: 450,
             fill: "both"
         }
-        notification.animate(keyframe, options).onfinish = () => {
+        const onfinish = function () {
             notificationTimeLeft.style.transitionDuration = "";
-        };
+            if (typeof this.onclose.onfinish == "function") {
+                this.onclose.onfinish();
+            }
+            this.onclose.onfinish = null;
+            this.onclose.oncancel = null;
+        }
+        notification.animate(keyframe, options).onfinish = onfinish.bind(this);
     }
 }
 
@@ -149,11 +214,24 @@ let getYandexMusicTab = () => {
     });
 }
 
-let sendEvent = (event, isResponse = false, forceObject = false) => {
+let sendEvent = (event, forceObject = false) => {
     if (typeof(event) != "object") event = { data: event };
     if (forceObject) event = { data: event };
     port.postMessage(event);
 }
+
+let sendEventBackground = (event, callback) => { // event should be as object.
+    chrome.runtime.sendMessage(event, function(response) {
+        if (response != undefined) {
+            if (response.options) {
+                setOptions(response.options); // options.js
+            }
+            if (callback != undefined) {
+                callback(response);
+            }
+        }
+    });
+};
 
 let getUrl = (url, size = 50) => {
     if (url == undefined) {
@@ -265,8 +343,20 @@ let toggleDislike = (isDisliked, notifyMe = false) => {
     }
 }
 
+const createPopup = function () {
+    sendEventBackground({ createPopup: true },
+        (result) => {
+            if (result.exists) {
+                NotificationControl.toggleControl(false);
+                const onEnd = showNotification(result.message);
+                onEnd.onfinish = NotificationControl.toggleControl.bind(NotificationControl, true);
+                onEnd.oncancel = NotificationControl.toggleControl.bind(NotificationControl, true);
+            }
+        });
+}
+
 let openNewTab = (tabId) => {
-    if (tabId != undefined) {
+    if (typeof tabId === 'number') {
         chrome.tabs.reload(tabId);
         loaderContainer.style.display = "block";
         appDetected.innerHTML = chrome.i18n.getMessage("waitWhilePage");
@@ -284,11 +374,10 @@ let openNewTab = (tabId) => {
     yesNoNew.style.display = "none";
 }
 
-
 let showNoConnected = () => {
-    getYandexMusicTab().then((result) => {
-        if (Extension.isConnected == false) {
-            if (result) {
+    getYandexMusicTab().then((tabId) => {
+        if (Extension.isConnection == false) {
+            if (tabId) {
                 appDetected.innerHTML = chrome.i18n.getMessage("appDetected");
                 appQuestion.innerHTML = chrome.i18n.getMessage("appQuestion");
                 bntNo.style.display = "none";
@@ -299,7 +388,6 @@ let showNoConnected = () => {
                 noConnect.style.display = "flex";
                 appQuestion.style.display = "";
                 noConnect.classList.add("puff-in-center");
-                reload = true;
             } else {
                 appDetected.innerHTML = chrome.i18n.getMessage("appNoDetected");
                 appQuestion.innerHTML = chrome.i18n.getMessage("appNoQuestion");
@@ -310,7 +398,6 @@ let showNoConnected = () => {
                 yesNoNew.style.display = "flex";
                 noConnect.style.display = "flex";
                 appQuestion.style.display = "";
-                reload = false;
             }
         }
     });
@@ -359,3 +446,40 @@ let getDurationAsString = (duration = 0) => {
     const {seconds, minutes, hours} = splitSeconds(duration);
     return twoDigits(seconds, minutes, hours);
 }    
+
+let setMediaData = (trackTitle, trackArtists, iconTrack) => {
+    artistsName[0].innerHTML = trackArtists;
+    trackName[0].innerHTML = trackTitle;
+    artistsName[0].style.fontSize = "";
+    trackName[0].style.fontSize = "";
+    if (Extension.windowName == "extension") {
+        urlCover = getUrl(iconTrack, 200);
+        setRightFontSize();
+    } else {
+        urlCover = getUrl(iconTrack, 50);
+    }
+    trackImage[0].style.backgroundImage = "url(" + urlCover + ")";
+}
+
+let setPlaybackStateStyle = (isPlaying) => {
+    if (isPlaying == false) {
+        pause[0].style.backgroundImage = "url(img/play.png)";
+        if (Options.isReduce) {
+            if (Extension.windowName == "extension") {
+                pause[0].style.backgroundPosition = "16px center";
+            } else {
+                pause[0].style.backgroundPosition = "2px center";
+            }
+            return;
+        }
+        if (Extension.windowName == "extension") {
+            pause[0].style.backgroundPosition = "20px center";
+        } else {
+            pause[0].style.backgroundPosition = "2px center";
+        }
+    } else {
+        pause[0].style.backgroundImage = "";
+        pause[0].style.backgroundPosition = "";
+        pause[0].style.backgroundSize = "";
+    }
+}

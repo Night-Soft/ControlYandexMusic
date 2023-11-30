@@ -121,18 +121,6 @@ checkBoxReassign.onclick = function() {
     }
 }
 
-let sendEventBackground = (event, callback) => { // event should be as object.
-    chrome.runtime.sendMessage(event, function(response) {
-        if (response != undefined) {
-            if (response.options) {
-                setOptions(response.options); // options.js
-            }
-            if (callback != undefined) {
-                callback(response);
-            }
-        }
-    });
-};
 // now the shortcut key which uses as play/ pause will be used for open popup;
 // check new version and show what new
 let checkNew = () => {

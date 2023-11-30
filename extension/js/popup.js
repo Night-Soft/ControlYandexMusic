@@ -1,196 +1,10 @@
-//START EXTENSION
-let previous = document.getElementsByClassName("previous");
-let pause = document.getElementsByClassName("pause");
-let next = document.getElementsByClassName("next");
-let modal = document.getElementsByClassName("modal");
-let trackImage = document.getElementsByClassName("cover");
-let modalCover = document.getElementsByClassName("modal-cover");
-let like = document.getElementsByClassName("like");
-let trackName = document.getElementsByClassName("name-track");
-let artistsName = document.getElementsByClassName("name-artists");
-let btnYes = document.getElementById("Yes");
-let bntNo = document.getElementById("No");
-let btnNew = document.getElementById("New");
-let appDetected = document.getElementById("AppDetected");
-let appQuestion = document.getElementById("AppQuestion");
-let noConnect = document.getElementsByClassName("no-connect")[0];
-let loaderContainer = document.getElementsByClassName("loader-container")[0];
-let yesNoNew = document.getElementsByClassName("yes-no-new")[0];
+if (Extension.windowName == "side-panel") {
+    document.getElementsByClassName("popup-btn")[0].onclick = createPopup;
+    sendEventBackground({ sidePanel: true });
+}
 
-
-let transition = document.getElementsByClassName("transition");
-let hamburgerMenuList = document.getElementsByClassName("hamburger-menu-list")[0];
-let dislike = document.getElementsByClassName("dislike")[0];
-let notification = document.getElementsByClassName("notification")[0];
-let notificationTimeLeft = document.getElementsByClassName("notification-time-left")[0];
-let closeNotification = document.getElementsByClassName("close-notification")[0];
-let textNotification = document.getElementsByClassName("h2-notification")[0];
-let notificationTrackName = document.getElementsByClassName("notification-track-name")[0];
-
-let contentListMenu = document.getElementsByClassName("content-list-menu")[0];
-let modalListMenu = document.getElementsByClassName("modal-list-menu")[0];
-
-let port = {
-    isConnected: false
-};
-let fromPopup = true;
-let reload = false;
-let urlCover;
-
-let Extension = {
-    onload: function () {
-        this.createConnection().then((result) => {
-            if (result) {
-                sendEvent("extensionIsLoad");
-            }
-        });
-    },
-    createConnection: async () => {
-        return new Promise((resolve, reject) => {
-            getYandexMusicTab().then((result) => {
-                if (result) {
-                    try {
-                        if (port.isConnected == false) {
-                            port = chrome.tabs.connect(result, { name: chrome.runtime.id });
-                            port.isConnected = true;
-                        }
-                    } catch (error) {
-                        port.isConnected = false;
-                    }
-                    if (port.isConnected == false) {
-                        showNoConnected();
-                        resolve(false);
-                        return;
-                    }
-                    onMessageAddListener();
-                    resolve(true);
-                } else {
-                    Extension.isConnected = false;
-                    showNoConnected();
-                    resolve(false);
-                }
-            });
-        });
-    },
-    windowName: window.location.pathname == '/side-panel.html' ? "side-panel" : "popup",
-    isConnected: undefined
-};
-
-chrome.runtime.onMessage.addListener( // background, content script
-    (request, sender, sendResponse) => {
-        if (request.onload) {
-            reload = false;
-            if (port.isConnected == false) {
-                Extension.createConnection();
-            }
-            if (noConnect.style.display == "flex") {
-                noConnect.classList.add("puff-out-center");
-                let endConnectAnim = () => {
-                    noConnect.style.display = "none";
-                    noConnect.classList.remove("puff-out-center");
-                    noConnect.classList.remove("puff-in-center");
-                    noConnect.removeEventListener("animationend", endConnectAnim);
-                }
-                noConnect.addEventListener("animationend", endConnectAnim);
-            }
-            getYandexMusicTab().then((id) => {
-                chrome.tabs.update(id, {
-                    active: true,
-                    highlighted: true
-                });
-            });
-        }
-        if (request.options) {
-            setOptions(request.options);
-        }
-        if(request.event == "change_track") {
-            State.stopUpdater();
-            State.position = 0;
-        } 
-    });
-
-chrome.runtime.onMessageExternal.addListener( // injected script
-    (request, sender, sendResponse) => {
-        switch (request.event) {
-            case 'currentTrack': // get from the key
-                if (request.trackInfo.index == -1) {
-                    showNotification(chrome.i18n.getMessage("playlistEmpty"), 7000);
-                    return;
-                }
-
-                setMediaData(request.currentTrack.title, getArtists(request.currentTrack, 5), request.currentTrack.cover);
-                setPlaybackStateStyle(request.isPlaying);
-                toggleLike(request.currentTrack.liked);
-                toggleDislike(request.currentTrack.disliked);
-
-                State.isPlay = request.isPlaying;
-                State.volume = request.volume;
-                State.isRepeat = request.controls.repeat;
-                State.isShuffle = request.controls.shuffle;
-
-                if (request.progress.duration != 0) {
-                    State.setProgress(request.progress);
-                } else {
-                    State.stopUpdater();
-                    State.duration = request.currentTrack.duration;
-                    State.position = 0;
-                }
-
-                updateTracksList(request.trackInfo);
-                break;
-            case 'togglePause':
-                State.isPlay = request.isPlaying;
-                break;
-            case 'toggleLike':
-                if (request.isLiked) {
-                    toggleDislike(false);
-                    toggleListDisliked(false);
-                }
-                toggleLike(request.isLiked);
-                toggleListLike(request.isLiked);
-                break;
-            case 'toggleDislike':
-                State.disliked = request.disliked.disliked;
-                if (State.disliked) {
-                    toggleLike(false);
-                }
-                toggleDislike(request.disliked.disliked, true);
-                toggleListDisliked(request.disliked.disliked);
-                break;
-            case "TRACKS_LIST":
-                updateTracksList(request);
-                break;
-            case "STATE":
-                State.isPlay = request.isPlaying;
-                State.position = request.progress.position;
-                break;
-            case "CONTROLS":
-                State.isRepeat = request.repeat;
-                State.isShuffle = request.shuffle;
-                break;
-            case "VOLUME":
-                State.volume = request.volume;
-                break;
-            case "SPEED":
-                State.speed = request.speed;
-                State.setProgress(request.progress);
-                break;
-            case "PROGRESS":
-                State.setProgress(request.progress);
-                break;
-            case "page_hide":
-                if (reload == true) return;
-                sendEventBackground({ isConnected: false })
-                window.close();
-                break;
-        }
-    });
-
-let boundsChangedId;
-chrome.windows.onBoundsChanged.addListener((ev) => {
-    if (Extension.windowName == "side-panel") return;
-    clearTimeout(boundsChangedId);
-    boundsChangedId = setTimeout(() => {
+if (Extension.windowName == "popup") {
+    const boundsChanged = new ExecutionDelay((ev) => {
         if (popupWindow.windowId == ev.id) {
             ev.isTrackListOpen = popupWindow.isPlaylistOpen;
             if (popupWindow.isPlaylistOpen == true) {
@@ -204,103 +18,10 @@ chrome.windows.onBoundsChanged.addListener((ev) => {
             }
             sendEventBackground({ savePopupBounds: ev });
         }
-    }, 200);
+    }, { delay: 200 });
+
+    chrome.windows.onBoundsChanged.addListener(boundsChanged.start.bind(boundsChanged));
 }
-);
-
-btnYes.onclick = () => {
-    //sendEventBackground({ keyOpenPage: false });
-    if (reload == false) {
-        openNewTab();
-    } else {
-        chrome.tabs.query({
-            windowType: "normal"
-        }, (tabs) => {
-            for (let i = tabs.length - 1; i >= 0; i--) {
-                if (tabs[i].url.startsWith("https://music.yandex")) {
-                    openNewTab(tabs[i].id);
-                    break;
-                }
-            }
-        });
-    }
-}
-
-bntNo.onclick = () => {
-    noConnect.classList.add("puff-out-center");
-    noConnect.addEventListener("animationend", () => {
-        noConnect.style.display = "none";
-
-    });
-}
-
-btnNew.onclick = () => {
-    openNewTab();
-}
-
-previous[0].onclick = () => {
-    sendEvent("previous");
-    State.stopUpdater();
-};
-
-pause[0].onclick = () => {
-    sendEvent("togglePause");
-};
-
-next[0].onclick = () => {
-    sendEvent("next");
-    State.stopUpdater();
-};
-like[0].onLongPress = new LongPressButton(like[0], () => {
-    sendEvent("toggleDislike");
-});
-
-like[0].onclick = () => {
-    sendEvent("toggleLike");
-}
-
-dislike.onLongPress = new LongPressButton(dislike, () => {
-    sendEvent("toggleDislike");
-});
-
-dislike.onclick = () => {
-    sendEvent("toggleDislike");
-}
-trackImage[0].onclick = () => {
-    let removeClass = () => {
-        modal[0].classList.remove("modal-background");
-        modalCover[0].removeEventListener("animationend", removeClass);
-    }
-    modalCover[0].addEventListener("animationend", removeClass);
-    modal[0].classList.add("modal-background");
-    openCover(trackImage[0], urlCover);
-};
-
-modal[0].onclick = function() {
-    let removeClass = () => {
-        modal[0].classList.remove("modal-background-reverse");
-        modal[0].removeEventListener("animationend", removeClass);
-        modal[0].style.display = "none";
-    }
-    modal[0].addEventListener("animationend", removeClass);
-    modal[0].classList.add("modal-background-reverse");
-    openCoverAnimate(CoverAnimation.element, true);
-}
-
-closeNotification.onclick = function() {
-    notificationTimeLeft.removeEventListener("transitionend", NotificationControl.boundListener);
-    NotificationControl.closeNotification.apply(NotificationControl);
-}
-notification.onmouseenter = () => {
-    NotificationControl.stayShown();
-}
-notification.onmouseleave = () => {
-    if (NotificationControl.isShown) {
-        NotificationControl.hide(2500);
-    }
-}
-
-let list = document.getElementById("listTrack");
 
 let PopupWindow = class {
     constructor() {
@@ -395,6 +116,7 @@ let PopupWindow = class {
 }
 let popupWindow = new PopupWindow();
 
+let list = document.getElementById("listTrack");
 /** @param {boolean} show show playlist or hide  */
 let togglePlaylist = (show) => {
     if (show == undefined) { show = !popupWindow.isPlaylistOpen; }
@@ -475,58 +197,6 @@ if (typeof hamburgerMenuList != "undefined") {
     }
 }
 
-let onMessageAddListener = () => {
-    port.onDisconnect.addListener((disconnect) => {
-        Extension.isConnected = false;
-        port.isConnected = false;
-        setPlaybackStateStyle(false);
-        showNoConnected();
-
-    });
-    port.onMessage.addListener(function (request) {
-        if (request.response) {
-            response(request.response);
-        }
-    });
-    let response = (answer) => {
-        switch (answer.case) {
-            case "extensionIsLoad":
-                if (answer.isConnect) {
-                    Extension.isConnected = true
-                } else {
-                    Extension.isConnected = false;
-                    showNoConnected();
-                    console.log("No connection");
-                }
-                break;
-        }
-    }
-}
-
-let setMediaData = (trackTitle, trackArtists, iconTrack) => {
-    artistsName[0].innerHTML = trackArtists;
-    trackName[0].innerHTML = trackTitle;
-    artistsName[0].style.fontSize = "";
-    trackName[0].style.fontSize = "";
-    urlCover = getUrl(iconTrack, 50);
-    trackImage[0].style.backgroundImage = "url(" + urlCover + ")";
-}
-
-let setPlaybackStateStyle = (isPlaying) => {
-    if (isPlaying == false) {
-        pause[0].style.backgroundImage = "url(img/play.png)";
-        if (Options.isReduce) {
-            pause[0].style.backgroundPosition = "2px center";
-            return;
-        }
-        pause[0].style.backgroundPosition = "2px center";
-    } else {
-        pause[0].style.backgroundImage = "";
-        pause[0].style.backgroundPosition = "";
-        pause[0].style.backgroundSize = "";
-    }
-}
-
 //END EXTENSION
 
 // START OPTIONS
@@ -541,19 +211,6 @@ let Options = {
     oldVersionDescription: undefined,
     isReduce: false,
     popupBounds: undefined
-};
-
-let sendEventBackground = (event, callback) => { // event should be as object.
-    chrome.runtime.sendMessage(event, function (response) {
-        if (response != undefined) {
-            if (response.options) {
-                setOptions(response.options);
-            }
-            if (callback != undefined) {
-                callback(response);
-            }
-        }
-    });
 };
 
 let setOptions = (options) => {

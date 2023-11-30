@@ -13,11 +13,13 @@ let Translate = {
         aMail.innerHTML = "NightSoftware@outlook.com";
         writeLettr.innerHTML = chrome.i18n.getMessage("writeLetter");
         writeLettr.appendChild(aMail);
-        if (reload == false) {
-            btnYes.innerHTML = chrome.i18n.getMessage("yes");
-        } else {
-            btnYes.innerHTML = chrome.i18n.getMessage("reload");
-        }
+        getYandexMusicTab().then(tabId => {
+            if (tabId == false) {
+                btnYes.innerHTML = chrome.i18n.getMessage("yes");
+            } else {
+                btnYes.innerHTML = chrome.i18n.getMessage("reload");
+            }
+        });
         bntNo.innerHTML = chrome.i18n.getMessage("no");
         btnNew.innerHTML = chrome.i18n.getMessage("new");
         let settings = document.getElementById("settings");

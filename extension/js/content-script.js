@@ -1,7 +1,5 @@
 chrome.runtime.onConnect.addListener(function(port) {
-    console.log(port);
     port.onMessage.addListener(function(request) {
-        console.log(request);
         switch (request.data) {
             case 'previous':
                 window.postMessage({ function: "previous" }, "*");
@@ -24,7 +22,7 @@ chrome.runtime.onConnect.addListener(function(port) {
                 window.postMessage({ function: "setTime", time: request.time }, "*");
                 break;
             case 'extensionIsLoad':
-                port.postMessage({ case: "extensionIsLoad", isConnect: true });
+                port.postMessage({ response: { isConnect: true } });
                 window.postMessage({ function: "getCurrentTrack" }, "*");
                 break;
             default:

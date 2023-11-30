@@ -77,7 +77,6 @@ let State = { // current
     set speed(value) {
         if (Number.isFinite(value)) {
             this._speed = value;
-            console.log("speed set", value);
         }
     },
 
@@ -189,7 +188,6 @@ let CurrentAnimation = {
 }
 
 let updateTracksList = (trackInfo) => {
-    console.log(trackInfo);
     State.track = trackInfo.tracksList[trackInfo.index];
     State.disliked = trackInfo.tracksList[trackInfo.index].disliked;
     State.likeItem = likeItems[trackInfo.index];
@@ -320,7 +318,7 @@ let createListElement = (list, index) => {
                 if (State.index == i) {
                     sendEvent("togglePause");
                 } else {
-                    sendEvent({ play: i }, false, true); // send as object
+                    sendEvent({ play: i }, true); // send as object
                     State.stopUpdater();
                     if (!PlayerInfo.tracks[i].liked && !list[i].disliked) {
                         listLike.classList.add("list-dislike");
@@ -579,7 +577,7 @@ let checkTrackPosition = (from) => {
 
 let scrollToSelected = () => {
     if (!isFirstScroll) {
-        if (PlayerInfo.tracks != undefined) {
+        if (PlayerInfo.tracks.length > 0) {
             selectedItem.scrollIntoView({ block: "center", behavior: "smooth" });
         }
         isFirstScroll = true;
@@ -667,14 +665,14 @@ let updateShuffle = (shuffle, isUpdate = false) => {
 }
 
 toggleShuffle.onclick = (event) => {
-    sendEvent({ toggleShuffle: true }, false, true);
+    sendEvent({ toggleShuffle: true }, true);
 }
 toggleRepeat.onclick = (event) => {
-    sendEvent({ toggleRepeat: true }, false, true);
+    sendEvent({ toggleRepeat: true }, true);
 
 }
 toggleVolume.onclick = (event) => {
-    sendEvent({ toggleVolume: true }, false, true);
+    sendEvent({ toggleVolume: true }, true);
 
 }
 
@@ -685,14 +683,14 @@ toggleVolume.onwheel = (event) => {
             sliderVolume.scale += 4;
             if (sliderVolume.scale > sliderVolume.maxScale) sliderVolume.scale = sliderVolume.maxScale;
             sliderVolume.setTooltipPosition(sliderVolume.scale);
-            sendEvent({ setVolume: sliderVolume.scale / 100 }, false, true);
+            sendEvent({ setVolume: sliderVolume.scale / 100 }, true);
         }
     } else {
         if (sliderVolume.scale >= 0) {
             sliderVolume.scale -= 4;
             if (sliderVolume.scale < 0) sliderVolume.scale = 0;
             sliderVolume.setTooltipPosition(sliderVolume.scale);
-            sendEvent({ setVolume: sliderVolume.scale / 100 }, false, true);
+            sendEvent({ setVolume: sliderVolume.scale / 100 }, true);
         }
     }
 }
