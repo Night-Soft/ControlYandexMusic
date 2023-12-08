@@ -1,15 +1,20 @@
-let LongPressButton = class {
+let LongPressElement = class {
+    static instances = [];
     #isStartPress;
     #timeoutId;
     #onclickFunc;
-
-    constructor(button, func, delay = 750) {
-        this.button = button;
+    #onmousedownBound;
+    #onmouseupBound;
+    constructor(element, func, delay = 750) {
+        LongPressElement.instances.push(this);
+        this.element = element;
         this.func = func;
-        this.delay = Math.floor(Math.random() * delay);
+        this.delay = delay;
+        this.#onmousedownBound = this.#onmousedown.bind(this);
+        this.#onmouseupBound = this.#onmouseup.bind(this);
 
-        button.addEventListener("mousedown", this.#onmousedown.bind(this));
-        button.addEventListener("mouseup", this.#onmouseup.bind(this));
+        element.addEventListener("mousedown", this.#onmousedownBound);
+        element.addEventListener("mouseup", this.#onmouseupBound);
     }
 
     #onmousedown(event) {
@@ -18,9 +23,9 @@ let LongPressButton = class {
         this.#isStartPress = true;
         this.#timeoutId = setTimeout(() => {
             this.#isStartPress = false;
-            if (this.button.onclick != null) {
-                this.#onclickFunc = this.button.onclick;
-                this.button.onclick = null;
+            if (this.element.onclick != null) {
+                this.#onclickFunc = this.element.onclick;
+                this.element.onclick = null;
             }
             this.func();
         }, this.delay);
@@ -31,9 +36,13 @@ let LongPressButton = class {
             clearTimeout(this.#timeoutId);
             this.#isStartPress = false;
             if (this.#onclickFunc != null) {
-                this.button.onclick = this.#onclickFunc;
+                this.element.onclick = this.#onclickFunc;
             }
         }
+    }
+    remove(){
+        this.element.removeEventListener("mousedown", this.#onmousedownBound);
+        this.element.removeEventListener("mouseup", this.#onmouseupBound);
     }
 }
 
@@ -41,7 +50,7 @@ let onMessageAddListener = () => {
     const onDisconnect = () => {
         Extension.isConnection = false;
         port.isConnection = false;
-        State.stopUpdater();
+        Player.stopUpdater();
         setPlaybackStateStyle(false);
         showNoConnected();
     }
@@ -483,3 +492,41 @@ let setPlaybackStateStyle = (isPlaying) => {
         pause[0].style.backgroundSize = "";
     }
 }
+
+HTMLDivElement.prototype.setStyle = function(style) {
+    if (typeof style != 'object') {
+        try {
+            throw new Error(`The "${style}" is not Object!`);
+        } catch (error) {
+            console.error(error);
+        }
+        return;
+    }
+    let keys = Object.keys(style);
+    for (let i = 0; i < keys.length; i++) {
+        this.style[keys[i]] = style[keys[i]];
+    }
+  };
+
+Object.defineProperty(HTMLDivElement.prototype, "onlongpress", {
+    get() {
+        if (this.LongPress instanceof LongPressElement) {
+            return this.LongPress.func;
+        }
+        return this.LongPress;
+    },
+    set(value) {
+        if (typeof value === "function") {
+            this.LongPress = new LongPressElement(this, value);
+            return;
+        } else if (value === undefined || value == null) {
+            if (this.LongPress instanceof LongPressElement) {
+                this.LongPress.remove();
+            }
+            this.LongPress = value;
+            return;
+        }
+        throw new TypeError(`The '${value}' is not a function.`);
+    },
+    enumerable: true
+});

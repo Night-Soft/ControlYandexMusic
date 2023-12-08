@@ -102,10 +102,6 @@ chrome.runtime.onMessage.addListener( // background, content-script
                 }
             }
         }
-        if (request.event == "change_track") {
-            State.stopUpdater();
-            State.position = 0;
-        }
     });
 
 chrome.runtime.onMessageExternal.addListener( // injected script
@@ -122,23 +118,26 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 toggleLike(request.currentTrack.liked);
                 toggleDislike(request.currentTrack.disliked);
 
-                State.isPlay = request.isPlaying;
-                State.volume = request.volume;
-                State.isRepeat = request.controls.repeat;
-                State.isShuffle = request.controls.shuffle;
+                Player.isPlay = request.isPlaying;
+                Player.volume = request.volume;
+                Player.isRepeat = request.controls.repeat;
+                Player.isShuffle = request.controls.shuffle;
 
-                if (request.progress.duration != 0) {
-                    State.setProgress(request.progress);
+                if (request.progress.duration > 0) {
+                    Player.setProgress(request.progress);
                 } else {
-                    State.stopUpdater();
-                    State.duration = request.currentTrack.duration;
-                    State.position = 0;
+                    Player.stopUpdater();
+                    Player.setProgress({
+                        position: 0,
+                        loaded: 0,
+                        duration: request.currentTrack.duration
+                    });
                 }
 
                 updateTracksList(request.trackInfo);
                 break;
             case 'togglePause':
-                State.isPlay = request.isPlaying;
+                Player.isPlay = request.isPlaying;
                 break;
             case 'toggleLike':
                 if (request.isLiked) {
@@ -149,8 +148,8 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 toggleListLike(request.isLiked);
                 break;
             case 'toggleDislike':
-                State.disliked = request.disliked.disliked;
-                if (State.disliked) {
+                Player.disliked = request.disliked.disliked;
+                if (Player.disliked) {
                     toggleLike(false);
                 }
                 toggleDislike(request.disliked.disliked, true);
@@ -160,22 +159,26 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 updateTracksList(request);
                 break;
             case "STATE":
-                State.isPlay = request.isPlaying;
-                State.position = request.progress.position;
+                Player.isPlay = request.isPlaying;
+                Player.position = request.progress.position;
                 break;
             case "CONTROLS":
-                State.isRepeat = request.repeat;
-                State.isShuffle = request.shuffle;
+                Player.isRepeat = request.repeat;
+                Player.isShuffle = request.shuffle;
                 break;
             case "VOLUME":
-                State.volume = request.volume;
+                Player.volume = request.volume;
                 break;
             case "SPEED":
-                State.speed = request.speed;
-                State.setProgress(request.progress);
+                Player.speed = request.speed;
+                Player.setProgress(request.progress);
                 break;
             case "PROGRESS":
-                State.setProgress(request.progress);
+                Player.setProgress(request.progress);
+                break;
+            case "change_track":
+                Player.stopUpdater();
+                Player.setProgress({ position: 0, loaded: 0 });
                 break;
             case "page_hide":
                 setTimeout(() => {
@@ -191,7 +194,7 @@ chrome.runtime.onMessageExternal.addListener( // injected script
     });
 
 btnYes.onclick = () => {
-    getYandexMusicTab().then(tabId => { openNewTab(tabId); });
+    getYandexMusicTab().then(tabId => openNewTab(tabId));
 }
 
 bntNo.onclick = () => {
@@ -202,37 +205,15 @@ bntNo.onclick = () => {
     });
 }
 
-btnNew.onclick = () => {
-    openNewTab();
-}
+btnNew.onclick = openNewTab;
 
-previous[0].onclick = () => {
-    sendEvent("previous");
-};
-
-pause[0].onclick = () => {
-    sendEvent("togglePause");
-};
-
-next[0].onclick = () => {
-    sendEvent("next");
-};
-
-like[0].onLongPress = new LongPressButton(like[0], () => {
-    sendEvent("toggleDislike");
-});
-
-like[0].onclick = () => {
-    sendEvent("toggleLike");
-}
-
-dislike.onLongPress = new LongPressButton(dislike, () => {
-    sendEvent("toggleDislike");
-});
-
-dislike.onclick = () => {
-    sendEvent("toggleDislike");
-}
+previous[0].onclick = sendEvent.bind(null, "previous", undefined);
+pause[0].onclick = sendEvent.bind(null, "togglePause", undefined);
+next[0].onclick = sendEvent.bind(null, "next", undefined);
+like[0].onclick = sendEvent.bind(null, "toggleLike", undefined);
+like[0].onlongpress = sendEvent.bind(null, "toggleDislike", undefined);
+dislike.onlongpress = sendEvent.bind(null, "toggleDislike", undefined);
+dislike.onclick = sendEvent.bind(null, "toggleDislike", undefined);
 
 trackImage[0].onclick = () => {
     let removeClass = () => {
@@ -241,6 +222,10 @@ trackImage[0].onclick = () => {
     }
     modalCover[0].addEventListener("animationend", removeClass);
     modal[0].classList.add("modal-background");
+    if (urlCover == "img/icon.png") {
+        openCover(trackImage[0]);
+        return;
+    }
     openCover(trackImage[0], urlCover);
 };
 

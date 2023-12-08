@@ -89,7 +89,7 @@ const ExecutionDelay = class {
      * @param {...any} args - Optional arguments to be passed to the function.
      * @returns {Promise<Object>} - A promise indicating the completion or an active timer.
      */
-    async start(...args) {
+    start(...args) {
         if (typeof this.#func != 'function') { throw new Error('The function is missing.'); }
         if (this.#isThrottling == true) {
             let argsMessage = "";
@@ -105,10 +105,10 @@ const ExecutionDelay = class {
             }
         }
         clearTimeout(this.#timeoutId);
+        this.#isTimeout = true;
         return new Promise((resolve, reject) => {
             // this.#fulfilled - function for set promise state to fulfilled with stop().
             this.#fulfilled = (message) => { resolve({ causeStops: message }); }
-            this.#isTimeout = true;
             this.#timeoutId = setTimeout(async () => {
                 try {
                     let result;

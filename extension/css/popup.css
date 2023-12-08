@@ -225,7 +225,7 @@ body {
     margin: 5px 0px 5px 0px;
     padding: unset;
     transition: 0.4s;
-    font-family: 'Roboto', sans-serif;
+    font-family: var(--fontFamily);
 }
 
 .selected-item {

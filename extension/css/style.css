@@ -1,9 +1,4 @@
-/* @import url('https://fonts.googleapis.com/css?family=Roboto&display=swap'); */
-
-@font-face {
-    font-family: "Roboto";
-    src: url("fonts/Roboto-Light.woff");
-}
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400&display=swap');
 
 body {
     --bodyOpacity: 0;
@@ -72,7 +67,7 @@ a {
     font-size: 1.6rem;
     text-align: center;
     margin: 0px auto 5px;
-    font-family: 'Roboto', sans-serif;
+    font-family: var(--fontFamily);
 }
 
 .content {
@@ -554,6 +549,8 @@ a {
     --hoverColor: rgb(32 48 71 / 30%);
     --toggleHover: rgb(32 48 71 / 30%);
     --toggleActive: #ffffff;
+
+    --fontFamily:'Roboto', sans-serif;
 }
 
 .slider-groove-progress {
@@ -911,7 +908,7 @@ a {
     font-size: 1.1rem;
     cursor: pointer;
     transition: 0.4s;
-    font-family: 'Roboto', sans-serif;
+    font-family: var(--fontFamily);
 }
 
 .item-track:hover {
@@ -956,11 +953,12 @@ a {
 
 .item-name-track {
     font-size: 1.1rem;
-    font-weight: bold;
+    font-weight: normal;
 }
 
 .item-artists {
     font-size: 1.1rem;
+    font-weight: 300;
 }
 
 
@@ -1107,7 +1105,7 @@ a {
     font-size: 1.4rem;
     cursor: pointer;
     transition: 0.4s;
-    font-family: 'Roboto', sans-serif;
+    font-family: var(--fontFamily);
 }
 
 .side:hover {
@@ -1126,7 +1124,7 @@ a {
     font-size: 1.4rem;
     cursor: pointer;
     transition: 0.4s;
-    font-family: 'Roboto', sans-serif;
+    font-family: var(--fontFamily);
     z-index: +1;
 }
 
@@ -1449,6 +1447,7 @@ label {
     border-radius: 3px;
     text-align: center;
     margin: 2px;
+    cursor: pointer;
 }
 
 .shortcut-key:hover {
@@ -1515,12 +1514,6 @@ label {
     background: #FF3333;
 }
 
-.select-shortcut-key:after {
-    content: "\f107";
-    color: inherit;
-    margin-left: 10px;
-}
-
 .submenu {
     position: absolute;
     top: 100%;
@@ -1546,6 +1539,7 @@ label {
     justify-content: center;
     width: 100%;
     background-color: #172334;
+    margin-top: 5px;
     border-radius: 10px;
 }
 .donationalerts {

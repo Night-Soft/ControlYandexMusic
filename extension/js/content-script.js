@@ -3,14 +3,12 @@ chrome.runtime.onConnect.addListener(function(port) {
         switch (request.data) {
             case 'previous':
                 window.postMessage({ function: "previous" }, "*");
-                chrome.runtime.sendMessage({ event: "change_track" });
                 break;
             case 'togglePause':
                 window.postMessage({ function: "togglePause" }, "*");
                 break;
             case 'next':
                 window.postMessage({ function: "next" }, "*");
-                chrome.runtime.sendMessage({ event: "change_track" });
                 break;
             case 'toggleLike':
                 window.postMessage({ function: "toggleLike" })
@@ -31,14 +29,12 @@ chrome.runtime.onConnect.addListener(function(port) {
         switch (request.commandKey) {
             case 'previous-key':
                 window.postMessage({ commandKey: "previous-key" }, "*");
-                chrome.runtime.sendMessage({ event: "change_track" });
                 break;
             case 'togglePause-key':
                 window.postMessage({ commandKey: "togglePause-key" }, "*");
                 break;
             case 'next-key':
                 window.postMessage({ commandKey: "next-key" }, "*");
-                chrome.runtime.sendMessage({ event: "change_track" });
                 break;
             case 'toggleLike-key':
                 window.postMessage({ commandKey: "toggleLike-key" }, "*");

@@ -1,3 +1,4 @@
+let playlist = document.getElementById("listTrack");
 let tracksListTitle = document.getElementsByClassName("title-list")[0];
 let listTracks = document.getElementsByClassName("list-track")[0];
 let loadingBar = document.getElementsByClassName("loading-bar")[0];
@@ -15,169 +16,188 @@ let isFirstScroll = false;
 let likeItems = [];
 let itemTracks = [];
 
-const PlayerInfo = {
-    source: {},
-    tracks: []
-}
+const PlayerInfo = class {
+    constructor() {
+        let volume = 0.5;
+        let speed = 1;
+        let duration = 0;
+        let position = 0;
+        let loaded = 0;
+        let isPlay;
+        let isRepeat;
+        let isShuffle;
+        Object.defineProperties(this, {
+            duration: {
+                get() { return duration; },
+                set(value) {
+                    if (Number.isFinite(value)) {
+                        duration = value;
+                        sliderProgress.maxScale = value;
+                        durationSpan.innerHTML = getDurationAsString(value);
+                    }
+                },
+                enumerable: true
+            },
+            position: {
+                get() { return position; },
+                set(value) {
+                    if (Number.isFinite(value)) {
+                        value = Number.parseFloat(value.toFixed(6));
+                        if (value < 0) {
+                            value = 0
+                        } else if (value > duration) {
+                            value = duration;
+                        }
+                        position = value;
+                        this.#currentTime = Date.now();
+                        currentTime.innerHTML = getDurationAsString(value);
+                        sliderProgress.setPosition(value);
+                        if (isPlay == true && this.isUpdateTimer == false && value > 0) {
+                            this.#positionUpdater();
+                        }
+                    }
+                },
+                enumerable: true
+            },
+            loaded: {
+                get() { return loaded; },
+                set(value) {
+                    if (Number.isFinite(value)) {
+                        loaded = value;
+                        loadingBar.style.width = (value * 100 / duration) + "%";
+                    }
+                },
+                enumerable: true
+            },
+            speed: {
+                get() { return speed; },
+                set(value) {
+                    if (Number.isFinite(value)) {
+                        speed = value;
+                    }
+                },
+                enumerable: true
+            },
+            volume: {
+                get() { return volume; },
+                set(value) {
+                    if (Number.isFinite(value)) {
+                        volume = value;
+                        setVolume(value);
+                    }
+                },
+                enumerable: true
+            },
+            isPlay: {
+                get() { return isPlay; },
+                set(value) {
+                    if (typeof value === "boolean") {
+                        if (value !== isPlay) {
+                            isPlay = value;
+                            setPlaybackStateStyle(value);
+                            this.#positionUpdater();
+                        }
+                    } else {
+                        isPlay = false;
+                        this.stopUpdater();
+                        setPlaybackStateStyle(false);
+                    }
+                },
+                enumerable: true
+            },
+            isRepeat: {
+                get() { return isRepeat; },
+                set(value) {
+                    if (value === isRepeat) return;
+                    if (typeof value === 'boolean' || value === 1 || value === null) {
+                        if (isRepeat === undefined || isRepeat === null) {
+                            isRepeat = value;
+                            updateRepeat(value, false);
+                            return;
+                        }
+                        isRepeat = value;
+                        updateRepeat(value, true);
 
-let State = { // current
-    track: undefined,
-    index: undefined, // Number
-    disliked: undefined,
-    likeItem: undefined,
-    coverLink: undefined,
-    coverItem: undefined,
-    isAutoScroll: false,
-    _volume: 0.5,
-    _speed: 1,
-    _duration: 0,
-    _position: 0,
-    _loaded: 0,
-    _isPlay: undefined,
-    _isRepeat: undefined,
-    _isShuffle: undefined,
-    
-    get duration() { return this._duration; },
-    set duration(value) {
-        if (Number.isFinite(value)) {
-            this._duration = value;
-            sliderProgress.maxScale = value;
-            durationSpan.innerHTML = getDurationAsString(value);
-        }
-    },
+                    }
+                },
+                enumerable: true
+            },
+            isShuffle: {
+                get() { return isShuffle; },
+                set(value) {
+                    if (value === isShuffle) return;
+                    if (typeof value === 'boolean' || value === null) {
+                        if (isShuffle === undefined || isShuffle === null) {
+                            isShuffle = value;
+                            updateShuffle(value, false);
+                            return;
+                        }
+                        isShuffle = value;
+                        updateShuffle(value, true);
 
-    get position() { return this._position; },
-    set position(value) {
-        if (Number.isFinite(value)) {
-            value = Number.parseFloat(value.toFixed(6));
-            if (value < 0) { 
-                value = 0 
-            } else if (value > this._duration) {
-                value = this._duration;
-            }
-            this._position = value;
-            this._currentTime = Date.now();
-            currentTime.innerHTML = getDurationAsString(value);
-            sliderProgress.setPosition(value);
-            if (this._isPlay == true && this.isUpdateTimer == false && value > 0) {
-                this._positionUpdater();
-            }
-        }
-    },
-
-    get loaded() { return this._loaded; },
-    set loaded(value) {
-        if (Number.isFinite(value)) {
-            this._loaded = value;
-            loadingBar.style.width = (value * 100 / this._duration) + "%";
-        }
-    },
-
-    get speed() { return this._speed; },
-    set speed(value) {
-        if (Number.isFinite(value)) {
-            this._speed = value;
-        }
-    },
-
-    get volume() { return this._volume; },
-    set volume(value) {
-        if (Number.isFinite(value)) {
-            this._volume = value;
-            setVolume(value);
-        }
-    },
-
-    get isPlay() { return this._isPlay; },
-    set isPlay(value) {
-        if (typeof value === "boolean") {
-            if (value !== this._isPlay) {
-                this._isPlay = value;
-                setPlaybackStateStyle(value);
-                this._positionUpdater();
-            }
-        } else {
-            this._isPlay = false;
-            this.stopUpdater();
-            setPlaybackStateStyle(false);
-        }
-    },
-
-    get isRepeat() { return this._isRepeat; },
-    set isRepeat(value) {
-        if (typeof value === 'boolean' || value === 1) {
-            if (value !== this._isRepeat) {
-                if (this._isRepeat == undefined) {
-                    this._isRepeat = value;
-                    updateRepeat(value, false);
-                    return;
-                }
-                this._isRepeat = value;
-                updateRepeat(value, true);
-            }
-        }
-    },
-    get isShuffle() { return this._isShuffle; },
-    set isShuffle(value) {
-        if (typeof value === 'boolean') {
-            if (value !== this._isShuffle) {
-                if (this._isShuffle == undefined) {
-                    this._isShuffle = value;
-                    updateShuffle(value, false);
-                    return;
-                }
-                this._isShuffle = value;
-                updateShuffle(value, true);
-            }
-        }
-    },
-
-    /**
-    * @param {object} progress - {duration, position, loaded}.
-    */
-    setProgress(progress){
-        if (typeof progress !== 'object') { return; }
-        this.duration = progress.duration;
-        this.position = progress.position;
-        this.loaded = progress.loaded;
-    },
-
-    isUpdateTimer: false,
-    _currentTime: 0,
-    _positionUpdaterId: undefined,
-    _positionUpdater() {
+                    }
+                },
+                enumerable: true
+            },
+        });
+    }
+    info = {
+        source: {},
+        tracks: []
+    }
+    track;
+    index; // Number
+    disliked;
+    likeItem;
+    coverLink;
+    coverItem;
+    isAutoScroll = false;
+    isUpdateTimer = false;
+    #currentTime = 0;
+    #positionUpdaterId = undefined;
+    #positionUpdater() {
         this.stopUpdater();
-        if (this._isPlay == false || this._position == 0) return;
+        if (this.isPlay == false || this.position == 0) return;
 
-        this._currentTime = Date.now();
+        this.#currentTime = Date.now();
         const updateTimer = () => {
-            if (Date.now() - this._currentTime >= 500) {
-                this.position += (Date.now() - this._currentTime) / 1000 * this._speed;
-                this._currentTime = Date.now();
+            if (Date.now() - this.#currentTime >= 500) {
+                this.position += (Date.now() - this.#currentTime) / 1000 * this.speed;
+                this.#currentTime = Date.now();
             }
-            if (this._position >= this._duration) {
+            if (this.position >= this.duration) {
                 this.stopUpdater();
                 return;
             }
-            if (this._position + 1 > this._loaded && this._position > 1) {
+            if (this.position + 1 > this.loaded && this.position + 1 < this.duration && this.position > 0) {
                 this.stopUpdater();
                 toggleLoadingWaitingBarDelay.start(true);
                 return;
             }
-        } 
-        this._positionUpdaterId = setInterval(updateTimer, 500);
+        }
+        this.#positionUpdaterId = setInterval(updateTimer, 500);
         this.isUpdateTimer = true;
-    },
+    }
     stopUpdater() {
         try {
             this.isUpdateTimer = false;
-            clearInterval(this._positionUpdaterId);
+            clearInterval(this.#positionUpdaterId);
             if (toggleLoadingWaitingBarDelay.isStarted || toggleLoadingWaitingBarDelay.isShown) {
                 toggleLoadingWaitingBarDelay.execute(false);
             }
         } catch (error) { console.log(error); }
     }
-}
+    /**
+    * @param {object} progress - {duration, position, loaded}.
+    */
+    setProgress({ duration, position, loaded }) {
+        if (duration >= 0) { this.duration = duration; }
+        if (position >= 0) { this.position = position; }
+        if (loaded >= 0) { this.loaded = loaded; }
+    }
+} 
+
+const Player = new PlayerInfo();
 
 let CurrentAnimation = {
     keyframe: undefined,
@@ -188,11 +208,11 @@ let CurrentAnimation = {
 }
 
 let updateTracksList = (trackInfo) => {
-    State.track = trackInfo.tracksList[trackInfo.index];
-    State.disliked = trackInfo.tracksList[trackInfo.index].disliked;
-    State.likeItem = likeItems[trackInfo.index];
+    Player.track = trackInfo.tracksList[trackInfo.index];
+    Player.disliked = trackInfo.tracksList[trackInfo.index].disliked;
+    Player.likeItem = likeItems[trackInfo.index];
 
-    PlayerInfo.source = trackInfo.sourceInfo;
+    Player.info.source = trackInfo.sourceInfo;
 
     // remove null object from tracksList
     for (let i = trackInfo.tracksList.length; i >= 0; i--) {
@@ -213,14 +233,14 @@ let setTitle = (title) => {
 
 let setTracksList = (list, index) => {
     try {
-        if (index >= 0 && State.index != index) {
+        if (index >= 0 && Player.index != index) {
             let allItem = document.querySelectorAll(".item-track");
             selectItem(allItem[index], index);
         }
-        if (equals(list, PlayerInfo.tracks)) { return; }
+        if (equals(list, Player.info.tracks)) { return; }
     } catch (error) {}
-    PlayerInfo.tracks = list;
-    setTitle(PlayerInfo.source);
+    Player.info.tracks = list;
+    setTitle(Player.info.source);
     let allItem = document.querySelectorAll(".item-track");
     clearList(allItem);
     likeItems = [];
@@ -229,7 +249,7 @@ let setTracksList = (list, index) => {
         trackPositionBottom.remove();    
     } catch (error) {}
     createListElement(list, index);
-    State.likeItem = likeItems[index];
+    Player.likeItem = likeItems[index];
 }
 
 let createListElement = (list, index) => {
@@ -243,8 +263,8 @@ let createListElement = (list, index) => {
         itemCover.setAttribute("loading", "lazy");
         itemCover.style.backgroundImage = "url(" + getUrl(list[i].cover) + ")";
         itemCover.onclick = (ev) => {
-            State.coverItem = itemCover;
-            openCover(itemCover, getUrl(list[i].cover, 400), openCoverAnimate);
+            Player.coverItem = itemCover;
+            openCover(itemCover, list[i].cover, openCoverAnimate);
         }
 
         let contentItemName = document.createElement("DIV");
@@ -280,17 +300,17 @@ let createListElement = (list, index) => {
             ev.stopPropagation();
             ev.stopImmediatePropagation();
             if (ev.target == itemTrack) {
-                if (!list[i].liked && !list[i].disliked && State.index == i) {
-                    State.likeItem = listLike;
-                    State.track = list[i];
+                if (!list[i].liked && !list[i].disliked && Player.index == i) {
+                    Player.likeItem = listLike;
+                    Player.track = list[i];
                     listLike.classList.add("list-dislike");
                     listLike.style.animation = "show-like 1s normal";
-                    State.endShowLike = (ev) => {
+                    Player.endShowLike = (ev) => {
                         listLike.style.animation = null;
-                        listLike.removeEventListener("animationend", State.endShowLike);
+                        listLike.removeEventListener("animationend", Player.endShowLike);
                     }
-                    listLike.removeEventListener("animationend", State.endShowLikeReverse);
-                    listLike.addEventListener("animationend", State.endShowLike);
+                    listLike.removeEventListener("animationend", Player.endShowLikeReverse);
+                    listLike.addEventListener("animationend", Player.endShowLike);
                 }
             }
         }
@@ -299,15 +319,15 @@ let createListElement = (list, index) => {
             ev.stopPropagation();
             ev.stopImmediatePropagation();
             if (ev.target == itemTrack) {
-                if (!list[i].liked && !list[i].disliked && State.index == i) {
-                    State.endShowLikeReverse = (ev) => {
+                if (!list[i].liked && !list[i].disliked && Player.index == i) {
+                    Player.endShowLikeReverse = (ev) => {
                         listLike.classList.remove("list-dislike");
-                        listLike.removeEventListener("animationend", State.endShowLikeReverse);
+                        listLike.removeEventListener("animationend", Player.endShowLikeReverse);
                         listLike.style.animation = null;
                         contentItemName.style.maxWidth = "";
                     }
-                    listLike.removeEventListener("animationend", State.endShowLike);
-                    listLike.addEventListener("animationend", State.endShowLikeReverse);
+                    listLike.removeEventListener("animationend", Player.endShowLike);
+                    listLike.addEventListener("animationend", Player.endShowLikeReverse);
                     listLike.style.animation = "show-like 1s reverse";
                 }
             }
@@ -315,12 +335,12 @@ let createListElement = (list, index) => {
 
         itemTrack.onclick = (ev) => {
             if (ev.target != listLike && ev.target != itemCover) {
-                if (State.index == i) {
+                if (Player.index == i) {
                     sendEvent("togglePause");
                 } else {
                     sendEvent({ play: i }, true); // send as object
-                    State.stopUpdater();
-                    if (!PlayerInfo.tracks[i].liked && !list[i].disliked) {
+                    Player.stopUpdater();
+                    if (!Player.info.tracks[i].liked && !list[i].disliked) {
                         listLike.classList.add("list-dislike");
                         listLike.style.animation = "show-like 1s normal";
                         let endShowLike = (ev) => {
@@ -373,50 +393,51 @@ let createListElement = (list, index) => {
     };
 }
 
-document.body.onmouseenter = () => { State.isAutoScroll = false; }
-document.body.onmouseleave = () => { State.isAutoScroll = true; }
+document.body.onmouseenter = () => { Player.isAutoScroll = false; }
+document.body.onmouseleave = () => { Player.isAutoScroll = true; }
 
 let listLikeControl = (listLike, list, index) => {
     listLike.onclick = () => {
-        if (State.index == index) {
-            if (State.disliked) {
-                State.likeFromPlaylist = true;
-                State.likeItem = listLike;
-                State.track = list;
+        if (Player.index == index) {
+            if (Player.disliked) {
+                Player.likeFromPlaylist = true;
+                Player.likeItem = listLike;
+                Player.track = list;
                 sendEvent("toggleDislike");
                 return;
             }
-            State.likeFromPlaylist = true;
-            State.likeItem = listLike;
-            State.track = list;
+            Player.likeFromPlaylist = true;
+            Player.likeItem = listLike;
+            Player.track = list;
             sendEvent("toggleLike");
         }
     }
-    listLike.onLongPress = new LongPressButton(listLike, () => {
-        if (State.index == index) {
-            State.likeFromPlaylist = true;
-            State.likeItem = listLike;
-            State.track = list;
+    listLike.onlongpress = () => {
+        console.log("onlongpress");
+        if (Player.index == index) {
+            Player.likeFromPlaylist = true;
+            Player.likeItem = listLike;
+            Player.track = list;
             sendEvent("toggleDislike");
         }
 
-    });
+    }
 }
 
 // call from extension.js
 let toggleListLike = (isLike) => {
-    let contentItemName = document.querySelectorAll(".content-item-name")[State.index];
+    let contentItemName = document.querySelectorAll(".content-item-name")[Player.index];
     if (isLike) {
-        State.track.liked = isLike;
-        State.likeItem.classList.remove("list-dislike");
-        State.likeItem.classList.add("list-like");
+        Player.track.liked = isLike;
+        Player.likeItem.classList.remove("list-dislike");
+        Player.likeItem.classList.add("list-like");
         contentItemName.style.maxWidth = contentItemName.innerWidth - 35 + "px";
     } else {
-        State.track.liked = isLike;
-        State.likeItem.classList.remove("list-like");
-        if (State.likeFromPlaylist == true) {
-            State.likeItem.classList.add("list-dislike");
-            State.likeFromPlaylist = false;
+        Player.track.liked = isLike;
+        Player.likeItem.classList.remove("list-like");
+        if (Player.likeFromPlaylist == true) {
+            Player.likeItem.classList.add("list-dislike");
+            Player.likeFromPlaylist = false;
         } else {
             contentItemName.style.maxWidth = "";
         }
@@ -433,23 +454,23 @@ let setDislikedStyle = (item, isDisliked) => {
 }
 
 let toggleListDisliked = (isDisliked) => {
-    let contentItemName = document.querySelectorAll(".content-item-name")[State.index];
+    let contentItemName = document.querySelectorAll(".content-item-name")[Player.index];
     if (isDisliked) {
-        State.track.disliked = isDisliked;
-        State.likeItem.classList.remove("list-dislike");
-        State.likeItem.classList.remove("list-like");
-        State.likeItem.classList.add("list-disliked");
+        Player.track.disliked = isDisliked;
+        Player.likeItem.classList.remove("list-dislike");
+        Player.likeItem.classList.remove("list-like");
+        Player.likeItem.classList.add("list-disliked");
         contentItemName.style.maxWidth = contentItemName.innerWidth - 35 + "px";
         setDislikedStyle(selectedItem, isDisliked);
         contentItemName.style.maxWidth = contentItemName.innerWidth - 35 + "px";
     } else {
-        State.track.disliked = isDisliked;
-        State.likeItem.classList.remove("list-like");
-        State.likeItem.classList.remove("list-disliked");
+        Player.track.disliked = isDisliked;
+        Player.likeItem.classList.remove("list-like");
+        Player.likeItem.classList.remove("list-disliked");
         setDislikedStyle(selectedItem, isDisliked);
-        if (State.likeFromPlaylist == true) {
-            State.likeItem.classList.add("list-dislike");
-            State.likeFromPlaylist = false;
+        if (Player.likeFromPlaylist == true) {
+            Player.likeItem.classList.add("list-dislike");
+            Player.likeFromPlaylist = false;
         } else {
             contentItemName.style.maxWidth = "";
         }
@@ -490,76 +511,64 @@ let getArtists = (list, numberOf = 3) => {
 }
 
 let selectItem = (item, index) => {
-    try {
-        if (State.track.liked == false) {
-            State.likeItem.classList.remove("list-dislike");
-        }
-    } catch (error) {}
     if (previousSelectItem != undefined) {
         previousSelectItem.classList.remove("selected-item");
     }
     item.classList.add("selected-item");
     previousSelectItem = item;
     selectedItem = item;
-    State.index = index;
+    Player.index = index;
     let getSelectedItem = document.getElementsByClassName("selected-item")[0];
     if (getSelectedItem) { // the selectedItem did not fully rendered
         checkTrackPosition();
     }
-    if (State.isAutoScroll) {
+    if (Player.isAutoScroll) {
         selectedItem.scrollIntoView({ block: "center", behavior: "smooth" });
     }
 }
 
-let trackPositionId;
 let isTrackPosition = false;
+let showTrackPosition = new ExecutionDelay(
+    (position) => {
+        if (isTrackPosition) {
+            let = keyframe = {
+                opacity: [0, 1]
+            };
+            if (position === "top") {
+                trackPositionTop.style.display = "block";
+                trackPositionBottom.style.display = "none";
+                trackPositionTop.animate(keyframe, { duration: 700 });
+            } else if (position === "bottom") {
+                trackPositionTop.style.display = "none";
+                trackPositionBottom.style.display = "block";
+                trackPositionBottom.animate(keyframe, { duration: 700 });
+            }
+        }
+
+    }, { delay: 200 }
+);
+
 let checkTrackPosition = (from) => {
-    let top = selectedItem.getClientRects()[0].top;
-    if (Extension.windowName != "extension") {
-        top  = top - 120; // 120px top in popup
-    }
-    if (top < 0) {
+    let { height, top } = selectedItem.getClientRects()[0];
+    let playlistTop = playlist.getClientRects()[0].top - height;
+
+    if (playlistTop > top) {
         if (isTrackPosition == false) {
-            clearTimeout(trackPositionId);
             isTrackPosition = true;
-            trackPositionId = setTimeout(() => {
-                if (isTrackPosition) {
-                    let = keyframe = {
-                        opacity: [0, 1]
-                    };
-                    trackPositionTop.style.display = "block";
-                    trackPositionBottom.style.display = "none";
-                    trackPositionTop.animate(keyframe, { duration: 700 })
-                }
-
-
-            }, 200);
+            showTrackPosition.start("top");
         }
         return;
-    }
-
-    if (selectedItem.getClientRects()[0].top > innerHeight) {
+    } else if (top > innerHeight) {
         if (isTrackPosition == false) {
-            clearTimeout(trackPositionId);
-
             isTrackPosition = true;
-            trackPositionId = setTimeout(() => {
-                if (isTrackPosition) {
-                    let = keyframe = {
-                        opacity: [0, 1]
-                    };
-                    trackPositionTop.style.display = "none";
-                    trackPositionBottom.style.display = "block";
-                    trackPositionBottom.animate(keyframe, { duration: 700 })
-                }
-            }, 200);
+            showTrackPosition.start("bottom");
         }
         return;
     }
     // remove track position
     if (isTrackPosition == false) { return; }
-    clearTimeout(trackPositionId);
     isTrackPosition = false;
+    showTrackPosition.stop();
     let = keyframe = {
         opacity: [1, 0]
     };
@@ -577,7 +586,7 @@ let checkTrackPosition = (from) => {
 
 let scrollToSelected = () => {
     if (!isFirstScroll) {
-        if (PlayerInfo.tracks.length > 0) {
+        if (Player.info.tracks.length > 0) {
             selectedItem.scrollIntoView({ block: "center", behavior: "smooth" });
         }
         isFirstScroll = true;
@@ -615,10 +624,11 @@ let setVolume = (volume) => {
 }
 
 let updateRepeat = (repeat, isUpdate = false) => {
-    if (repeat == null) {
+    if (repeat === null) {
         toggleRepeat.style.display = "none";
         return;
     }
+    if (toggleRepeat.style.display == "none") { toggleRepeat.style.display = ""; }
     if (repeat === true) {
         if (isUpdate) showNotification(chrome.i18n.getMessage("playListRepeatOn"), 5000);
         if (toggleRepeat.classList.contains('toggle-active') == false) {
@@ -645,10 +655,11 @@ let updateRepeat = (repeat, isUpdate = false) => {
 }
 
 let updateShuffle = (shuffle, isUpdate = false) => {
-    if (shuffle == null) {
+    if (shuffle === null) {
         toggleShuffle.style.display = "none";
         return;
     }
+    if (toggleShuffle.style.display == "none") { toggleShuffle.style.display = ""; }
     if (shuffle === true) {
         if (isUpdate) showNotification(chrome.i18n.getMessage("randomOrder"), 6000);
         if (toggleShuffle.classList.contains('toggle-active') == false) {

@@ -201,20 +201,20 @@ let sliderVolumeContent = document.getElementsByClassName("slider-content")[0];
 let sliderVolume = new Slider(sliderVolumeElement, currentGrooveVol, handleVol, tooltipVol);
 
 const sendVolumeDelay = new ExecutionDelay(() => {
-    sendEvent({ setVolume: sliderVolume.scale / 100 }, false, true);
+    sendEvent({ setVolume: sliderVolume.scale / 100 }, true);
 }, {
     delay: 200,
     isThrottling: true
 });
 
-sliderVolume.onmousemovedown = () => { sendVolumeDelay.start(); }
+sliderVolume.onmousemovedown = sendVolumeDelay.start.bind(sendVolumeDelay);
 
 sliderVolume.onmousedown = (event) => {
     sliderVolume.setTooltipPosition(event);
-    sendEvent({ setVolume: sliderVolume.scale / 100 }, false, true);
+    sendEvent({ setVolume: sliderVolume.scale / 100 }, true);
 }
 sliderVolume.onwheel = () => {
-    sendEvent({ setVolume: sliderVolume.scale / 100 }, false, true);
+    sendEvent({ setVolume: sliderVolume.scale / 100 }, true);
 }
 
 // slider progress and time of track
@@ -244,8 +244,8 @@ const sendPositionDelay = new ExecutionDelay((event) => {
 let seconds;
 sliderProgress.onmousemove = (event) => {
     seconds = getSeconds(event.x - sliderProgress.groove.offsetLeft);
-    if (seconds > State.duration) {
-        seconds = State.duration;
+    if (seconds > Player.duration) {
+        seconds = Player.duration;
     } else if (seconds < 0) {
         seconds = 0;
     }
@@ -262,16 +262,16 @@ sliderProgress.onmousedown = (event) => {
 
 sliderProgress.onwheel = (event) => {
     let seconds = event.deltaY < 0 ? 4 : -4;
-    sliderProgress.setTooltipData(getDurationAsString(State.position + seconds));
-    setTime(State.position + seconds);
+    sliderProgress.setTooltipData(getDurationAsString(Player.position + seconds));
+    setTime(Player.position + seconds);
 }
 
-const getSeconds = function (currentPosition, duration = State.duration) {
+const getSeconds = function (currentPosition, duration = Player.duration) {
     return parseFloat((currentPosition / sliderProgress.groove.offsetWidth * duration).toFixed(6));
 }
 
 function setTime(seconds) {
-    State.position = seconds;
+    Player.position = seconds;
     sendEvent({
         data: "setTime",
         time: seconds,
@@ -282,7 +282,7 @@ const loadingWaitingBar = document.getElementsByClassName('loading-waiting-bar')
 const toggleLoadingWaitingBarDelay = new ExecutionDelay({ delay: 1000 });
 toggleLoadingWaitingBarDelay.setFunction(function (show = true) {
     if (show) {
-        const percent = 100 - State.position * 100 / State.duration;
+        const percent = 100 - Player.position * 100 / Player.duration;
         loadingWaitingBar.style.width = percent + '%';
         loadingWaitingBar.style.display = 'block';
         this.isShown = true;

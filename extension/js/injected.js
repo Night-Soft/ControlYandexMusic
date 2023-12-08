@@ -1,7 +1,8 @@
 let YandexMusicControl = {
     id: "UnknowId",
     port: undefined,
-    actionHandler: undefined
+    mediaSession: undefined,
+    MediaMetadata: undefined
 }
 
 let getArtists = (list) => {
@@ -28,70 +29,55 @@ let getArtists = (list) => {
     }
 }
 
-let setMediaSession = () => {
-    let current = externalAPI.getCurrentTrack();
-    let iconTrack;
-    if (current == undefined) {
-        return;
-    }
-    iconTrack = current.cover;
-    if (iconTrack == undefined) {
-        iconTrack = 'img/icon.png'
-    } else {
-        iconTrack = iconTrack.slice(0, -2);
-        iconTrack = 'https://' + iconTrack; // + "400x400"
-    }
-    navigator.mediaSession.metadata = new MediaMetadata({
-        title: current.title,
-        artist: getArtists(externalAPI.getCurrentTrack()),
-        artwork: [
-            { src: iconTrack + "50x50", sizes: "50x50", type: "image/jpeg" },
-            { src: iconTrack + "80x80", sizes: "80x80", type: "image/jpeg" },
-            { src: iconTrack + "100x100", sizes: "100x100", type: "image/jpeg" },
-            { src: iconTrack + "200x200", sizes: "200x200", type: "image/jpeg" },
-            { src: iconTrack + "300x300", sizes: "300x300", type: "image/jpeg" },
-            { src: iconTrack + "400x400", sizes: "400x400", type: "image/jpeg" },
-        ]
-    });
-    if (externalAPI.isPlaying()) {
-        navigator.mediaSession.playbackState = "playing";
-    } else {
-        navigator.mediaSession.playbackState = "paused";
-    }
-    //setActionHandler();
+let setMediaMetaData = () => {
+    const currentTrack = externalAPI.getCurrentTrack();
+    if(!currentTrack) return;
+    let { title, cover, album } = currentTrack;
 
+    if (cover == undefined) {
+        cover = 'img/icon.png'
+    } else {
+        cover = cover.slice(0, -2);
+        cover = 'https://' + cover; // + "400x400"
+    }
+
+    const newMetaData = {
+        title: title,
+        album: album.title,
+        artist: getArtists(externalAPI.getCurrentTrack()),
+        artwork: [30, 50, 80, 100, 200, 300, 400].map(size => {
+            size = size + "x" + size;
+            return { src: cover + size, sizes: size, type: "image/jpg" }
+        })
+    }
+
+    YandexMusicControl.mediaSession.metadata = new YandexMusicControl.MediaMetadata(newMetaData);
 }
 
 let setActionHandler = () => {
     if ('mediaSession' in navigator) {
-        navigator.mediaSession.setActionHandler('play', function() {
-            navigator.mediaSession.playbackState = "playing";
-            togglePauseKey();
-        });
-        navigator.mediaSession.setActionHandler('pause', function() {
-            navigator.mediaSession.playbackState = "paused";
-            togglePauseKey();
-        });
-        navigator.mediaSession.setActionHandler('previoustrack', function() {
-            previousKey();
-        });
-        navigator.mediaSession.setActionHandler('nexttrack', function() {
-            nextKey();
+        YandexMusicControl.MediaMetadata = MediaMetadata;
+        YandexMusicControl.mediaSession = navigator.mediaSession;
+
+        MediaMetadata = class { constructor({ }) {} };
+        Object.defineProperty(navigator, 'mediaSession', {
+            value: {
+                setActionHandler() {}
+            }
         });
 
-        navigator.mediaSession.setActionHandler('seekbackward', function() {
+        YandexMusicControl.mediaSession.setActionHandler('play', togglePauseKey);
+        YandexMusicControl.mediaSession.setActionHandler('pause', togglePauseKey);
+        YandexMusicControl.mediaSession.setActionHandler('previoustrack', previousKey);
+        YandexMusicControl.mediaSession.setActionHandler('nexttrack', nextKey);
+        YandexMusicControl.mediaSession.setActionHandler('seekbackward', function () {
             externalAPI.setPosition(externalAPI.getProgress().position - 10)
         });
-
-        navigator.mediaSession.setActionHandler('seekforward', function() {
+        YandexMusicControl.mediaSession.setActionHandler('seekforward', function () {
             externalAPI.setPosition(externalAPI.getProgress().position + 10)
         });
-
-        // need to set empty function, because Yandex.Music overrides the ActionHandler when switching tracks.
-        // may be Yandex music was updated in November-December 2022
-        YandexMusicControl.actionHandler = navigator.mediaSession.setActionHandler;  
-        navigator.mediaSession.setActionHandler = ()=>{};
     }
+
 }
 
 function getTracks() {
@@ -135,6 +121,7 @@ function toggleLike() {
         isLiked: externalAPI.getCurrentTrack().liked
     });
 }
+
 let toggleDislike = () => {
     externalAPI.toggleDislike();
     chrome.runtime.sendMessage(YandexMusicControl.id, {
@@ -144,6 +131,7 @@ let toggleDislike = () => {
 }
 
 let previousKey = () => {
+    chrome.runtime.sendMessage(YandexMusicControl.id, { event: "change_track" });
     let promise = externalAPI.prev();
     promise.then(
         function() {
@@ -154,6 +142,7 @@ let previousKey = () => {
             });
         });
 }
+
 let togglePauseKey = () => {
     externalAPI.togglePause();
     chrome.runtime.sendMessage(YandexMusicControl.id, {
@@ -163,7 +152,9 @@ let togglePauseKey = () => {
     });
     getTracks();
 }
+
 let nextKey = () => {
+    chrome.runtime.sendMessage(YandexMusicControl.id, { event: "change_track" });
     let promise = externalAPI.next();
     promise.then(function() {
         chrome.runtime.sendMessage(YandexMusicControl.id, {
@@ -173,6 +164,7 @@ let nextKey = () => {
         });
     });
 }
+
 let toggleLikeKey = () => {
     externalAPI.toggleLike();
     chrome.runtime.sendMessage(YandexMusicControl.id, {
@@ -196,9 +188,11 @@ window.addEventListener("message", function(event) {
             togglePause();
             break;
         case 'previous':
+            chrome.runtime.sendMessage(YandexMusicControl.id, { event: "change_track" });
             previous();
             break;
         case 'next':
+            chrome.runtime.sendMessage(YandexMusicControl.id, { event: "change_track" });
             next();
             break;
         case 'setTime':
@@ -231,9 +225,12 @@ window.addEventListener("message", function(event) {
 
     if (event.data.id) {
         YandexMusicControl.id = event.data.id;
-        setMediaSession();
+        setMediaMetaData();
     }
-    if (event.data.play) { externalAPI.play(event.data.play); }
+    if (event.data.play) { 
+        chrome.runtime.sendMessage(YandexMusicControl.id, { event: "change_track" });
+        externalAPI.play(event.data.play); 
+    }
     if (event.data.toggleVolume) { externalAPI.toggleMute(); }
     if (event.data.toggleRepeat) { externalAPI.toggleRepeat(); }
     if (event.data.toggleShuffle) { externalAPI.toggleShuffle(); }
@@ -261,15 +258,17 @@ externalAPI.on(externalAPI.EVENT_TRACKS_LIST, function() {
 
 // play, pause, change track
 externalAPI.on(externalAPI.EVENT_STATE, function() { 
+    let progress = externalAPI.getProgress();
+    if (progress.duration == 0) return;
     chrome.runtime.sendMessage(YandexMusicControl.id, {
         event: "STATE",
         isPlaying: externalAPI.isPlaying(),
-        progress: externalAPI.getProgress(),
+        progress: progress,
     });
     if (externalAPI.isPlaying()) {
-        navigator.mediaSession.playbackState = "playing";
+        YandexMusicControl.mediaSession.playbackState = "playing";
     } else {
-        navigator.mediaSession.playbackState = "paused";
+        YandexMusicControl.mediaSession.playbackState = "paused";
     }
 });
 
@@ -304,7 +303,7 @@ let prevPosition = 0,
 externalAPI.on(externalAPI.EVENT_TRACK, function() {
     prevPosition = 0;
     getTracks();
-    setMediaSession();
+    setMediaMetaData();
 });
 
 const sendProgress = new ExecutionDelay((progress) => {

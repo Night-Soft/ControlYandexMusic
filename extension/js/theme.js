@@ -185,12 +185,12 @@ let setIncreaseCover = (isIncrease = false) => {
         rootCss.style.setProperty('--pixselsForReduce', '20px');
         rootCss.style.setProperty('--coverBackgroundSize', '35px');
         Options.isReduce = true;
-        try { setPlaybackStateStyle(State.isPlay || false); } catch (error) { console.log(error); }
+        try { setPlaybackStateStyle(Player.isPlay || false); } catch (error) { console.log(error); }
     } else {
         rootCss.style.setProperty('--pixselsForReduce', '0px');
         rootCss.style.setProperty('--coverBackgroundSize', '45px');
         Options.isReduce = false;
-        try { setPlaybackStateStyle(State.isPlay || false); } catch (error) { console.log(error); }
+        try { setPlaybackStateStyle(Player.isPlay || false); } catch (error) { console.log(error); }
     }
 }
 
@@ -222,18 +222,3 @@ let disabledOptions = (list, listCheckBox, turnOn = false) => {
         }
     }
 }
-
-HTMLDivElement.prototype.setStyle = function(style) {
-    if (typeof style != 'object') {
-        try {
-            throw new Error(`The "${style}" is not Object!`);
-        } catch (error) {
-            console.error(error);
-        }
-        return;
-    }
-    let keys = Object.keys(style);
-    for (let i = 0; i < keys.length; i++) {
-        this.style[keys[i]] = style[keys[i]];
-    }
-  };
