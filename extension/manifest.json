@@ -4,7 +4,7 @@
     "description": "__MSG_appDesc__",
     "short_name": "__MSG_shortName__",
     "default_locale": "en",
-    "version": "3.3.4",
+    "version": "3.3.5",
     "web_accessible_resources": [{
         "resources": ["js/ExecutionDelay.js", "js/injected.js", "./what-new.json"],
         "matches": ["https://music.yandex.ua/*", "https://music.yandex.ru/*", "https://music.yandex.by/*", "https://avatars.yandex.net/*"]
