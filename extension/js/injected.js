@@ -258,14 +258,12 @@ externalAPI.on(externalAPI.EVENT_TRACKS_LIST, function() {
 
 // play, pause, change track
 externalAPI.on(externalAPI.EVENT_STATE, function() { 
-    let progress = externalAPI.getProgress();
-    if (progress.duration == 0) return;
-    chrome.runtime.sendMessage(YandexMusicControl.id, {
-        event: "STATE",
-        isPlaying: externalAPI.isPlaying(),
-        progress: progress,
-    });
-    if (externalAPI.isPlaying()) {
+    const progress = externalAPI.getProgress();
+    const isPlaying = externalAPI.isPlaying();
+    if (progress.duration == 0 && isPlaying == false) return;
+
+    chrome.runtime.sendMessage(YandexMusicControl.id, { event: "STATE", isPlaying, progress });
+    if (isPlaying) {
         YandexMusicControl.mediaSession.playbackState = "playing";
     } else {
         YandexMusicControl.mediaSession.playbackState = "paused";
