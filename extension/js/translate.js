@@ -1,7 +1,6 @@
 let Translate = {
     onload: function() {
         title[0].innerHTML = chrome.i18n.getMessage("title");
-        title[1].innerHTML = chrome.i18n.getMessage("title");
         about.innerHTML = chrome.i18n.getMessage("about");
         contactMe.innerHTML = chrome.i18n.getMessage("contactMe");
         shortCuts.innerHTML = chrome.i18n.getMessage("openShortcuts");
