@@ -8,6 +8,7 @@ body {
     margin: 5px;
     background: black;
     background: linear-gradient(0deg, #FF5555 0%, #ffdd00 100%);
+    font-family: var(--fontFamily);
     width: 400px;
     color: var(--color);
     border-radius: 5px;
@@ -700,7 +701,6 @@ a {
     position: absolute;
     display: inline-block;
     cursor: pointer;
-    z-index: +2;
     top: 0px;
 }
 
@@ -715,7 +715,7 @@ a {
     position: absolute;
     display: inline-block;
     cursor: pointer;
-    z-index: +3;
+    z-index: +2;
     top: 0px;
     right: 5px;
 }
@@ -1046,6 +1046,7 @@ a {
 .change .bar1 {
     -webkit-transform: rotate(-45deg) translate(-8px, 6px);
     transform: rotate(-45deg) translate(-8px, 8px);
+    opacity: 0;
 }
 
 .change .bar2 {
@@ -1055,12 +1056,15 @@ a {
 .change .bar3 {
     -webkit-transform: rotate(45deg) translate(-8px, -8px);
     transform: rotate(45deg) translate(-8px, -8px);
+    opacity: 0;
 }
 
 .change-list .bar-list1 {
     -webkit-transform: rotate(-45deg) translate(-15px, 0px);
     transform: rotate(-45deg) translate(-15px, 0px);
     width: 35px;
+    opacity: 0;
+
 }
 
 .change-list .bar-list2 {
@@ -1071,6 +1075,8 @@ a {
     -webkit-transform: rotate(45deg) translate(-15px, 0px);
     transform: rotate(45deg) translate(-15px, 0px);
     width: 35px;
+    opacity: 0;
+
 }
 
 .change-list .bar-list1::before {
