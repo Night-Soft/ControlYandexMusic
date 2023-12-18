@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500&display=swap');
 
 body {
     --bodyOpacity: 0;
@@ -50,14 +50,15 @@ h6 {
     margin-top: 5px;
 }
 
-h4 {
-    font-weight: bolder;
+h3 {
+    font-weight: 500;
 }
 
 a {
     background: white;
     padding: 3px 5px 5px;
     border-radius: 5px;
+    margin-left: 4px;
 }
 
 #headAllows {
@@ -129,7 +130,7 @@ a {
 
 .name-track {
     font-size: 1.4rem;
-    font-weight: bold;
+    font-weight: 500;
     margin: 0px;
 }
 
@@ -1145,12 +1146,12 @@ a {
 label {
     margin-left: 10px;
     cursor: pointer;
-    font-weight: bold;
+    font-weight: 500;
     vertical-align: middle;
 }
 
 .subtitle {
-    font-weight: bold;
+    font-weight: 500;
 }
 
 .list-menu {
@@ -1381,6 +1382,13 @@ label {
     bottom: 0px;
     background: var(--mainRed);
     font-size: 1em
+}
+
+.write-to {
+    height: 22px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .buttons {
