@@ -1,6 +1,5 @@
 const { performance } = require('node:perf_hooks');
 const fs = require("fs");
-//const { version } = require("process");
 const beautify = require('beautify');
 
 const red = '\x1b[0;31m';
@@ -9,24 +8,41 @@ const clear = '\x1b[0m';
 
 const enter = async () => {
   if (process.argv.length <= 2) {
-    console.log(red + "Parameters undefined!" + clear);
+    enterVersion();    
     return;
   }
-  for (let i = 2; i < process.argv.length; i++) {
-    switch (process.argv[i]) {
-      case "-release":
-        await buildRelease("release");
-        await buildRelease('release', "edge");
-        break;
-      case "-pre-release":
-        preRelease("pre-release");
-        break;
-      case "-dev":
-        buildDev("dev");
-        break;
-    }
-  }
+  selectVersion(process.argv[2].slice(1));
   return;
+}
+
+const enterVersion = function () {
+  const readline = require('readline').createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+  
+  readline.question('Enter one of the build versions: "dev", "pre-release", "release".\nversion:', version => {
+    selectVersion(version)
+    readline.close();
+  });
+}
+
+const selectVersion = async function (version) {
+  switch (version) {
+    case "release":
+      await buildRelease("release");
+      await buildRelease('release', "edge");
+      break;
+    case "pre-release":
+      preRelease("pre-release");
+      break;
+    case "dev":
+      buildDev("dev");
+      break;
+    default:
+      console.log(red + "Incorrect build version!" + clear);
+      break;
+  }
 }
 
 const readJson = async (path) => {
@@ -58,7 +74,6 @@ const createManifest = async (version = "release") => {
       readJson("./build.json").then(build => {
         const ignore = build.ignore;
         delete build.ignore;
-        manifest.version = build.version;
         resolve({ manifest: merge(manifest, build[version]), ignore });
       });
     });
