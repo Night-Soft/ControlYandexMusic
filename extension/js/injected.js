@@ -227,7 +227,7 @@ window.addEventListener("message", function(event) {
         YandexMusicControl.id = event.data.id;
         setMediaMetaData();
     }
-    if (event.data.play) { 
+    if (event.data.play >= 0) { 
         chrome.runtime.sendMessage(YandexMusicControl.id, { event: "change_track" });
         externalAPI.play(event.data.play); 
     }
