@@ -47,6 +47,9 @@
     "continue": {
         "message": "Continue"
     },
+    "cancel": {
+        "message": "Cancel"
+    },
     "reload": {
         "message": "Reload"
     },
@@ -99,10 +102,10 @@
         "message": "Dark"
     },
     "increaseCover": {
-        "message": "Reduce the control buttons and increase the cover"
+        "message": "Reduce the control buttons and enlarge the image"
     },
     "whatNew": {
-        "message": "What's new?"
+        "message": "What's New"
     },
     "addDislikeButton": {
         "message": "Add a dislike button"
@@ -121,9 +124,6 @@
     },
     "isNoKeyAction": {
         "message": "There is no shortcut key set for this action!"
-    },
-    "checkBoxSavePos": {
-        "message": "Save the position and size of the popup."
     },
     "shortcutKeyOpenPopup": {
         "message": "Select a shortcut key to open and activate the popup. (The default shortcut key will be reassigned)."
@@ -147,7 +147,7 @@
         "message": "The window already exists!"
     },
     "allNotifications": {
-        "message": "Notification every time a track is switched."
+        "message": "Notification every time a track is switched"
     },
     "repeatOf": {
         "message": "Repeat is turned off"
@@ -166,6 +166,47 @@
     },
     "playlistEmpty": {
         "message": "Your playlist is empty!"
+    },
+    "stepChange": {
+        "message": "Change step when scrolling with a roller:"
+    },
+    "secondsPosition": {
+        "message": "seconds:"
+    },
+    "interestVolume": {
+        "message": "volume:"
+    },
+    "showMore": {
+        "message": "Show more"
+    },
+    "hide": {
+       "message": "Hide"
+    },
+    "pinTab": {
+        "message": "Auto-pin Yandex.Music tab"
+    },
+    "pinTabNow": {
+        "message": "Pin a tab now?"
+    },
+    "tabPinned": {
+        "message": "The tab is pinned"
+    },
+    "unpinTab": {
+        "message": "Unpin a tab?"
+    },
+    "tabUnpinned": {
+        "message": "The tab is unpinned"
+    },
+    "previousPopupSize": {
+        "message": "Previous popup size:"
+    },
+    "defaultPopupSize": {
+        "message": "Default popup size:"
+    },
+    "usePrevSize": {
+        "message": "Use previous popup size"
+    },
+    "useCurrnetSize": {
+        "message": "Use current popup size"
     }
-
 }
