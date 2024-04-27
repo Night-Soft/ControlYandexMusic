@@ -37,24 +37,26 @@ let Translate = {
         let defaultTheme = document.getElementById("DefaultTheme");
         let lightTheme = document.getElementById("LightTheme");
         let darkTheme = document.getElementById("DarkTheme");
-        defaultTheme.parentNode.lastElementChild.innerHTML = chrome.i18n.getMessage("defaultTheme");
-        lightTheme.parentNode.lastElementChild.innerHTML = chrome.i18n.getMessage("lightTheme");
-        darkTheme.parentNode.lastElementChild.innerHTML = chrome.i18n.getMessage("darkTheme");
+        defaultTheme.lastChild.innerHTML = chrome.i18n.getMessage("defaultTheme");
+        lightTheme.lastChild.innerHTML = chrome.i18n.getMessage("lightTheme");
+        darkTheme.lastChild.innerHTML = chrome.i18n.getMessage("darkTheme");
         let checkBoxIncreaseCover = document.getElementById("checkBoxIncreaseCover");
         checkBoxIncreaseCover.innerHTML = chrome.i18n.getMessage("increaseCover");
         let addDislikeButton = document.getElementById("checkBoxDislikeButton");
         addDislikeButton.innerHTML = chrome.i18n.getMessage("addDislikeButton");
-        let checkBoxSavePosT = document.getElementById("checkBoxSavePos");
-        checkBoxSavePosT.innerHTML = chrome.i18n.getMessage("checkBoxSavePos");
         let checkBoxReassignT = document.getElementById("checkBoxReassign");
         checkBoxReassignT.innerHTML = chrome.i18n.getMessage("noShortcutSelected");
-        let shortcutKeyOpenPopup = document.getElementById("shortcutKeyOpenPopup");;
+        let shortcutKeyOpenPopup = document.getElementById("shortcutKeyOpenPopup");
         shortcutKeyOpenPopup.innerHTML = chrome.i18n.getMessage("shortcutKeyOpenPopup");
         let selectedShortcutKeyT = document.getElementsByClassName("select-shortcut-key")[0];
         selectedShortcutKeyT.innerHTML = chrome.i18n.getMessage("selectedShortcutKey");
         let allNotifications = document.getElementById("allNotifications");
         allNotifications.innerHTML = chrome.i18n.getMessage("allNotifications");
+        pinTab.innerHTML = chrome.i18n.getMessage("pinTab");
+        document.getElementById("StepChange").innerHTML = chrome.i18n.getMessage("stepChange");
+        document.getElementById("SecondsPosition").innerHTML = chrome.i18n.getMessage("secondsPosition");
+        document.getElementById("InterestVolume").innerHTML = chrome.i18n.getMessage("interestVolume");
     }
 }
 
-FileReady.on("Translate");
+EventEmitter.emit("Translate");

@@ -50,7 +50,7 @@ h6 {
     margin-top: 5px;
 }
 
-h3 {
+h3, h2 {
     font-weight: 500;
 }
 
@@ -59,6 +59,9 @@ a {
     padding: 3px 5px 5px;
     border-radius: 5px;
     margin-left: 4px;
+}
+span {
+    align-self: center;
 }
 
 #headAllows {
@@ -82,16 +85,18 @@ a {
 }
 
 .control {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     background-color: var(--backgroundControl);
     border-radius: 50%;
-    border-style: solid;
-    border-color: var(--mainRed);
     text-align: center;
     width: calc(70px - var(--pixselsForReduce));
     height: calc(70px - var(--pixselsForReduce));
     align-self: center;
     background-size: var(--coverBackgroundSize);
-    filter: drop-shadow(0px 0px 2px rgb(0 0 0 / 20%))
+    filter: drop-shadow(0px 0px 2px rgb(0 0 0 / 20%));
+    cursor: pointer;
 }
 
 .control:hover {
@@ -102,30 +107,39 @@ a {
     background-color: rgba(85, 82, 99, 0.45);
 }
 
-.previous {
-    cursor: pointer;
-    cursor: pointer;
-    background-image: url(../img/previous.png);
-    background-repeat: no-repeat, repeat;
-    background-position: center;
-}
-
-.next {
-    cursor: pointer;
-    cursor: pointer;
-    background-image: url(../img/next.png);
-    background-repeat: no-repeat, repeat;
-    background-position: center;
-}
-
 .pause {
-    cursor: pointer;
-    background-image: url(../img/pause.png);
-    background-repeat: no-repeat, repeat;
-    background-position: center;
     width: calc(90px - var(--pixselsForReduce));
     height: calc(90px - var(--pixselsForReduce));
-    background-size: calc(15px + var(--coverBackgroundSize));
+}
+.svg-prev {
+    width: var(--coverBackgroundSize);
+    height: var(--coverBackgroundSize);
+}
+.svg-pause {
+    display: none;
+    width: calc(15px + var(--coverBackgroundSize));
+    height: calc(15px + var(--coverBackgroundSize));
+}
+.svg-play {
+    width: calc(15px + var(--coverBackgroundSize));
+    height: calc(15px + var(--coverBackgroundSize));
+}
+.svg-next {
+    width: var(--coverBackgroundSize);
+    height: var(--coverBackgroundSize);  
+}
+
+.svg-outside-color {
+    fill: var(--progress);
+    transition: var(--transitionDuration);
+}
+.svg-main-color {
+    fill: var(--topButtonColor);
+    transition: var(--transitionDuration);
+}
+.svg-main-color-stroke {
+    stroke: var(--topButtonColor);
+    transition: var(--transitionDuration);
 }
 
 .name-track {
@@ -141,7 +155,7 @@ a {
 
 .like {
     cursor: pointer;
-    background-image: url(../img/no-like.png);
+    background-image: url(../img/not-liked.png);
     background-repeat: no-repeat, repeat;
     background-position: center;
 }
@@ -172,7 +186,7 @@ a {
     -webkit-mask-size: 30px;
     -webkit-mask-repeat: no-repeat;
     -webkit-mask-position: center;
-    background-color: #C1C1C1;
+    background-color: var(--toggleColor);
     margin-left: 1px;
     transition: 500ms;
 }
@@ -224,7 +238,7 @@ a {
 }
 
 .cover {
-    background-image: url(../img/icon.png);
+    background-image: url(../img/icon.svg);
     background-repeat: no-repeat, repeat;
     background-position: center;
     width: calc(150px + var(--pixselsForReduce));
@@ -236,33 +250,6 @@ a {
     cursor: pointer;
 }
 
-
-/* .content-cover {
-    display: flex;
-}
-
-.next-cover {
-    background-image: url(https://avatars.yandex.net/get-music-content/4477012/65e76312.a.15482874-1/200x200);
-    -webkit-mask-image: url(/../img/RightMask.png);
-    -webkit-mask-repeat: no-repeat;
-    background-image: url(https://avatars.yandex.net/get-music-content/4477012/65e76312.a.15482874-1/200x200);
-    width: 25px;
-    background-position: left;
-    background-size: cover;
-    border-radius: 0px;
-}
-
-.prev-cover {
-    background-image: url(https://avatars.yandex.net/get-music-content/4477012/65e76312.a.15482874-1/200x200);
-    -webkit-mask-image: url(/../img/LeftMask.png);
-    -webkit-mask-repeat: no-repeat;
-    background-image: url(https://avatars.yandex.net/get-music-content/4477012/65e76312.a.15482874-1/200x200);
-    width: 25px;
-    background-position: right;
-    background-size: cover;
-    border-radius: 0px;
-} */
-
 .content-track-artist {
     display: flex;
     flex-direction: column;
@@ -270,7 +257,21 @@ a {
     width: 50%;
     padding: 3px 0px 3px;
 }
-
+.loading-screen {
+    display: flex;
+    justify-content: center;
+    transition: 0.350s;
+    z-index: 3;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    background: radial-gradient(circle at 25% 27%, rgba(0, 14, 51, 1) 0%, rgba(0, 7, 26, 1) 100%);
+}
+.loading-img{
+    width: 50%;
+}
 .modal {
     display: none;
     justify-content: center;
@@ -319,7 +320,7 @@ a {
     height: 100%;
     width: 100%;
     position: relative;
-    border-radius: 0px;
+    border-radius: 5px;
     margin: auto;
     background-repeat: no-repeat, repeat;
     background-position: center;
@@ -330,6 +331,8 @@ a {
     display: flex;
     align-self: center;
     position: relative;
+    max-width: min(90vw, 90vh);
+    max-height: min(90vh, 90vw);
     height: 90%;
     width: 90%;
 
@@ -387,7 +390,7 @@ a {
     height: var(--progress-height);
     border-radius: 10px;
     background:
-        linear-gradient(90deg, rgba(0, 0, 0, 0) 33%, #ffd000 50%, rgba(0, 0, 0, 0) 66%) #ffffff00;
+        linear-gradient(90deg, rgba(0, 0, 0, 0) 33%, var(--progress) 50%, rgba(0, 0, 0, 0) 66%) #ffffff00;
     background-size: 300% 100%;
     animation: await-loading 1s infinite linear;
 }
@@ -506,6 +509,7 @@ a {
     position: relative;
     cursor: pointer;
 }
+
 .handle-toltip {
     position: absolute;
     width: 100%;
@@ -547,12 +551,24 @@ a {
     --backgroundControl: rgba(252, 252, 255, 0.17);
     --ifHour: calc(100% - 84px);
     --selectedItemColor: #ff881a;
-    --opacityColor: rgba(0, 0, 0, 0.4);
-    --hoverColor: rgb(32 48 71 / 30%);
-    --toggleHover: rgb(32 48 71 / 30%);
+    --trackPosition: #ff881a;
+    --opacityColor: rgba(0, 0, 0, 0.2);
+    --hoverColor: rgba(32 48 71 / 30%);
+    --toggleColor: rgb(51, 51, 51);
+    --toggleHover: rgba(32 48 71 / 30%);
+    --settingItemBackground: rgba(255 255 255 / 50%);
+    --listTrackBackground: rgba(0 0 0 / 50%);
+    --settingItemHover: rgba(255 255 255 / 20%);
+    --topButtonColor: var(--mainRed);
+    --topColor: var(--mainRed);
+    --middleColor: var(--mainRed);
+    --bottomColor: #ffdd00;
     --toggleActive: #ffffff;
-
-    --fontFamily:'Roboto', sans-serif;
+    --settingsСolor: #fff;
+    --sideHoverColor: #fff;
+    --transitionDuration: 0s;
+    --fontFamily: 'Roboto', sans-serif;
+    --slider-shadow: unset;
 }
 
 .slider-groove-progress {
@@ -642,6 +658,24 @@ a {
     backdrop-filter: blur(4px);
     overflow: hidden;
 }
+.notification-action {
+    display: none;
+    min-width: 80px;
+    width: fit-content;
+    background: var(--mainRed);
+    cursor: pointer;
+    transition: 0.5s;
+    color: var(--color);
+    font-size: 1.5em;
+    border: none;
+    border-radius: 10px;
+    padding: 5px;
+    margin: 5px 26px 8px 5px;
+
+}
+.notification-action:hover {
+    background: var(--selectedItemColor);
+}
 
 .close-notification {
     position: absolute;
@@ -696,6 +730,7 @@ a {
     align-self: center;
     margin: 3px 20px 7px;
     line-height: 20px;
+    width: 100%;
 }
 
 .container {
@@ -750,68 +785,17 @@ a {
     background-size: contain;
     background-repeat: no-repeat, repeat;
     background-position: center;
-    transition: 1s;
+    transition: var(--transitionDuration);
 }
 
 .list-track {
-    position: inherit;
+    position: relative;
+    overflow-y: scroll;
     min-height: 100%;
-    width: 100%;
-    background-color: rgb(0 0 0 / 60%);
-
+    width: 80%;
+    background-color: rgb(0 0 0 / 70%);
 }
 
-.list-like {
-    background-image: url(../img/like.png);
-    background-repeat: no-repeat, repeat;
-    background-position: top center;
-    min-width: 30px;
-    height: 30px;
-    position: absolute;
-    right: 5px;
-    margin-top: 3px;
-    background-size: contain;
-    margin-left: auto;
-    border-radius: 10px;
-    transition: 1s;
-    transition-property: background-image;
-    filter: drop-shadow(0px 0px 3px rgb(0 0 0 / 70%));
-}
-
-.list-dislike {
-    background-image: url(../img/no-like.png);
-    background-repeat: no-repeat, repeat;
-    background-position: center;
-    min-width: 30px;
-    height: 30px;
-    position: absolute;
-    margin-top: 3px;
-    right: 5px;
-    background-size: contain;
-    align-self: auto;
-    margin-left: auto;
-    border-radius: 10px;
-    transition: 1s;
-    transition-property: background-image;
-    filter: drop-shadow(0px 0px 3px rgb(0 0 0 / 70%));
-}
-
-.list-disliked {
-    background-image: url(../img/disliked.svg);
-    background-repeat: no-repeat, repeat;
-    background-position: center;
-    min-width: 30px;
-    height: 30px;
-    position: absolute;
-    right: 5px;
-    background-size: contain;
-    align-self: auto;
-    margin-left: auto;
-    border-radius: 10px;
-    transition: 1s;
-    transition-property: background-image;
-    filter: drop-shadow(0px 0px 3px rgb(0 0 0 / 70%));
-}
 
 @keyframes show-like {
     0% {
@@ -857,7 +841,8 @@ a {
 
 .track-position-top::after {
     content: "";
-    background: rgb(255 136 26 / 65%);
+    background:  var(--trackPosition);
+    opacity: 0.65;
     position: absolute;
     width: calc(100%);
     border-radius: 50%;
@@ -883,7 +868,8 @@ a {
 
 .track-position-bottom::after {
     content: "";
-    background: rgb(255 136 26 / 65%);
+    background: var(--trackPosition);
+    opacity: 0.65;
     position: absolute;
     width: calc(100%);
     border-radius: 50%;
@@ -895,17 +881,16 @@ a {
 }
 
 .track-position-top:hover::after {
-    background: rgb(255 136 26 / 100%);
+    opacity: 1;
 
 }
 
 .track-position-bottom:hover::after {
-    background: rgb(255 136 26 / 100%);
+    opacity: 1;
 }
 
 .item-track {
     display: flex;
-    margin: 5px 0px 5px 0px;
     font-size: 1.1rem;
     cursor: pointer;
     transition: 0.4s;
@@ -919,9 +904,7 @@ a {
 .item-track-content {
     display: flex;
     width: 100%;
-    padding: 5px;
-    /* margin: 5px 0px 5px 0px; */
-    padding: 5px;
+    padding: 5px 0px 5px 5px;
     transition: 0.4s;
 }
 .item-track-content:hover {
@@ -930,11 +913,12 @@ a {
 .title-list {
     text-align: center;
     font-size: 1.3rem;
-    margin: 5px 40px 5px 0px;
+    margin: 5px 4px;
+    font-weight: 500;
 }
 
 .item-cover {
-    background-image: url(../img/icon.png);
+    background-image: url(../img/icon.svg);
     background-repeat: no-repeat, repeat;
     background-position: center;
     min-width: 40px;
@@ -968,14 +952,16 @@ a {
     width: 20%;
 } */
 
-#listTrack::-webkit-scrollbar {
+.list-track::-webkit-scrollbar {
     width: 10px;
     background-color: transparent;
+    filter: var(--slider-shadow);
 }
 
-#listTrack::-webkit-scrollbar-thumb {
+.list-track::-webkit-scrollbar-thumb {
     border-radius: 10px;
-    background: linear-gradient(0deg, #FF5555 0%, var(--progress) 100%);
+    background: linear-gradient(0deg, var(--progress) 0%, var(--mainRed) 100%);
+    filter: var(--slider-shadow);
 }
 
 .bar1,
@@ -983,10 +969,10 @@ a {
 .bar3 {
     width: 35px;
     height: 5px;
-    background-color: var(--mainRed);
+    background-color: var(--topButtonColor);
     margin: 6px 0;
     border-radius: 5px;
-    transition: 0.7s;
+    transition: var(--transitionDuration);
 }
 
 .bar-list1,
@@ -994,16 +980,16 @@ a {
 .bar-list3 {
     width: 30px;
     height: 5px;
-    background-color: var(--mainRed);
+    background-color: var(--topButtonColor);
     margin: 6px 0;
     border-radius: 5px;
-    transition: 0.7s;
+    transition: var(--transitionDuration);
 }
 
 .bar-list1::before {
     content: "";
     position: absolute;
-    background-color: var(--mainRed);
+    background-color: var(--topButtonColor);
     border-radius: 5px;
     height: 5px;
     width: 5px;
@@ -1013,7 +999,7 @@ a {
 .bar-list2::before {
     content: "";
     position: absolute;
-    background-color: var(--mainRed);
+    background-color: var(--topButtonColor);
     border-radius: 5px;
     height: 5px;
     width: 5px;
@@ -1023,7 +1009,7 @@ a {
 .bar-list3::before {
     content: "";
     position: absolute;
-    background-color: var(--mainRed);
+    background-color: var(--topButtonColor);
     border-radius: 5px;
     height: 5px;
     width: 5px;
@@ -1032,6 +1018,8 @@ a {
 
 .modal-list-menu {
     display: none;
+    flex-direction: row;
+    justify-content: flex-end;
     position: fixed;
     left: 0;
     top: 0;
@@ -1039,7 +1027,7 @@ a {
     height: 100%;
     overflow-y: auto;
     overflow-x: hidden;
-    background-color: rgb(0 0 0 / 40%);
+    background-color: var(--listTrackBackground);
     cursor: pointer;
     z-index: +2;
 }
@@ -1091,7 +1079,46 @@ a {
 .selected-item {
     background-color: var(--selectedItemColor, #ff881a);
     border-radius: 10px;
+    filter: var(--slider-shadow);
 }
+/* .selected-item .content-item-name {
+    filter: drop-shadow(0px 0px 4px var(--listTrackBackground));
+} */
+.list-item-like {
+    display: none;
+    background-repeat: no-repeat, repeat;
+    background-position: top center;
+    min-width: 30px;
+    height: 30px;
+    position: absolute;
+    right: 5px;
+    margin-top: 3px;
+    background-size: contain;
+    margin-left: auto;
+    transition: 0.7s;
+    transition-property: opacity;
+    filter: drop-shadow(0px 0px 3px rgb(0 0 0 / 70%));
+}
+/* .selected-item:hover [like=false] {
+    display: block;
+    background-image: url(../img/not-liked.png);
+
+} */
+.list-item-liked {
+    display: block;
+    background-image: url(../img/liked.png);
+}
+
+.list-item-not-liked {
+    display: block;
+    background-image: url(../img/not-liked.png);
+}
+
+.list-item-disliked  {
+    display: block;
+    background-image: url(../img/disliked.svg);
+}
+
 
 .content-menu {
     display: none;
@@ -1108,7 +1135,6 @@ a {
 
 .side {
     padding: 10px;
-    margin: 5px 0px 5px 0px;
     font-size: 1.4rem;
     cursor: pointer;
     transition: 0.4s;
@@ -1116,9 +1142,9 @@ a {
 }
 
 .side:hover {
-    background: var(--mainRed);
-    padding: 15px;
-    color: white;
+    background: var(--topColor);
+    padding-left: 20px;
+    color: var(--sideHoverColor); 
     border-radius: 5px;
 }
 
@@ -1136,18 +1162,17 @@ a {
 }
 
 .side-help:hover {
-    background: var(--mainRed);
     padding: 15px;
     height: 130px;
-    color: white;
-    border-radius: 5px 5px 0px 0px;
 }
 
 label {
     margin-left: 10px;
     cursor: pointer;
-    font-weight: 500;
+    font-weight: 400;
     vertical-align: middle;
+    align-self: center;
+    width: 100%;
 }
 
 .subtitle {
@@ -1158,6 +1183,8 @@ label {
     display: flex;
     flex-direction: column;
     overflow: auto;
+    justify-content: space-around;
+    height: calc(100% - 30px);
 }
 
 .settings {
@@ -1172,25 +1199,182 @@ label {
     cursor: default;
     font-size: 1rem;
     overflow: hidden;
+    font-weight: 500;
+    color: var(--settingsСolor);
+
 }
 
 .setting-item {
     border-radius: 10px;
-    border: solid 2px var(--mainRed);
-    background-color: rgb(255 255 255 / 25%);
+    border: solid 2px var(--topColor);
+    background-color: var(--settingItemBackground);
     padding: 5px;
 }
 
+.setting-item-hover {
+    cursor: pointer;
+    padding: 2px 4px;
+    transition: 0.4s;
+}
+.setting-item-hover:hover {
+    background: var(--settingItemHover);
+    border-radius: 10px;
+}
+.default-gradient-container {
+    display: flex;
+    justify-content: center;
+}
 
-/* .setting-name {
-    background-color: rgb(255 255 255 / 25%);
-    margin-left: auto;
-    border-radius: 0px 5px 5px 5px;
-    margin-top: -5px;
-    text-align: right;
-    width: fit-content;
-    padding: 0px 3px 1px;
-} */
+.gradient-container {
+    display: grid;
+    justify-items: center;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+    margin: 4px 0px;
+}
+
+.gradients {
+    display: grid;
+    justify-items: center;
+    grid-template-columns: 1fr;
+    height: 0px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    transition: 0.7s;
+}
+.show-gradients {
+    height: 260px;
+
+}
+.gradients::-webkit-scrollbar {
+    width: 10px;
+    border-radius: 10px;
+    background-color: white;
+}
+
+.gradients::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background: linear-gradient(0deg, var(--progress) 0%, var(--mainRed) 100%);
+}
+
+.prev-themes {
+    width: min-content;
+    justify-items: center;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+    overflow: hidden;
+    height: auto;
+    padding: 5px;
+    margin: unset;
+}
+.gradient{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 54px;
+    height: 84px;
+    border-radius: 10px;
+    background-color: white;
+    cursor: pointer;
+}
+.gradient:hover {
+    outline: 3px solid var(--color);
+}
+.gradient-name {
+    font-weight: 300;
+    font-size: 14px;
+    width: 100%;
+    text-align: center;
+    padding: 2px;
+    word-wrap: break-word;
+}
+
+.show-gradients > a {
+    grid-column: span 4;
+}
+
+#DefaultTheme {
+    background: linear-gradient(0deg, #FF5555 0%, #ffdd00 100%);
+}
+#LightTheme {
+    background: linear-gradient(0deg, #F2F3F2 0%, #F9F9F8 100%);
+    color: #202c3d;
+
+}
+#DarkTheme {
+    background: linear-gradient(0deg, #121212 0%, #222222 100%);
+    color: #EBEBEB;
+}
+
+#OtherTheme {
+    display: none;
+    text-align: center;
+    word-wrap: break-word;
+}
+
+#OtherThemeName {
+    font-weight: normal;
+    font-size: inherit;
+}
+
+#ShowMore {
+    display: block;
+    cursor: pointer;
+}
+.user-theme-selected {
+    outline: 3px solid var(--color);
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.input-step {
+    border: none;
+    border-radius: 10px;
+    color: var(--settingsСolor);
+    background: var(--topColor);
+    height: 22px;
+    width: 60px;
+    text-align: center;
+    font-size: 1rem;
+    outline: none;
+    border: 0px solid var(--topColor);
+    border-bottom-width: 2px;
+    transition: 0.5s;
+}
+.input-step:focus {
+    border: 0px solid #ffffff;
+    border-bottom-width: 2px;
+
+}
+.input-step-content {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+}
+.span-px {
+    margin: 0px 5px;
+    width: 16px;
+}
+.input-step-container {
+   display: flex;
+   flex-direction: row; 
+}
+.popup-size {
+    display: flex;
+    justify-content: center;
+}
+
+.content-label > #PopupPx {
+    margin-right: 5px;
+    margin-left: unset;
+}
+.content-label > #PopupPercent  {
+    margin-right: 0px;
+    margin-left: 5px;
+}
 
 .title-menu {
     color: black;
@@ -1230,8 +1414,9 @@ label {
     0% {
         background-color: rgba(0, 0, 0, 0);
     }
+
     100% {
-        background-color: var(--opacityColor, rgba(0, 0, 0, 0.4));
+        background-color: rgba(0, 0, 0, 0.4);
     }
 }
 
@@ -1252,7 +1437,7 @@ label {
 }
 
 .icon {
-    background-image: url(../img/icon.png);
+    background-image: url(../img/icon.svg);
     background-repeat: no-repeat, repeat;
     background-position: center;
     width: 150px;
@@ -1375,12 +1560,16 @@ label {
 }
 
 .support-menu {
-    color: white;
+    position: absolute;
+    bottom: 0px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     width: 100%;
-    height: 50px;
+    height: 30px;
     text-align: center;
     bottom: 0px;
-    background: var(--mainRed);
+    background: var(--topColor);
     font-size: 1em
 }
 
@@ -1389,6 +1578,7 @@ label {
     display: flex;
     justify-content: center;
     align-items: center;
+    color: var(--settingsСolor);
 }
 
 .buttons {
@@ -1444,34 +1634,38 @@ label {
 }
 
 .container-reassign {
-    background: #ff4444;
-    border-radius: 5px;
+    background: rgb(255 255 255 / 10%);
+    border-radius: 10px;
     margin: 5px 0px;
 }
 
-.content-reassign {
-    background: #ff7766;
-    padding: 5px;
+.content-setting-item {
+    transition: 0.5s;
+    background: rgb(255 255 255 / 10%);
+    padding: 4px;
     border-radius: 5px;
-    margin: 5px;
+    margin: 4px;
+    font-weight: 400;
 }
 
 .shortcut-key {
-    background: #ff5555;
-    border-radius: 3px;
+    transition: 0.3s;
+    background: rgb(255 255 255 / 20%);
+    border-radius: 6px;
     text-align: center;
     margin: 2px;
     cursor: pointer;
 }
 
 .shortcut-key:hover {
-    background: #ff3333;
+    background: rgb(0 0 0 / 5%);
     border-radius: 3px;
     text-align: center;
     margin: 2px;
 }
 .switcher {
     cursor: pointer;
+    align-self: center;
 }
 @supports(-webkit-appearance: none) or (-moz-appearance: none) {
     .switcher {
@@ -1494,16 +1688,17 @@ label {
             position: absolute;
             width: 16px;
             height: 16px;
-            background-color: white;
+            background-color: rgb(245 245 245);
             margin: 2px 4px;
             border-radius: 50%;
         }
 
         &:checked {
-            background-color: #ffd000;
+            background-color: var(--selectedItemColor);
 
             &:after {
                 transform: translateX(14px);
+                background-color: var(--settingsСolor);
             }
         }
 
@@ -1511,21 +1706,35 @@ label {
             opacity: 0.6;
         }
     }
+    .switcher-px {
+        background-color: var(--topColor);
+        &:after {
+            clip-path: polygon(0 50%, 100% 90%, 100% 10%);
+            background-color: var(--settingsСolor);
+        }
+        &:checked {
+            &:after {
+                clip-path: polygon(100% 50%, 0 90%, 0 10%);
+            }
+            background-color: var(--topColor);
+        }
+    }
 }
 .list-shortcut-keys {
     display: flex;
     justify-content: center;
     flex-direction: column;
-    padding: 10px;
-    border-radius: 5px;
-    background: #ff4444;
+    border-radius: 10px;
+    background: rgb(255 255 255 / 20%);
 }
 
 .select-shortcut-key {
     transition: 0.7s;
     text-align: center;
-    border-radius: 5px;
-    background: #FF3333;
+    border-radius: 10px;
+    padding: 5px;
+    margin-top: 4px;
+    background: rgb(255 255 255 / 20%);
 }
 
 .submenu {
@@ -1754,7 +1963,7 @@ label {
 
 #scroll-bar::-webkit-scrollbar-thumb {
     border-radius: 10px;
-    background: linear-gradient(0deg, #FF5555 0%, var(--progress) 100%);
+    background: linear-gradient(0deg, var(--progress) 0%, var(--mainRed) 100%);
 }
 
 #listMenu::-webkit-scrollbar {
@@ -1764,7 +1973,7 @@ label {
 
 #listMenu::-webkit-scrollbar-thumb {
     border-radius: 10px;
-    background: linear-gradient(0deg, #FF5555 0%, var(--progress) 100%);
+    background: linear-gradient(0deg, var(--progress) 0%, var(--mainRed) 100%);
 }
 
 #Yes {
@@ -1780,7 +1989,7 @@ label {
     width: 35%;
     font-size: 15px;
     color: white;
-    background-color: var(--mainRed);
+    background-color: #FF3333;
     border: none;
     border-radius: 15px;
     cursor: pointer;
@@ -1815,7 +2024,7 @@ label {
 .loader {
     border: 8px solid #f3f3f300;
     border-radius: 50%;
-    border-top: 8px solid #ffdd00;
+    border-top: 8px solid var(--topColor);
     width: 30px;
     height: 30px;
     right: 0px;
@@ -1827,7 +2036,7 @@ label {
 .loader2 {
     border: 8px solid rgba(62, 61, 132, 0);
     border-radius: 50%;
-    border-bottom: 8px solid var(--mainRed);
+    border-bottom: 8px solid var(--bottomColor);
     width: 30px;
     height: 30px;
     margin: -8px;

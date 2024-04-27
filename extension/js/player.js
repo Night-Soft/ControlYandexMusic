@@ -1,19 +1,17 @@
-let playlist = document.getElementById("listTrack");
-let tracksListTitle = document.getElementsByClassName("title-list")[0];
+let listTracksContainer = document.getElementById("listTrack");
 let listTracks = document.getElementsByClassName("list-track")[0];
 let loadingBar = document.getElementsByClassName("loading-bar")[0];
 let toggleShuffle = document.querySelector(".toggle-shuffle");
 let toggleRepeat = document.querySelector(".toggle-repeat");
 let toggleVolume = document.getElementsByClassName("toggle-volume")[0];
 let contentGrooveVolume = document.getElementsByClassName("content-groove-volume")[0];
-let trackPositionTop;
-let trackPositionBottom;
+let trackPositionTop = document.querySelector(".track-position-top");
+let trackPositionBottom = document.querySelector(".track-position-bottom");
+let tracksListTitle = document.querySelector(".title-list");
 let previousSelectItem;
 let previousSlider;
 let selectedItem;
 let likeItem;
-let isFirstScroll = false;
-let likeItems = [];
 let itemTracks = [];
 
 const PlayerInfo = class {
@@ -27,6 +25,37 @@ const PlayerInfo = class {
         let isRepeat;
         let isShuffle;
         Object.defineProperties(this, {
+            liked: {
+                get() { return this.track.liked },
+                set(value) {
+                    if (typeof value !== "boolean" || value == this.track.liked) return;
+
+                    this.track.liked = value;
+                    this.likeItem.setAttribute("like", value);
+                    if (value == true && this.track.disliked == true) {
+                        this.track.disliked = false;
+                        selectedItem.style.filter = "";
+                        toggleDislike(false, true);
+                    }
+
+                    toggleLike(value);
+                }
+            },
+            disliked: {
+                get() { return this.track.disliked },
+                set(value) {
+                    if (typeof value !== "boolean" || value === this.track.disliked) return;
+
+                    this.track.disliked = value;
+                    if (value) {
+                        this.track.liked = false;
+                        this.likeItem.setAttribute("like", value);
+                        toggleLike(false);
+                    }
+
+                    toggleDislike(value, true); 
+                }
+            },
             duration: {
                 get() { return duration; },
                 set(value) {
@@ -50,7 +79,7 @@ const PlayerInfo = class {
                         }
                         position = value;
                         this.#currentTime = Date.now();
-                        currentTime.innerHTML = getDurationAsString(value);
+                        currentTime.innerText = getDurationAsString(value);
                         sliderProgress.setPosition(value);
                         if (isPlay == true && this.isUpdateTimer == false && value > 0) {
                             this.#positionUpdater();
@@ -139,25 +168,35 @@ const PlayerInfo = class {
                 },
                 enumerable: true
             },
+            likeItem: {
+                get() {
+                    return this.playlist.elements.get(this.index)?.itemTrack.childNodes[1];
+                }
+            }
         });
     }
     info = {
         source: {},
         tracks: []
     }
-    track;
+    track = {
+        liked: false,
+        disliked: false
+    }
+    list = {
+        tabTracks: new Map(),
+        tracks: new Map()
+    }
+    playlist = new LivePlaylist();
     index; // Number
-    disliked;
-    likeItem;
     coverLink;
     coverItem;
-    isAutoScroll = false;
     isUpdateTimer = false;
     #currentTime = 0;
     #positionUpdaterId = undefined;
     #positionUpdater() {
         this.stopUpdater();
-        if (this.isPlay == false || this.position == 0) return;
+        if (this.isPlay == false || this.loaded == 0) return;
 
         this.#currentTime = Date.now();
         const updateTimer = () => {
@@ -190,40 +229,71 @@ const PlayerInfo = class {
     /**
     * @param {object} progress - {duration, position, loaded}.
     */
-    setProgress({ duration, position, loaded }) {
+    setProgress({ loaded, duration, position }) {
         if (duration >= 0) { this.duration = duration; }
-        if (position >= 0) { this.position = position; }
         if (loaded >= 0) { this.loaded = loaded; }
+        if (position >= 0) { this.position = position; }
+    }
+    clearPlaylist(){
+        this.list.tabTracks.clear();
+        this.list.tracks.clear();
+        this.playlist.clear();
     }
 } 
 
 const Player = new PlayerInfo();
+const playlist = Player.playlist;
 
-let CurrentAnimation = {
-    keyframe: undefined,
-    options: undefined,
-    left: undefined,
-    top: undefined,
-    isFromList: undefined
-}
+let updateTracksList = ({ tracksList, sourceInfo, index: tabIndex }) => {
+    Player.track = tracksList[tabIndex];
+    Player.disliked = tracksList[tabIndex].disliked;
 
-let updateTracksList = (trackInfo) => {
-    Player.track = trackInfo.tracksList[trackInfo.index];
-    Player.disliked = trackInfo.tracksList[trackInfo.index].disliked;
-    Player.likeItem = likeItems[trackInfo.index];
+    if (equals(tracksList, Player.info.tracks)) {
+        const { index } = Player.list.tabTracks.get(tabIndex);
+        if (index >= 0 && Player.index != index) {
+            if (!playlist.elements.get(index)) {
+                let quantity = 10;
+                let indexesForCreated;
 
-    Player.info.source = trackInfo.sourceInfo;
+                if (index < playlist.minIndex) { 
+                    quantity = playlist.minIndex - index + 10;
+                    indexesForCreated = playlist.getIndexes(playlist.minIndex, quantity, "up");
+                } else if (index > playlist.maxIndex) {
+                    quantity = index - playlist.maxIndex + 10;
+                    indexesForCreated = playlist.getIndexes(playlist.maxIndex, quantity, "down");
+                } else {
+                    indexesForCreated = playlist.getIndexes(index, quantity);
+                }
 
-    // remove null object from tracksList
-    for (let i = trackInfo.tracksList.length; i >= 0; i--) {
-        if (trackInfo.tracksList[i] == null) {
-            trackInfo.tracksList.splice(i, 1);
+                if (indexesForCreated) createReactiveList(indexesForCreated);
+                return;
+            }
+            selectItem(playlist.elements.get(index).itemTrack, index);
         }
+        return;
     }
-    setTracksList(trackInfo.tracksList, trackInfo.index);
+
+    Player.info.tracks = tracksList;
+    Player.info.source = sourceInfo;
+    Player.clearPlaylist();
+
+    let index = -1;
+    tracksList.forEach((track, tabIndex) => {
+        if (typeof track === "object" && track !== null) {
+            index++;
+            const value = { index, tabIndex, track };
+            Player.list.tabTracks.set(tabIndex, value);
+            Player.list.tracks.set(index, value);
+        }
+    });
+
+    updateTitle(Player.info.source);
+
+    const indexes = playlist.getIndexes(Player.list.tabTracks.get(tabIndex).index, 15);
+    createReactiveList(indexes, tabIndex);
 }
 
-let setTitle = (title) => {
+let updateTitle = (title) => {
     if (title.title != undefined) {
         tracksListTitle.innerHTML = title.title;
     } else {
@@ -231,260 +301,209 @@ let setTitle = (title) => {
     }
 }
 
-let setTracksList = (list, index) => {
-    try {
-        if (index >= 0 && Player.index != index) {
-            let allItem = document.querySelectorAll(".item-track");
-            selectItem(allItem[index], index);
+let isFirstLoad = true;
+let createReactiveList = (indexesForCreated, currentTabIndex) => {
+    let isScrollTocenter = false;
+    let isTimeGreaterThanOneHour = false;
+    console.time("playlist created");
+
+    function predicate({ value: index }, itemTrack) {
+        const likeItem = itemTrack.childNodes[1];
+        const itemCover = itemTrack.childNodes[0].childNodes[0];
+        const contentItemName = itemTrack.childNodes[0].childNodes[1];
+        const { tabIndex, track } = Player.list.tracks.get(index);
+        const coverCick = function() {
+            Player.coverItem = this;
+            openCover(this, track.cover, openCoverAnimate);
         }
-        if (equals(list, Player.info.tracks)) { return; }
-    } catch (error) {}
-    Player.info.tracks = list;
-    setTitle(Player.info.source);
-    let allItem = document.querySelectorAll(".item-track");
-    clearList(allItem);
-    likeItems = [];
-    try {
-        trackPositionTop.remove();
-        trackPositionBottom.remove();    
-    } catch (error) {}
-    createListElement(list, index);
-    Player.likeItem = likeItems[index];
-}
-
-let createListElement = (list, index) => {
-    let ifHour = false;
-    for (let i = 0; i < list.length; i++) {
-        let itemTrack = document.createElement("DIV");
-        itemTrack.classList.add("item-track");
-
-        let itemCover = document.createElement("DIV");
-        itemCover.classList.add("item-cover");
-        itemCover.setAttribute("loading", "lazy");
-        itemCover.style.backgroundImage = "url(" + getUrl(list[i].cover) + ")";
-        itemCover.onclick = (ev) => {
-            Player.coverItem = itemCover;
-            openCover(itemCover, list[i].cover, openCoverAnimate);
-        }
-
-        let contentItemName = document.createElement("DIV");
-        contentItemName.classList.add("content-item-name");
-
-        let itemNameTrack = document.createElement("DIV");
-        itemNameTrack.classList.add("item-name-track");
-        itemNameTrack.innerHTML = list[i].title;
-
-        let itemArtists = document.createElement("DIV");
-        itemArtists.classList.add("item-artists");
-        itemArtists.innerHTML = getArtists(list[i]);
-
-        contentItemName.appendChild(itemNameTrack);
-        contentItemName.appendChild(itemArtists);
-        let itemTrackContent = document.createElement("DIV");
-        itemTrackContent.classList.add("item-track-content");
-
-        itemTrackContent.appendChild(itemCover);
-        itemTrackContent.appendChild(contentItemName);
-
-        let listLike = document.createElement("DIV");
-        if (list[i].liked) {
-            listLike.classList.add("list-like");
-        } else if (list[i].disliked) {
-            listLike.classList.add("list-disliked");
-            setDislikedStyle(itemTrack, true);
-        }
-        listLikeControl(listLike, list[i], i);
-        likeItems.push(listLike);
-
-        itemTrack.onmouseenter = (ev) => {
+        const onmouseenter = (ev) => {
             ev.stopPropagation();
             ev.stopImmediatePropagation();
             if (ev.target == itemTrack) {
-                if (!list[i].liked && !list[i].disliked && Player.index == i) {
-                    Player.likeItem = listLike;
-                    Player.track = list[i];
-                    listLike.classList.add("list-dislike");
-                    listLike.style.animation = "show-like 1s normal";
+                if (!track.liked && !track.disliked && Player.index == index) {
+                    Player.track = track;
+                    likeItem.classList.add("list-item-not-liked");
+                    likeItem.style.animation = "show-like 1s normal";
                     Player.endShowLike = (ev) => {
-                        listLike.style.animation = null;
-                        listLike.removeEventListener("animationend", Player.endShowLike);
+                        likeItem.style.animation = null;
+                        likeItem.removeEventListener("animationend", Player.endShowLike);
                     }
-                    listLike.removeEventListener("animationend", Player.endShowLikeReverse);
-                    listLike.addEventListener("animationend", Player.endShowLike);
+                    likeItem.removeEventListener("animationend", Player.endShowLikeReverse);
+                    likeItem.addEventListener("animationend", Player.endShowLike);
                 }
             }
         }
 
-        itemTrack.onmouseleave = (ev) => {
+        const onmouseleave = (ev) => {
             ev.stopPropagation();
             ev.stopImmediatePropagation();
             if (ev.target == itemTrack) {
-                if (!list[i].liked && !list[i].disliked && Player.index == i) {
+                if (!track.liked && !track.disliked && Player.index == index) {
                     Player.endShowLikeReverse = (ev) => {
-                        listLike.classList.remove("list-dislike");
-                        listLike.removeEventListener("animationend", Player.endShowLikeReverse);
-                        listLike.style.animation = null;
+                        likeItem.classList.remove("list-item-not-liked");
+                        likeItem.removeEventListener("animationend", Player.endShowLikeReverse);
+                        likeItem.style.animation = null;
                         contentItemName.style.maxWidth = "";
                     }
-                    listLike.removeEventListener("animationend", Player.endShowLike);
-                    listLike.addEventListener("animationend", Player.endShowLikeReverse);
-                    listLike.style.animation = "show-like 1s reverse";
+                    likeItem.removeEventListener("animationend", Player.endShowLike);
+                    likeItem.addEventListener("animationend", Player.endShowLikeReverse);
+                    likeItem.style.animation = "show-like 1s reverse";
                 }
             }
         }
 
-        itemTrack.onclick = (ev) => {
-            if (ev.target != listLike && ev.target != itemCover) {
-                if (Player.index == i) {
+        const onclick = (ev) => {
+            if (ev.target != likeItem && ev.target != itemCover) {
+                if (Player.index == index) {
                     sendEvent("togglePause");
                 } else {
-                    sendEvent({ play: i }, true); // send as object
+                    sendEvent({ play: tabIndex }, true); // send as object
                     Player.stopUpdater();
-                    if (!Player.info.tracks[i].liked && !list[i].disliked) {
-                        listLike.classList.add("list-dislike");
-                        listLike.style.animation = "show-like 1s normal";
+                    if (!Player.info.tracks[tabIndex].liked && !track.disliked) {
+                        likeItem.classList.add("list-item-not-liked");
+                        likeItem.style.animation = "show-like 1s normal";
                         let endShowLike = (ev) => {
-                            listLike.style.animation = null;
-                            listLike.removeEventListener("animationend", endShowLike);
+                            likeItem.style.animation = null;
+                            likeItem.removeEventListener("animationend", endShowLike);
                         }
-                        listLike.addEventListener("animationend", endShowLike);
+                        likeItem.addEventListener("animationend", endShowLike);
 
                     }
                 }
             }
         }
-        itemTrack.appendChild(listLike);
 
-        let trackTime = document.createElement("span");
-        trackTime.classList.add("track-time");
-        trackTime.innerHTML = getDurationAsString(list[i].duration);
-        itemTrack.appendChild(trackTime);
-
-        if (index != undefined && index == i) {
-            selectItem(itemTrack, index);
+        const itemTrackAttr = {
+            class: "item-track",
+            onmouseenter,
+            onmouseleave,
+            onclick
         }
-        if (list[i].duration > 3600 && ifHour == false) {
+        if (track.disliked) itemTrackAttr.style = "filter: opacity(0.5)";
+        let likeClass = "list-item-like ";
+        likeClass += track.liked ? "list-item-liked" : track.disliked ? "list-item-disliked" : "";
+
+        const imgAttr = {
+            onclick: coverCick,
+            class: "item-cover",
+            loading: "lazy",
+            src: getUrl(track.cover)
+        }
+
+        if (track.duration > 3600 && isTimeGreaterThanOneHour == false) {
             let rootCss = document.querySelector(':root');
             rootCss.style.setProperty('--ifHour', 'calc(100% - 100px)');
+            isTimeGreaterThanOneHour = true;
         }
 
-        itemTrack.prepend(itemTrackContent);
-        listTracks.appendChild(itemTrack);
+        listLikeControl(likeItem, track, index);
+
+        return {
+            itemTrackAttr,
+            imgAttr,
+            likeClass,
+            onmouseenter,
+            onmouseleave,
+            onclick,
+            trackTitle: track.title,
+            artistsTitle: getArtists(track),
+            duration: getDurationAsString(track.duration)
+        }
     }
 
-    trackPositionTop = document.createElement('div');
-    trackPositionTop.classList.add("track-position-top");
-    trackPositionBottom = document.createElement('div');
-    trackPositionBottom.classList.add("track-position-bottom");
+    const template = [
+        ["div", "{{itemTrackAttr}}",
+            ["div", { class: "item-track-content" },
+                ["img", "{{imgAttr}}"],
+                ["div", { class: "content-item-name" },
+                    ["div", { class: "item-name-track" }, "{{trackTitle}}"],
+                    ["div", { class: "item-artists",}, "{{artistsTitle}}"],
+                ],
+            ],
+            ["div", { class: "{{likeClass}}" }], // to do
+            ["span", { class: "track-time" }, "{{duration}}"]
+        ]
+    ];
+    
+    const itemTrack = new Component(template, indexesForCreated, predicate).nodes;
+    indexesForCreated.forEach((indexVal, index) => {
+        const { tabIndex, index: indexInList } = Player.list.tracks.get(indexVal); 
+        const referenceElement = playlist.getReferenceElement(indexVal);
 
-    let listTrack = document.getElementById("listTrack");
-    trackPositionTop.onclick = () => {
-        selectedItem.scrollIntoView({ block: "center", behavior: "smooth" });
-    
+        listTracks.insertBefore(itemTrack[index], referenceElement); 
+
+        
+        playlist.elements.set(indexInList, {
+            itemTrack: itemTrack[index], 
+            index: indexInList,
+            tabIndex
+        });
+        playlist.updateMinMaxIndex();
+
+        if (currentTabIndex === tabIndex) {
+            selectItem(itemTrack[index], indexInList);
+            isScrollTocenter = true;
+        }
+    });
+    console.timeEnd("playlist created");
+
+    if (isFirstLoad === false) {
+        if(isScrollTocenter) scrollToCenter();
+        return;
     }
-    trackPositionBottom.onclick = () => {
-        selectedItem.scrollIntoView({ block: "center", behavior: "smooth" });
-    
-    }
-    listTracks.prepend(trackPositionBottom);
-    listTracks.prepend(trackPositionTop);
-    listTrack.onscroll = function (event) {
-        checkTrackPosition();
-    };
+
+    EventEmitter.on("playlistIsOpen", () => {
+        function addScroll() {
+            listTracks.addEventListener("scroll", checkTrackPosition.start.bind(checkTrackPosition));
+            listTracks.addEventListener("scroll", checkForNewElement.start.bind(checkForNewElement));
+            listTracks.removeEventListener("scrollend", addScroll);
+            clearTimeout(timeoutId);
+            isFirstLoad = false;
+        }
+
+        let timeoutId = setTimeout(addScroll, 1500);
+
+        listTracks.addEventListener("scrollend", addScroll);
+
+        if (isScrollTocenter) scrollToCenter();
+    }, true);
+
 }
 
-document.body.onmouseenter = () => { Player.isAutoScroll = false; }
-document.body.onmouseleave = () => { Player.isAutoScroll = true; }
-
-let listLikeControl = (listLike, list, index) => {
-    listLike.onclick = () => {
+let listLikeControl = (likeItem, track, index) => {
+    likeItem.onclick = () => {
         if (Player.index == index) {
             if (Player.disliked) {
                 Player.likeFromPlaylist = true;
-                Player.likeItem = listLike;
-                Player.track = list;
+                Player.track = track;
                 sendEvent("toggleDislike");
                 return;
             }
             Player.likeFromPlaylist = true;
-            Player.likeItem = listLike;
-            Player.track = list;
+            Player.track = track;
             sendEvent("toggleLike");
         }
     }
-    listLike.onlongpress = () => {
-        console.log("onlongpress");
+    likeItem.longpress = () => {
         if (Player.index == index) {
             Player.likeFromPlaylist = true;
-            Player.likeItem = listLike;
-            Player.track = list;
+            Player.track = track;
             sendEvent("toggleDislike");
         }
 
     }
 }
 
-// call from extension.js
-let toggleListLike = (isLike) => {
-    let contentItemName = document.querySelectorAll(".content-item-name")[Player.index];
-    if (isLike) {
-        Player.track.liked = isLike;
-        Player.likeItem.classList.remove("list-dislike");
-        Player.likeItem.classList.add("list-like");
-        contentItemName.style.maxWidth = contentItemName.innerWidth - 35 + "px";
-    } else {
-        Player.track.liked = isLike;
-        Player.likeItem.classList.remove("list-like");
-        if (Player.likeFromPlaylist == true) {
-            Player.likeItem.classList.add("list-dislike");
-            Player.likeFromPlaylist = false;
-        } else {
-            contentItemName.style.maxWidth = "";
-        }
-    }
-
-}
-
-let setDislikedStyle = (item, isDisliked) => {
-    if (isDisliked) {
-        item.style.filter = "opacity(0.5)";
-    } else {
-        item.style.filter = "";
-    }
-}
-
-let toggleListDisliked = (isDisliked) => {
-    let contentItemName = document.querySelectorAll(".content-item-name")[Player.index];
-    if (isDisliked) {
-        Player.track.disliked = isDisliked;
-        Player.likeItem.classList.remove("list-dislike");
-        Player.likeItem.classList.remove("list-like");
-        Player.likeItem.classList.add("list-disliked");
-        contentItemName.style.maxWidth = contentItemName.innerWidth - 35 + "px";
-        setDislikedStyle(selectedItem, isDisliked);
-        contentItemName.style.maxWidth = contentItemName.innerWidth - 35 + "px";
-    } else {
-        Player.track.disliked = isDisliked;
-        Player.likeItem.classList.remove("list-like");
-        Player.likeItem.classList.remove("list-disliked");
-        setDislikedStyle(selectedItem, isDisliked);
-        if (Player.likeFromPlaylist == true) {
-            Player.likeItem.classList.add("list-dislike");
-            Player.likeFromPlaylist = false;
-        } else {
-            contentItemName.style.maxWidth = "";
-        }
-    }
-}
-
 const equals = (a, b) => {
+    if(a.length !== b.length) return false;
+    let toReturn = true;
     for (let i = 0; i < a.length; i++) {
-        if (a[i].title != b[i].title) {
+        if (a[i]?.title != b[i]?.title) {
             return false;
         }
     }
-    return true;
-};
+    return toReturn;
+}
 
 let getArtists = (list, numberOf = 3) => {
     let getArtistsTitle = (listArtists) => {
@@ -513,54 +532,56 @@ let getArtists = (list, numberOf = 3) => {
 let selectItem = (item, index) => {
     if (previousSelectItem != undefined) {
         previousSelectItem.classList.remove("selected-item");
+        previousSelectItem.childNodes[1].classList.remove("list-item-not-liked");
     }
     item.classList.add("selected-item");
+
     previousSelectItem = item;
     selectedItem = item;
     Player.index = index;
-    let getSelectedItem = document.getElementsByClassName("selected-item")[0];
-    if (getSelectedItem) { // the selectedItem did not fully rendered
-        checkTrackPosition();
-    }
-    if (Player.isAutoScroll) {
-        selectedItem.scrollIntoView({ block: "center", behavior: "smooth" });
-    }
+    
+    if (!document.hasFocus() && !isFirstLoad) { //
+        scrollToCenter();
+        return;
+    };
+    if (EventEmitter.getEvent("playlistIsOpen")?.isEmitted) checkTrackPosition.execute();
 }
 
 let isTrackPosition = false;
 let showTrackPosition = new ExecutionDelay(
     (position) => {
         if (isTrackPosition) {
-            let = keyframe = {
-                opacity: [0, 1]
-            };
             if (position === "top") {
                 trackPositionTop.style.display = "block";
                 trackPositionBottom.style.display = "none";
-                trackPositionTop.animate(keyframe, { duration: 700 });
+                trackPositionTop.animate({ opacity: [0, 1] }, { duration: 700 });
             } else if (position === "bottom") {
                 trackPositionTop.style.display = "none";
                 trackPositionBottom.style.display = "block";
-                trackPositionBottom.animate(keyframe, { duration: 700 });
+                trackPositionBottom.animate({ opacity: [0, 1] }, { duration: 700 });
             }
         }
 
     }, { delay: 200 }
 );
 
-let checkTrackPosition = (from) => {
-    let { height, top } = selectedItem.getClientRects()[0];
-    let playlistTop = playlist.getClientRects()[0].top - height;
+
+const checkTrackPosition = new ExecutionDelay(() => {
+    const rect = selectedItem.getClientRects();
+    if (rect.length === 0) return;
+
+    let { height, top } = rect[0];
+    let playlistTop = listTracksContainer.getClientRects()[0].top - height;
 
     if (playlistTop > top) {
-        if (isTrackPosition == false) {
-            isTrackPosition = true;
+        if (isTrackPosition !== "top") {
+            isTrackPosition = "top";
             showTrackPosition.start("top");
         }
         return;
     } else if (top > innerHeight) {
-        if (isTrackPosition == false) {
-            isTrackPosition = true;
+        if (isTrackPosition !== "bottom") {
+            isTrackPosition = "bottom";
             showTrackPosition.start("bottom");
         }
         return;
@@ -569,9 +590,8 @@ let checkTrackPosition = (from) => {
     if (isTrackPosition == false) { return; }
     isTrackPosition = false;
     showTrackPosition.stop();
-    let = keyframe = {
-        opacity: [1, 0]
-    };
+
+    let = keyframe = { opacity: [1, 0] };
     trackPositionBottom.animate(keyframe, { duration: 700 }).onfinish = () => {
         if (isTrackPosition == false) {
             trackPositionBottom.style.display = "none";
@@ -582,28 +602,41 @@ let checkTrackPosition = (from) => {
             trackPositionTop.style.display = "none";
         }
     };
+}, { delay: 500, isThrottling: true });
+
+const checkForNewElement = new ExecutionDelay(() => {
+    const {top, bottom, height: listHeight} = listTracks.getClientRects()[0];
+    const { top: firstElementY, height } = playlist.firstElement.itemTrack.getClientRects()[0];
+    const lastElementY = playlist.lastElement.itemTrack.getClientRects()[0].top;
+    const elementSize = height * 5; 
+
+    if (firstElementY > -elementSize + top) {
+        const quantity = listHeight / height > 10 ? Math.floor(listHeight / height) : 10;
+        const indexes = playlist.getIndexes(playlist.firstElement.index, quantity, "up");
+        if (indexes) createReactiveList(indexes);
+        return;
+    }
+
+    if (lastElementY < elementSize + bottom - height) {
+        const quantity = listHeight / height > 10 ? Math.floor(listHeight / height) : 10;
+        const indexes = playlist.getIndexes(playlist.lastElement.index, quantity, "down");
+        if (indexes) createReactiveList(indexes);
+    }
+}, { delay: 200, isThrottling: true });
+
+const scrollToCenter = () => {
+    selectedItem.scrollIntoView({ block: "center", behavior: "smooth" });
 }
 
-let scrollToSelected = () => {
-    if (!isFirstScroll) {
-        if (Player.info.tracks.length > 0) {
-            selectedItem.scrollIntoView({ block: "center", behavior: "smooth" });
-        }
-        isFirstScroll = true;
-    }
-}
+trackPositionTop.onclick = scrollToCenter;
+trackPositionBottom.onclick = scrollToCenter;
 
-let clearList = (list) => {
-    for (let i = 0; i < list.length; i++) {
-        list[i].remove();
-    }
-}
 
 /**
  * @param {number} volume min 0 max 1.
  */
 let setVolume = (volume) => {
-    volume = volume * 100;
+    volume = Math.round(volume * 100);
     let isVolume;
     if (sliderVolumeContent.offsetWidth == 0) {
         sliderVolumeContent.style.display = "block"; // for slider can get offset
@@ -675,30 +708,22 @@ let updateShuffle = (shuffle, isUpdate = false) => {
     }
 }
 
-toggleShuffle.onclick = (event) => {
-    sendEvent({ toggleShuffle: true }, true);
-}
-toggleRepeat.onclick = (event) => {
-    sendEvent({ toggleRepeat: true }, true);
-
-}
-toggleVolume.onclick = (event) => {
-    sendEvent({ toggleVolume: true }, true);
-
-}
+toggleShuffle.onclick = () => { sendEvent({ toggleShuffle: true }, true); }
+toggleRepeat.onclick = () => { sendEvent({ toggleRepeat: true }, true); }
+toggleVolume.onclick = () => { sendEvent({ toggleVolume: true }, true); }
 
 toggleVolume.onwheel = (event) => {
     sliderVolume.showTooltip(true);
     if (event.deltaY < 0) {
         if (sliderVolume.scale <= sliderVolume.maxScale) {
-            sliderVolume.scale += 4;
+            sliderVolume.scale += sliderVolume.wheelStep;
             if (sliderVolume.scale > sliderVolume.maxScale) sliderVolume.scale = sliderVolume.maxScale;
             sliderVolume.setTooltipPosition(sliderVolume.scale);
             sendEvent({ setVolume: sliderVolume.scale / 100 }, true);
         }
     } else {
         if (sliderVolume.scale >= 0) {
-            sliderVolume.scale -= 4;
+            sliderVolume.scale -= sliderVolume.wheelStep;
             if (sliderVolume.scale < 0) sliderVolume.scale = 0;
             sliderVolume.setTooltipPosition(sliderVolume.scale);
             sendEvent({ setVolume: sliderVolume.scale / 100 }, true);
@@ -710,34 +735,15 @@ let isVolume = false;
 const showVolumeDelay = new ExecutionDelay(() => {
     sliderVolumeContent.style.display = "block";
     isVolume = true;
-    let keyframe = {
-        opacity: [0, 1]
-    };
-
-    let options = {
-        duration: 300,
-    }
-    sliderVolumeContent.animate(keyframe, options);
-}, {
-    delay: 150,
-    isThrottling: true
-});
+    sliderVolumeContent.animate({ opacity: [0, 1] }, { duration: 300 });
+}, { delay: 150, isThrottling: true });
 
 const hideVolumeDelay = new ExecutionDelay(() => {
     isVolume = false;
-    let keyframe = {
-        opacity: [1, 0]
-    };
-    let options = {
-        duration: 300,
-    }
-    sliderVolumeContent.animate(keyframe, options).onfinish = () => {
+    sliderVolumeContent.animate({ opacity: [1, 0], }, { duration: 300 }).onfinish = () => {
         sliderVolumeContent.style.display = "none";
     };
-}, {
-    delay: 850,
-    isThrottling: true
-});
+}, { delay: 850, isThrottling: true });
 
 toggleVolume.onmouseenter = () => {
     if (isVolume == false) { showVolumeDelay.start(); }

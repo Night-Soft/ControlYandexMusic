@@ -4,6 +4,7 @@ if (Extension.windowName == "side-panel") {
 }
 
 if (Extension.windowName == "popup") {
+    const properties = ["id", "tabs", "focused", "type", "state", "incognito", "alwaysOnTop"];
     const boundsChanged = new ExecutionDelay((ev) => {
         if (popupWindow.windowId == ev.id) {
             ev.isTrackListOpen = popupWindow.isPlaylistOpen;
@@ -16,11 +17,15 @@ if (Extension.windowName == "popup") {
                 popupWindow.height = window.innerHeight;
                 ev.playlistHeight = popupWindow.playlistHeight - popupWindow.frameHeight;
             }
+            properties.forEach(property => Reflect.deleteProperty(ev, property));
+            Options.popupBounds = ev;
             sendEventBackground({ savePopupBounds: ev });
         }
     }, { delay: 200 });
-
     chrome.windows.onBoundsChanged.addListener(boundsChanged.start.bind(boundsChanged));
+
+    const popupClosed = sendEventBackground.bind(null, { popupClosed: true });
+    window.addEventListener("beforeunload", popupClosed);
 }
 
 let PopupWindow = class {
@@ -30,25 +35,15 @@ let PopupWindow = class {
         } else {
             return PopupWindow.instance
         }
-
-        let windows = chrome.windows.getAll({ populate: true, windowTypes: ['popup'] });
-        windows.then((result) => {
-            if (result.length) {
-                let windowUrl;
-                for (let i = 0; i < result.length; i++) {
-                    windowUrl = result[i].tabs[0].url;
-                    if (windowUrl.includes(chrome.runtime.id + "/popup.html")) {
-                        this.windowId = result[i].tabs[0].windowId;
-                    }
-                }
-            } else {
-                this.windowId = undefined;
-            }
-        }, (reject) => { });
-
         this.x = 0;
         this.y = 0;
         this.windowId;
+        getPopupWindowId().then((windowId)=>{
+            if (windowId) {
+                this.windowId = windowId;
+                sendEventBackground({ popupCreated: { id: this.windowId } });
+            }
+        });
         this.correctMinSize();
     }
 
@@ -57,8 +52,18 @@ let PopupWindow = class {
     #playlistHeight = 270;
     #isPlaylistOpen = false;
     correctMinSize() {
-        if (window.innerHeight < 110) {
-            window.resizeTo(this.width, this.height);
+        const height = window.innerHeight < 110 ? true : false;
+        const width = window.innerWidth < 250 ? true : false;
+        if (height && width) {
+            window.resizeTo(250, 110);
+            return;
+        }
+        if (height) {
+            window.resizeTo(window.innerWidth, 110);
+            return;
+        }
+        if (width) {
+            window.resizeTo(250, window.innerHeight);
         }
     }
     resizeTo(width, height) {
@@ -162,7 +167,7 @@ let togglePlaylist = (show) => {
         anim.onfinish = () => {
             list.style.height = "auto";
             list.style.overflowY = "auto";
-            scrollToSelected();
+            EventEmitter.emit("playlistIsOpen");
         }
         // playlist open
     } else {
@@ -190,7 +195,11 @@ let togglePlaylist = (show) => {
 }
 
 if (typeof hamburgerMenuList != "undefined") {
-    hamburgerMenuList.onclick = () => { togglePlaylist(); }
+    hamburgerMenuList.onclick = () => { 
+        togglePlaylist();
+        Options.popupBounds.isTrackListOpen = popupWindow.isPlaylistOpen;
+        sendEventBackground({ savePopupBounds: Options.popupBounds });
+     }
 } else {
     if (Extension.windowName == "side-panel") {
         togglePlaylist(true);
@@ -201,77 +210,67 @@ if (typeof hamburgerMenuList != "undefined") {
 
 // START OPTIONS
 let Options = {
-    onload: function () {
-        sendEventBackground({ getOptions: true }, setOptions);
-    },
-    isPlayPauseNotify: undefined,
-    isPrevNextNotify: undefined,
-    isShowWhatNew: undefined,
-    version: undefined,
-    oldVersionDescription: undefined,
-    isReduce: false,
-    popupBounds: undefined
-};
+    theme: {},
+    positionStep: undefined,
+    volumeStep: undefined,
+    popupBounds: undefined,
+    isSaveSizePopup: undefined
+}
+
 
 let setOptions = (options) => {
+    if (options.positionStep != undefined) {
+        Options.positionStep = options.positionStep;
+        if (typeof sliderProgress != "undefined") {
+            sliderProgress.wheelStep = options.positionStep;
+        }
+    }
+    if (options.volumeStep != undefined) {
+        Options.volumeStep = options.volumeStep;
+        if (typeof sliderVolume != "undefined") {
+            sliderVolume.wheelStep = options.volumeStep;
+        }
+    }
     if (options.theme != undefined) {
-        switch (options.theme) {
-            case "default":
-                Options.theme = options.theme;
-                setTheme("default", Extension.windowName);
-                break;
-            case "light":
-                Options.theme = options.theme;
-                setTheme("light", Extension.windowName);
-                break;
-            case "dark":
-                Options.theme = options.theme;
-                setTheme("dark", Extension.windowName);
-                break
-        }
+        Options.theme = options.theme;
+        setTheme(options.theme.name, Extension.windowName);
     }
-    if (options.isDarkTheme != undefined) { // remove it on next update
-        Options.isDarkTheme = options.isDarkTheme;
-        if (options.isDarkTheme == true) {
-            setDarkTheme("dark");
-        }
-    }
-    if (options.isCoverIncrease != undefined) {
-        Options.isCoverIncrease = options.isCoverIncrease;
-        try {
-            if (options.isCoverIncrease) {
-                setIncreaseCover(true);
-            } else {
-                setIncreaseCover(false);
-            }
-        } catch (error) { console.log(error) }
-    }
+
     if (options.isDislikeButton != undefined) {
         Options.isDislikeButton = options.isDislikeButton;
         if (options.isDislikeButton) {
             dislike.style.display = "block";
-            setIncreaseCover(true);
         } else {
             dislike.style.display = "none";
-            if (Options.isCoverIncrease == false) {
-                setIncreaseCover(false);
-            }
         }
     }
-    if (options.popupBounds != undefined) {
-        Options.popupBounds = options.popupBounds;
-        //this
-        popupWindow.playlistHeight = options.popupBounds.playlistHeight;
-        popupWindow.height = options.popupBounds.height;
-        if (options.popupBounds.isTrackListOpen) {
-            if (Extension.windowName == "popup") {
-                togglePlaylist(true);
+    if (Extension.windowName == "popup") {
+        if (options.hasOwnProperty("isSaveSizePopup") && options.hasOwnProperty("writeOptions") === false) {
+            if (options.isSaveSizePopup === false || options.isSaveSizePopup === undefined) {
+                Options.isSaveSizePopup = options.isSaveSizePopup;
+                popupWindow.playlistHeight = window.innerHeight;
+                popupWindow.width = window.innerWidth;
+                popupWindow.height = window.innerHeight;
             }
-            return;
+            if (options.popupBounds != undefined) {
+                Options.popupBounds = options.popupBounds;
+                if (options.isSaveSizePopup) {
+                    popupWindow.playlistHeight = options.popupBounds.playlistHeight;
+                    popupWindow.height = options.popupBounds.height;
+                }
+                if (options.popupBounds.isTrackListOpen || options.popupBounds.isTrackListOpen == undefined) {
+                    // to do:
+                    // popupWindow.height = options.popupBounds.height;
+                    
+                    togglePlaylist(true);
+                    return;
+                }
+            }
         }
         popupWindow.correctMinSize();
+        rootCss.style.setProperty('--transitionDuration', '0.7s');
     }
 }
 // END OPTIONS
-Options.onload();
+sendEventBackground({ getOptions: true }, setOptions);
 Extension.onload();

@@ -5,7 +5,7 @@ body {
 }
 
 :root {
-    --coverBackgroundSize: 45px;
+    --coverBackgroundSize: 30px;
     --pixselsForReduce: 0px;
     --progress-height: 8px;
     --progress-handle-size: 16px;
@@ -83,6 +83,7 @@ body {
     top: 115px;
     bottom: 0px;
     border-radius: 5px 5px 0px 0px;
+    background-color: var(--listTrackBackground);
 }
 
 .content-list-menu-popup {
@@ -105,6 +106,19 @@ body {
     background-size: 28px;
     filter: drop-shadow(0px 0px 2px rgb(0 0 0 / 20%));
 }
+.svg-pause {
+    display: none;
+    width: 30px;
+    height: 30px;
+}
+.svg-play {
+    width: 30px;
+    height: 30px;
+}
+
+.slider {
+    filter: var(--slider-shadow);
+}
 
 .slider-progress-popup {
     margin-left: 10px;
@@ -115,6 +129,9 @@ body {
     display: flex;
     justify-content: space-around;
     color: white;
+}
+.slider-toltip {
+    margin-top: -36px;
 }
 
 .content-time {
@@ -139,6 +156,7 @@ body {
 
 .content {
     padding-top: unset;
+    margin-top: 2px;
 }
 
 .content-track {
@@ -152,7 +170,7 @@ body {
     width: 35px;
     height: 35px;
     border-radius: 10px;
-    margin: 5px 10px 0px 5px;
+    margin: 0px 10px 0px 5px;
     transition: 0.7s;
 }
 
@@ -167,7 +185,7 @@ body {
     height: 100%;
     width: 100%;
     position: relative;
-    border-radius: 0px;
+    border-radius: 5px;
 }
 .image-container {
     display: flex;
@@ -225,8 +243,6 @@ body {
 
 .item-track {
     min-height: 20px;
-    margin: 5px 0px 5px 0px;
-    padding: unset;
     transition: 0.4s;
     font-family: var(--fontFamily);
 }
@@ -250,7 +266,7 @@ body {
 }
 
 .title-list {
-    margin-right: 32px;
+    margin: 5px 30px 5px 30px;
 }
 
 .track-position-top {
@@ -273,15 +289,8 @@ body {
 
 }
 
-.track-position-top:hover::after {
-    background: rgb(255 136 26 / 100%);
-
-}
-
-.track-position-bottom:hover::after {
-    background: rgb(255 136 26 / 100%);
-}
 .list-track {
+    width: 100%;
     background-color: unset;
 
 }
@@ -321,6 +330,7 @@ body {
 
 #AppQuestion {
     font-size: 0.8rem;
+    font-weight: 300;
     margin: 0px;
     line-height: 1;
 }
@@ -418,7 +428,6 @@ body {
         font-size: 20px;
         margin: auto;
         line-height: unset;
-        font-weight: 100;
     }
     .no-conect-btn {
         font-size: initial;
@@ -430,13 +439,14 @@ body {
         min-width: 24px;
         height: 24px
     }
-
     .list-dislike {
         min-width: 24px;
         height: 24px
     }
     .track-position-top {
         top: 107px;
-    
+    }
+    .list-item-like {
+        min-width: 22px;
     }
 }

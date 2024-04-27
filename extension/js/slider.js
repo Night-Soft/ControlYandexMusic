@@ -35,17 +35,22 @@ let Slider = class {
 
 
     }
+    #wheelStep = 4;
+    get wheelStep() { return this.#wheelStep; }
+    set wheelStep(value) {
+        if (isFinite(value)) { this.#wheelStep = value; }
+    }
     #wheel(event) {
         if (event.deltaY < 0) {
             if (this.scale <= this.maxScale) {
-                this.scale += 4;
+                this.scale += this.wheelStep;
                 if (this.scale > this.maxScale) this.scale = this.maxScale;
                 this.setPosition(this.scale);
                 this.setTooltipPosition(this.scale);
             }
         } else {
             if (this.scale >= 0) {
-                this.scale -= 4;
+                this.scale -= this.wheelStep;
                 if (this.scale < 0) this.scale = 0;
                 this.setPosition(this.scale);
                 this.setTooltipPosition(this.scale);
@@ -199,6 +204,10 @@ let tooltipVol = document.getElementsByClassName("slider-toltip")[0];
 let sliderVolumeContent = document.getElementsByClassName("slider-content")[0];
 
 let sliderVolume = new Slider(sliderVolumeElement, currentGrooveVol, handleVol, tooltipVol);
+sliderVolume.wheelStep = Options.volumeStep;
+if (typeof volumeStep != "undefined") {
+    volumeStep.value = sliderVolume.wheelStep;
+}
 
 const sendVolumeDelay = new ExecutionDelay(() => {
     sendEvent({ setVolume: sliderVolume.scale / 100 }, true);
@@ -232,6 +241,10 @@ let progressUpdater, currentUnixTime;
 let sliderProgress = new Slider(sliderProgressElement, progressGrooveCurrent, progressHandle, progressToltip);
 sliderProgress.isOwnDataToltip = true;
 sliderProgress.setDelayTooltip(150);
+sliderProgress.wheelStep = Options.positionStep;
+if (typeof positionStep != "undefined") {
+    positionStep.value = sliderProgress.wheelStep;
+}
 
 const sendPositionDelay = new ExecutionDelay((event) => {
     sliderProgress.setTooltipData(getDurationAsString(getSeconds(event.x - sliderProgress.groove.offsetLeft)));
@@ -261,7 +274,7 @@ sliderProgress.onmousedown = (event) => {
 }
 
 sliderProgress.onwheel = (event) => {
-    let seconds = event.deltaY < 0 ? 4 : -4;
+    let seconds = event.deltaY < 0 ? sliderProgress.wheelStep : - sliderProgress.wheelStep;
     sliderProgress.setTooltipData(getDurationAsString(Player.position + seconds));
     setTime(Player.position + seconds);
 }

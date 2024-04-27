@@ -3,7 +3,7 @@ let Background = {
         port: {},
         isConnected: false,
         async create() {
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 getYandexMusicTab().then((result) => {
                     if (result) {
                         try {
@@ -26,21 +26,9 @@ let Background = {
             });
         },
         onPortAddListener() {
-            this.port.onDisconnect.addListener((disconnect) => {
+            this.port.onDisconnect.addListener(() => {
                 this.isConnected = false;
             });
-            this.port.onMessage.addListener(function(request) {
-                if (request.response) {
-                    response(request.response);
-                }
-            });
-            let response = (answer) => {
-                switch (answer.case) {
-                    case "extensionIsLoad":
-                        console.log("extension Is Load", answer);
-                        break;
-                }
-            }
         }
     },
     isAllReaded: false,
@@ -51,6 +39,10 @@ let Background = {
 }
 
 let Options = {
+    defaultPopup: undefined,
+    pinTab: undefined,
+    positionStep: undefined,
+    volumeStep: undefined,
     isAllNoifications: undefined,
     isPlayPauseNotify: undefined,
     isPrevNextNotify: undefined,
@@ -59,15 +51,15 @@ let Options = {
     oldVersionDescription: undefined,
     isDarkTheme: undefined,
     theme: undefined,
-    isCoverIncrease: undefined,
+    isButtonsReduced: undefined,
     isDislikeButton: undefined,
-    isSavePosPopup: undefined,
+    isSaveSizePopup: undefined,
     popupBounds: undefined,
     reassign: undefined,
 }
 
 let PopupWindow = class {
-    constructor() {
+    constructor () {
         if (!PopupWindow.instance) {
             PopupWindow.instance = this;
         } else {
@@ -77,7 +69,7 @@ let PopupWindow = class {
         display.then((value) => {
             this.workArea.height = value[0].workArea.height;
             this.workArea.width = value[0].workArea.width;
-        }, (reject) => {});
+        });
         this.workArea = {
             height: 0,
             width: 0,
@@ -88,31 +80,37 @@ let PopupWindow = class {
 
     windowData = () => {
         const width = () => {
-            if (this.bounds != undefined && Object.keys(this.bounds).length !== 0) {
+            if (Options.isSaveSizePopup === false || Options.isSaveSizePopup === undefined) {
+                if (Options.defaultPopup) {
+                    return Options.defaultPopup.width;
+                } 
+            }
+            if (Object.keys(this.bounds).length > 0) {
                 return this.bounds.width;
             }
-            return 250;
+            return 380;
         }
         const height = () => {
-            if (this.bounds != undefined && Object.keys(this.bounds).length !== 0) {
+            if (Options.isSaveSizePopup === false || Options.isSaveSizePopup === undefined) {
+                if (Options.defaultPopup) {
+                    return Options.defaultPopup.height;
+                } 
+            }
+            if (Object.keys(this.bounds).length > 0) {
                 if (this.bounds.isTrackListOpen) {
                     return this.bounds.playlistHeight;
                 }
                 return this.bounds.height;
             }
-            return 110;
+            return 580;
         }
         const left = () => {
-            if (this.bounds != undefined && Object.keys(this.bounds).length !== 0) {
-                return this.bounds.left;
-            }
-            return this.workArea.width - width();
+            if(this?.bounds?.left) return this.bounds.left;
+            return this.workArea.width / 2 - width() / 2; 
         }
         const top = () => {
-            if (this.bounds != undefined && Object.keys(this.bounds).length !== 0) {
-                return this.bounds.top;
-            }
-            return this.workArea.height - height();
+            if (this?.bounds?.top) return this.bounds.top;
+            return this.workArea.height / 2 - height() / 2; 
         }
         return {
             height: height(),
@@ -126,7 +124,7 @@ let PopupWindow = class {
     }
     create(force = false) {
         if (force) {
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 chrome.windows.create(this.windowData(), (windowData) => {
                     if (Object.keys(this.bounds).length > 0) {
                         windowData.height = this.bounds.height;
@@ -168,7 +166,7 @@ let PopupWindow = class {
         });
     }
     updateWindow() {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             PopupWindow.checkCreated().then((result) => {
                 if (result) {
                     if (result.state == "normal" || result.state == "maximized") {
@@ -188,9 +186,8 @@ let PopupWindow = class {
         });
     }
     static checkCreated() {
-        return new Promise((resolve, reject) => {
-            let popupWindowList = chrome.windows.getAll({ populate: true, windowTypes: ['popup'] });
-            popupWindowList.then((result) => {
+        return new Promise((resolve) => {
+            chrome.windows.getAll({ populate: true, windowTypes: ['popup'] }).then((result) => {
                 if (result.length) {
                     let windowUrl;
                     for (let i = 0; i < result.length; i++) {
@@ -206,10 +203,9 @@ let PopupWindow = class {
                     }
                     resolve(false);
                 } else {
-                    //this.bounds = undefined;
                     resolve(false);
                 }
-            }, (reject) => {});
+            });
         });
     }
      #getBounds() {
@@ -217,8 +213,8 @@ let PopupWindow = class {
             PopupWindow.instance.bounds = Options.popupBounds;
             return Options.popupBounds;
         }
-        return new Promise((resolve, reject) => {
-            getOptions({ parameters: ["popupBounds"] }).then((result) => {
+        return new Promise((resolve) => {
+            getOptions("popupBounds").then((result) => {
                 if(result.popupBounds != undefined) {
                     PopupWindow.instance.bounds = result.popupBounds;
                     resolve(result);
@@ -234,9 +230,9 @@ let PopupWindow = class {
 chrome.commands.onCommand.addListener(function(command) {
     if (command) { // 'next-key' 'previous-key' 'togglePause-key' 'toggleLike-key'
         if (Options.reassign == undefined) {
-            getOptions({ parameters: ["popupBounds", "reassign"] }).then((result) => {
-                if ("isReassign" in Options.reassign) {
-                    if (Options.reassign.isReassign == true && Options.reassign.shortCut.name == command) {
+            getOptions("popupBounds", "reassign").then((result) => {
+                if (Options.reassign?.isReassign) { 
+                    if (Options.reassign.shortCut.name == command) {
                         createUpdatePopup();
                         return;
                     }
@@ -268,11 +264,11 @@ chrome.runtime.onMessageExternal.addListener(
         if (request.key == true) {
             if (Background.isAllReaded) {
                 showNotification(request);
-            } else(
+            } else {
                 getOptions().then((result) => {
                     showNotification(request);
-                }, (rejected) => {})
-            )
+                });
+            }
         }
         //return true;
     });
@@ -286,9 +282,10 @@ chrome.runtime.onMessage.addListener( // content, extension, script
             if (!Background.connection.isConnected) {
                 Background.connection.create();
             }
-            getYandexMusicTab().then((result) => {
-                if (result) {
-                    sendEvent({ id: chrome.runtime.id, tabId: result });
+            getYandexMusicTab().then((tabId) => {
+                if (tabId) {
+                    sendEvent({ id: chrome.runtime.id, tabId });
+                    Options.pinTab && chrome.tabs.update(tabId, { pinned: true });
                 }
             });
         }
@@ -299,10 +296,10 @@ chrome.runtime.onMessage.addListener( // content, extension, script
                 });
             } else {
                 getOptions().then((result) => {
-                    sendMessage({ options: result });
+                    sendResponse({ options: result });
                 });
             }
-            return;
+            // return;
         } else if (request.getOptions != undefined) {
             if (request.send != undefined) {
                 getOptions(request.getOptions, request.send);
@@ -321,7 +318,7 @@ chrome.runtime.onMessage.addListener( // content, extension, script
                 sendResponse(result);
             });
         }
-        return true; // 
+        return true;  
     });
 
 chrome.windows.onRemoved.addListener((ev) => {
@@ -336,7 +333,9 @@ let sendMessage = (event, callback) => {
 }
 
 let sendEvent = (event) => { // to content script
-    Background.connection.port.postMessage(event);
+    if (Background.connection.isConnected) {
+        Background.connection.port.postMessage(event);
+    }
 }
 
 let getYandexMusicTab = () => {
@@ -358,37 +357,18 @@ let getYandexMusicTab = () => {
 
 let writePopupBoundsTimer;
 let writePopupBounds = (popupBounds, force = false) => {
-    //console.log("set popupBounds date to instance", popupBounds)
     PopupWindow.instance.bounds = popupBounds;
-    try {
-        const del = (obj, arr = ["id", "tabs", "focused", "type", "state", "incognito", "alwaysOnTop"]) => {
-            for (let i = 0; i < arr.length; i++) {
-                Reflect.deleteProperty(obj, arr[i]);
-            }
+    if (equalsObj(popupBounds, Options.popupBounds) == false) {
+        if (force) {
+            clearTimeout(writePopupBoundsTimer);
+            writeOptions({ popupBounds });
+            return;
         }
-        del(popupBounds);
-        del(Options.popupBounds);
-        //console.log("delete unnecessary from popupBounds", popupBounds);
-    } catch (error) { }
-    // save to instance
-    if (Options.isSavePosPopup) {
-        if (equalsObj(popupBounds, Options.popupBounds) == false) {
-            if (force) {
-                clearTimeout(writePopupBoundsTimer);
-                // popupBounds saved force
-                Options.popupBounds = PopupWindow.instance.bounds;
-                writeOptions({popupBounds});
-                return;
-            }
-            if (typeof(writePopupBoundsTimer) != "undefined") {
-                clearTimeout(writePopupBoundsTimer);
-            }
-            Options.popupBounds = PopupWindow.instance.bounds;
-            writePopupBoundsTimer = setTimeout(() => {
-                //console.log("popupBounds writed with timeout")
-                writeOptions({popupBounds});
-            }, 15000);
-        }
+        clearTimeout(writePopupBoundsTimer);
+        Options.popupBounds = popupBounds;
+        writePopupBoundsTimer = setTimeout(() => {
+            writeOptions({ popupBounds });
+        }, 15000);
     }
 }
 // send to get frame
@@ -396,17 +376,13 @@ let createUpdatePopup = async() => {
     if (typeof(popupWindow) == 'undefined') {
         popupWindow = new PopupWindow();
     }
-    return new Promise((resolve, reject) => { //this
-        popupWindow.create().then((result) => {
-            if (result.exists && result.nowCreated) {
-                sendMessage({ popupCreated: true, windowData: popupWindow.bounds });
-            } else if (result.exists) {
-                popupWindow.updateWindow();
-            }
-            resolve(result);
-        });
-    });
-
+    const result = await popupWindow.create();
+    if (result.exists && result.nowCreated) {
+        sendMessage({ popupCreated: true, windowData: popupWindow.bounds });
+    } else if (result.exists) {
+        popupWindow.updateWindow();
+    }
+    return Promise.resolve(result);
 }
 
 const equalsObj = (a, b) => {
@@ -621,65 +597,50 @@ let getWhatNew = async() => {
     });
 }
 
-let readOption = (option) => {
-    let date = new Date();
-    Background.lastReaded.time = date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
-    if (option == true) { // get all options
-        return new Promise((resolve, reject) => {
-            let OptionsKeys = Object.keys(Options);
-            let obj = {}
-            for (let i = 0; i < OptionsKeys.length; i++) {
-                chrome.storage.local.get([OptionsKeys[i]], function(result) {
-                    Options[OptionsKeys[i]] = result[OptionsKeys[i]];
-                    obj[OptionsKeys[i]] = result[OptionsKeys[i]];
-                    if (OptionsKeys.length - 1 == i) {
-                        Background.isAllReaded = true;
-                        Background.lastReaded.parameters = OptionsKeys;
-                        resolve(obj);
-                    }
-                });
-            }
-        });
+let readOption = (options = null) => { 
+    if (options !== null && typeof options !== 'string' && Array.isArray(options) !== true) {
+        throw new TypeError(`Wrong options type. '${options}'`);
     }
-    if (option.parameters) { // get selected options
-        const compare = (arr1, arr2) => {
-            let same = [];
-            let different = arr1.slice();
-            for (let i = 0; i < arr1.length; i++) {
-                for (let j = 0; j < arr2.length; j++) {
-                    if (arr1[i] == arr2[j]) {
-                        same.push(arr1[i]);
-                        different.splice(different.indexOf(arr1[i]), 1);
-                    }
-                }
-            }
-            return { parameters: same, different };
+    let existingOptions = [];
+    if (options !== null) {
+        if (Array.isArray(options)) {
+            existingOptions = Object.keys(Options).filter((key) => {
+                for (requestKey of options) { 
+                    if (requestKey === key) return requestKey;
+                 }
+            });
+        } else if (typeof options === "string") {
+            existingOptions = Object.keys(Options).filter(option => option === options);
         }
-
-        return new Promise((resolve, reject) => {
-            let { parameters, different } = compare(option.parameters, Object.keys(Options));
-
-            if (different.length > 0) {
-                try {
-                    throw new Error(`The "${different}" is not defined!`);
-                } catch (error) {
-                    console.error(error);
-                }
-            }
-            let object = {}
-            for (let i = 0; i < parameters.length; i++) {
-                chrome.storage.local.get(parameters[i], (result) => {
-                    object[parameters[i]] = result[parameters[i]];
-                    Options[parameters[i]] = result[parameters[i]];
-                    if (i + 1 == parameters.length) {
-                        Background.lastReaded.parameters = parameters;
-                        resolve(object)
-                    }
-                });
-            }
-
-        });
+        if (existingOptions.length == 0) {
+            throw new Error(`The '${options}' does not exsist`);
+        }
     }
+    const date = new Date();
+    Background.lastReaded.time = date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
+
+    return new Promise((resolve) => {
+        const optionsToGet = existingOptions.length > 0 ? existingOptions : null;
+        if(optionsToGet === null) Background.isAllReaded = true;
+        chrome.storage.local.get(optionsToGet).then(result => {
+            Object.keys(result).forEach((key) => Options[key] = result[key]);
+
+            if (optionsToGet !== null && Object.keys(result).length !== existingOptions.length) {
+                const emptyOptions = existingOptions.reduce((options, key) => {
+                    return Object.assign(options, { [key]: undefined });
+                }, {});
+
+                const missingOptions = existingOptions.filter((value) => result[value] ? false : true);
+                result = Object.defineProperty({ ...emptyOptions, ...result }, "Info", {
+                    value: `The '${missingOptions.join(", ")}' probably not writed yet`
+                });
+
+                resolve(result);
+                return;
+            }
+            resolve(result);
+        });
+    });
 }
 
 let writeOptions = (option) => {
@@ -710,48 +671,51 @@ let writeOptions = (option) => {
     }
 }
 
+const checkNewVersion = async () => {
+    const manifestVersion = chrome.runtime.getManifest().version; // this
+    if (Options.version === undefined && Background.isAllReaded === false) {
+        await getOptions("version");
+    }
+    if (manifestVersion != Options.version) {
+        const result = await getWhatNew();
+        if (!result.success) { return; }
+        let currentVersionDescription = result.versions[0][0];
+        if (Options.oldVersionDescription != currentVersionDescription) {
+            writeOptions({
+                version: manifestVersion,
+                oldVersionDescription: currentVersionDescription,
+                isShowWhatNew: true
+            });
+        }
+        return Promise.resolve({ isNewVersion: true });
+    }
+    return Promise.resolve({ isNewVersion: false });
+}
 /**
  * option takes parameters.
- * @param {object} option True for get all options.
- * @param {object} option get needed { parameters: ["innewversion", "version"] }.
- * @param {object} send force send message with options.
+ * @param {null | string[] | string} option null for get all options,
+ *  get needed ["theme", "version"] or "popupBounds".
+ * @param {boolean} send force send message with options.
  * @return {object} Result as object.
  */
-let getOptions = async(option = true, send = false) => { // read and send
-    if (option != true && typeof option != "object" && !Array.isArray(option)) {
-        option = { parameters: [option.toString()] };
-    }
-    if (Array.isArray(option)) {
-        option = { parameters: option }
+let getOptions = async (option = null, send = false) => { // read and send
+    if (option !== null && typeof option !== 'string' && Array.isArray(option) !== true) {
+        throw new TypeError(`Wrong option type. ${option}`);
     }
     return new Promise((resolve, reject) => {
         readOption(option).then((result) => { // read from parameter
-            if (option === true) {
-                const manifestVersion = chrome.runtime.getManifest().version;
-                if (manifestVersion != Options.version) {
-                    getWhatNew().then((value) => {
-                        if (!value.success) { return; }
-                        let currentVersionDescription = value.versions[0][0];
-                        if (Options.oldVersionDescription != currentVersionDescription) {
-                            writeOptions({
-                                version: manifestVersion,
-                                oldVersionDescription: currentVersionDescription,
-                                isShowWhatNew: true
-                            });
-                            sendMessage({ options: Options });
-                        }
-                    });
-                }
-            }
-            resolve(result);
-            if (send) {
+            if (option === null && result.isShowWhatNew) {
                 sendMessage({ options: Options });
             }
+            if (send) sendMessage({ options: Options });
+            resolve(result);
         }, (rejected) => {
             reject(rejected);
             console.log("Read settings error.", rejected);
         });
     });
 }
+
 let popupWindow = new PopupWindow();
 Background.connection.create();
+checkNewVersion();

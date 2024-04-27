@@ -78,18 +78,65 @@
         </div>
     </div>
 
-    <div class="content ">
-        <div class="previous control control-popup"></div>
-        <div class="pause control control-popup"></div>
-        <div class="next control control-popup"></div>
+    <div class="content">
+        <div id="Previous" class="control control-popup">
+            <svg class="svg-prev" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path class="svg-outside-color"
+                    d="M9.87305 2C8.28631 2 7 3.28631 7 4.87305V94.8552C7 96.442 8.28631 97.7283 9.87305 97.7283H28.3864C29.9731 97.7283 31.2594 96.442 31.2594 94.8552V55.5467L84.6826 91.143C86.485 92.3439 88.802 92.4555 90.7114 91.4333C92.6208 90.4111 93.8127 88.4211 93.8127 86.2553V12.8734C93.8127 10.7076 92.6208 8.71751 90.7114 7.69532C88.802 6.67313 86.485 6.7847 84.6826 7.98563L31.2594 43.582V4.87305C31.2594 3.28631 29.9731 2 28.3864 2H9.87305Z"
+                    fill="#FFCC00" />
+                <path fill-rule="evenodd" clip-rule="evenodd"
+                    d="M13.5768 13.6399C13.5768 10.366 15.9125 7.41955 19.1297 7.41955C22.347 7.41955 24.6826 10.366 24.6826 13.6399V86.0883C24.6826 89.3622 22.347 92.3087 19.1297 92.3087C15.9125 92.3087 13.5768 89.3622 13.5768 86.0883V13.6399Z"
+                    fill="white" fill-opacity="0.941176" />
+                <path fill-rule="evenodd" clip-rule="evenodd"
+                    d="M79.4562 71.0903C79.9284 70.8359 80.2229 70.3428 80.2229 69.8063L80.2229 29.9215C80.2229 29.3851 79.9284 28.8919 79.4561 28.6375C78.9839 28.3831 78.4101 28.4085 77.9621 28.7036L47.6925 48.646C47.2829 48.9159 47.0364 49.3735 47.0364 49.8639C47.0364 50.3544 47.2829 50.812 47.6925 51.0818L77.9621 71.0242C78.4101 71.3193 78.9839 71.3447 79.4562 71.0903Z"
+                    fill="white" fill-opacity="0.941176" />
+            </svg>
+        </div>
+        <div id="Pause" class="pause control control-popup">
+            <svg class="svg-play" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path class="svg-outside-color" fill-rule="evenodd" clip-rule="evenodd"
+                    d="M93.488 57.8047C99.496 54.3359 99.496 45.6641 93.488 42.1953L22.5181 1.22083C16.51 -2.24791 9 2.08801 9 9.02549V90.9745C9 97.912 16.51 102.248 22.5181 98.7792L93.488 57.8047ZM58.5663 51.9512C60.0683 51.084 60.0683 48.916 58.5663 48.0488L34.9097 34.3907C33.4076 33.5235 31.5301 34.6075 31.5301 36.3418V63.6582C31.5301 65.3925 33.4076 66.4765 34.9097 65.6093L58.5663 51.9512Z"
+                    fill="#FFCC00" />
+                <path fill-rule="evenodd" clip-rule="evenodd"
+                    d="M83.9127 50.9756C84.6637 50.542 84.6637 49.458 83.9127 49.0244L21.3916 12.9278C20.6406 12.4942 19.7018 13.0362 19.7018 13.9034V86.0966C19.7018 86.9638 20.6406 87.5058 21.3916 87.0722L83.9127 50.9756ZM70.9579 51.3879C72.4599 50.5207 72.4599 48.3528 70.9579 47.4856L27.869 22.6082C26.367 21.741 24.4895 22.825 24.4895 24.5594V74.3141C24.4895 76.0485 26.367 77.1325 27.869 76.2653L70.9579 51.3879Z"
+                    fill="white" />
+            </svg>
+            <svg class="svg-pause" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path class="svg-outside-color" fill-rule="evenodd" clip-rule="evenodd"
+                    d="M55.0002 9.9095C55.0002 4.43663 59.4368 0 64.9097 0H75.0903C80.5632 0 84.9998 4.43663 84.9998 9.9095V90.0901C84.9998 95.563 80.5632 99.9996 75.0903 99.9996H64.9097C59.4368 99.9996 55.0002 95.563 55.0002 90.0901V9.9095Z"
+                    fill="#FFCC00" />
+                <path fill-rule="evenodd" clip-rule="evenodd"
+                    d="M62 12.9871C62 9.68039 64.6806 6.99979 67.9873 6.99979H72.0127C75.3194 6.99979 78 9.68039 78 12.9871V87.0125C78 90.3192 75.3194 92.9998 72.0127 92.9998H67.9873C64.6806 92.9998 62 90.3192 62 87.0125V12.9871Z"
+                    fill="#FFFEFF" />
+                <path class="svg-outside-color" fill-rule="evenodd" clip-rule="evenodd"
+                    d="M15 9.9097C15 4.43683 19.4366 0.000198364 24.9095 0.000198364H35.0901C40.563 0.000198364 44.9996 4.43683 44.9996 9.9097V90.0903C44.9996 95.5632 40.563 99.9998 35.0901 99.9998H24.9095C19.4366 99.9998 15 95.5632 15 90.0903V9.9097Z"
+                    fill="#FFCC00" />
+                <path fill-rule="evenodd" clip-rule="evenodd"
+                    d="M21.9998 12.9873C21.9998 9.68058 24.6804 6.99999 27.9871 6.99999H32.0125C35.3192 6.99999 37.9998 9.68058 37.9998 12.9873V87.0127C37.9998 90.3194 35.3192 93 32.0125 93H27.9871C24.6804 93 21.9998 90.3194 21.9998 87.0127V12.9873Z"
+                    fill="#FFFEFF" />
+            </svg>
+        </div>
+        <div id="Next" class="next control control-popup">
+            <svg class="svg-next" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path class="svg-outside-color"
+                    d="M90.9397 2C92.5264 2 93.8127 3.28631 93.8127 4.87305V94.8552C93.8127 96.442 92.5264 97.7283 90.9397 97.7283H72.4263C70.8396 97.7283 69.5533 96.442 69.5533 94.8552V55.5467L16.1301 91.143C14.3278 92.3439 12.0108 92.4555 10.1014 91.4333C8.19196 90.4111 7.00005 88.4211 7.00005 86.2553V12.8734C7.00005 10.7076 8.19196 8.71751 10.1014 7.69532C12.0108 6.67313 14.3278 6.7847 16.1301 7.98563L69.5533 43.582V4.87305C69.5533 3.28631 70.8396 2 72.4263 2H90.9397Z"
+                    fill="#FFCC00" />
+                <path fill-rule="evenodd" clip-rule="evenodd"
+                    d="M87.2359 13.6399C87.2359 10.366 84.9003 7.41955 81.683 7.41955C78.4657 7.41955 76.1301 10.366 76.1301 13.6399V86.0883C76.1301 89.3622 78.4657 92.3087 81.683 92.3087C84.9003 92.3087 87.2359 89.3622 87.2359 86.0883V13.6399Z"
+                    fill="white" fill-opacity="0.941176" />
+                <path fill-rule="evenodd" clip-rule="evenodd"
+                    d="M21.3566 71.0903C20.8843 70.8359 20.5898 70.3428 20.5898 69.8063L20.5898 29.9215C20.5898 29.3851 20.8843 28.8919 21.3566 28.6375C21.8289 28.3831 22.4027 28.4085 22.8506 28.7036L53.1203 48.646C53.5298 48.9159 53.7763 49.3735 53.7763 49.8639C53.7763 50.3544 53.5298 50.812 53.1203 51.0818L22.8506 71.0242C22.4027 71.3193 21.8289 71.3447 21.3566 71.0903Z"
+                    fill="white" fill-opacity="0.941176" />
+            </svg>
+        </div>
         <div class="like control control-popup"></div>
         <div class="dislike control control-popup"></div>
     </div>
     <div id="listTrack" class="modal-list-menu modal-list-menu-popup">
-        <div class="content-list-menu content-list-menu-popup">
-            <div class="list-track">
-                <div class="title-list">Title</div>
-            </div>
+        <div class="track-position-top"></div>
+        <div class="track-position-bottom"></div>
+        <div class="list-track">
+            <div class="title-list">Title</div>
         </div>
     </div>
     <div class="no-connect">
@@ -111,7 +158,7 @@
     <script defer src="js/general-utils.js "></script>
     <script defer src="js/ExecutionDelay.js"></script>
     <script defer src="js/general-elements.js"></script>
-    <script defer src="js/popup.js "></script>
+    <script defer src="js/popup.js"></script>
     <script defer src="js/player.js"></script>
     <script defer src="js/slider.js"></script>
 </body>

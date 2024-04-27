@@ -8,23 +8,22 @@ const ExecutionDelay = class {
     #fulfilled;
     #isTimeout = false;
     /**
- * @param {Function} func - The function to be executed with a delay.
- * @param {Object} [options={}] - Options as an object for setting parameters.
- * @param {number} [options.delay=1000] - The delay time in milliseconds (default: 1000ms).
- * @param {Object|null} [options.context=null] - The context in which the function will be executed (default: null).
- * @param {boolean} [options.startNow=false] - Initiates execution immediately upon initialization (default: false).
- * @param {boolean} [options.executeNow=false] - Executes the function immediately upon initialization (default: false).
- * @param {boolean} [options.isThrottling=false] - Sets whether function calls are throttled (default: false).
- * @param  {...any} args - Additional arguments to be passed to the function.
- */
+    * @param {Function} func - The function to be executed with a delay.
+    * @param {Object} [options={}] - Options as an object for setting parameters.
+    * @param {number} [options.delay=1000] - The delay time in milliseconds (default: 1000ms).
+    * @param {Object|null} [options.context=null] - The context in which the function will be executed (default: null).
+    * @param {boolean} [options.startNow=false] - Initiates execution immediately upon initialization (default: false).
+    * @param {boolean} [options.executeNow=false] - Executes the function immediately upon initialization (default: false).
+    * @param {boolean} [options.isThrottling=false] - Sets whether function calls are throttled (default: false).
+    * @param  {...any} args - Additional arguments to be passed to the function.
+    */
     constructor(func, {
         delay = 1000,
         context = null,
         startNow = false,
         executeNow = false,
         isThrottling = false
-    } = {},
-        ...args) {
+    } = {}, ...args) {
         this.delay = delay;
         this.setContext(context);
         this.isThrottling = isThrottling;
@@ -38,13 +37,13 @@ const ExecutionDelay = class {
 
     get delay() { return this.#delay; }
     set delay(value) {
-        if (typeof value !== 'number') { throw new ReferenceError(`The '${value}' is not 'number'`); }
+        if (typeof value !== 'number') { throw new TypeError(`The '${value}' is not 'number'`); }
         this.#delay = value;
     }
 
     get isThrottling() { return this.#isThrottling; }
     set isThrottling(value) {
-        if (typeof value !== 'boolean') { throw new ReferenceError(`The '${value}' is not 'boolean'`); }
+        if (typeof value !== 'boolean') { throw new TypeError(`The '${value}' is not 'boolean'`); }
         if (value == false) { this.#args = undefined; }
         this.#isThrottling = value;
     }
@@ -53,7 +52,7 @@ const ExecutionDelay = class {
 
     getFunction() { return { function: this.#func, arguments: this.#args, context: this.#context } }
     setFunction(func, ...args) {
-        if (typeof func != 'function') { throw new Error(`The '${func}' is not a function.`); }
+        if (typeof func != 'function') { throw new TypeError(`The '${func}' is not a function.`); }
         this.#func = func;
         if (args.length > 0) this.#args = args;
         return {

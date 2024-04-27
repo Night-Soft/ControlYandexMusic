@@ -1,6 +1,6 @@
-let previous = document.getElementsByClassName("previous");
-let pause = document.getElementsByClassName("pause");
-let next = document.getElementsByClassName("next");
+let previous = document.getElementById("Previous");
+let pause = document.getElementById("Pause");
+let next = document.getElementById("Next");
 let trackImage = document.getElementsByClassName("cover");
 let artistsName = document.getElementsByClassName("name-artists");
 let trackName = document.getElementsByClassName("name-track");
@@ -18,17 +18,16 @@ let yesNoNew = document.getElementsByClassName("yes-no-new")[0];
 let transition = document.getElementsByClassName("transition");
 let hamburgerMenuList = document.getElementsByClassName("hamburger-menu-list")[0];
 let dislike = document.getElementsByClassName("dislike")[0];
-let notification = document.getElementsByClassName("notification")[0];
-let notificationTimeLeft = document.getElementsByClassName("notification-time-left")[0];
-let closeNotification = document.getElementsByClassName("close-notification")[0];
 let textNotification = document.getElementsByClassName("h2-notification")[0];
 let notificationTrackName = document.getElementsByClassName("notification-track-name")[0];
 let contentListMenu = document.getElementsByClassName("content-list-menu")[0];
 let modalListMenu = document.getElementsByClassName("modal-list-menu")[0];
+let PlayIcon = document.getElementsByClassName("svg-play")[0];
+let PauseIcon = document.getElementsByClassName("svg-pause")[0];
 
-let port = {
-    isConnection: false
-};
+const rewind = rewindHolding();
+
+let port = { isConnection: false };
 
 let urlCover;
 
@@ -94,17 +93,28 @@ chrome.runtime.onMessage.addListener( // background, content-script
                 });
             });
         }
+
+        // to do
         if (request.options) {
             setOptions(request.options);
-            if (Extension.windowName == "extension") {
+            if (Extension.windowName === "extension") {
                 if (request.options.isShowWhatNew) {
                     checkNew();
                 }
             }
         }
+        if (request.savePopupBounds && Extension.windowName === "extension") {
+            setOptions({ popupBounds: request.savePopupBounds });
+        } 
+        if (request.popupCreated && Extension.windowName === "extension") {
+            toggleSetCurrentSizeBtn();
+        } 
+        if (request.popupClosed && Extension.windowName === "extension") {
+            toggleSetCurrentSizeBtn();
+        } 
     });
 
-chrome.runtime.onMessageExternal.addListener( // injected script
+    chrome.runtime.onMessageExternal.addListener( // injected script
     (request, sender, sendResponse) => {
         switch (request.event) {
             case 'currentTrack': // get from the key
@@ -112,11 +122,11 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                     showNotification(chrome.i18n.getMessage("playlistEmpty"), 7000);
                     return;
                 }
+                updateTracksList(request.trackInfo);
 
                 setMediaData(request.currentTrack.title, getArtists(request.currentTrack, 5), request.currentTrack.cover);
-                setPlaybackStateStyle(request.isPlaying);
-                toggleLike(request.currentTrack.liked);
-                toggleDislike(request.currentTrack.disliked);
+                toggleLike(request.currentTrack.liked, false);
+                toggleDislike(request.currentTrack.disliked, false, false);
 
                 Player.isPlay = request.isPlaying;
                 Player.volume = request.volume;
@@ -133,27 +143,15 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                         duration: request.currentTrack.duration
                     });
                 }
-
-                updateTracksList(request.trackInfo);
                 break;
             case 'togglePause':
                 Player.isPlay = request.isPlaying;
                 break;
             case 'toggleLike':
-                if (request.isLiked) {
-                    toggleDislike(false);
-                    toggleListDisliked(false);
-                }
-                toggleLike(request.isLiked);
-                toggleListLike(request.isLiked);
+                Player.liked = request.isLiked;
                 break;
             case 'toggleDislike':
                 Player.disliked = request.disliked.disliked;
-                if (Player.disliked) {
-                    toggleLike(false);
-                }
-                toggleDislike(request.disliked.disliked, true);
-                toggleListDisliked(request.disliked.disliked);
                 break;
             case "TRACKS_LIST":
                 updateTracksList(request);
@@ -165,6 +163,8 @@ chrome.runtime.onMessageExternal.addListener( // injected script
             case "CONTROLS":
                 Player.isRepeat = request.repeat;
                 Player.isShuffle = request.shuffle;
+                Player.disliked = request.disliked;
+                Player.liked = request.liked;
                 break;
             case "VOLUME":
                 Player.volume = request.volume;
@@ -180,15 +180,9 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 Player.stopUpdater();
                 Player.setProgress({ position: 0, loaded: 0 });
                 break;
-            case "page_hide":
-                setTimeout(() => {
-                    getYandexMusicTab().then(tabId => {
-                        if (tabId == false) {
-                            sendEventBackground({ isConnected: false })
-                            window.close();
-                        }
-                    });
-                }, 500);
+            case "play_error":
+                Player.isPlay = request.isPlaying;
+                Player.setProgress(request.progress);
                 break;
         }
     });
@@ -205,14 +199,21 @@ bntNo.onclick = () => {
     });
 }
 
+ //
 btnNew.onclick = openNewTab;
 
-previous[0].onclick = sendEvent.bind(null, "previous", undefined);
-pause[0].onclick = sendEvent.bind(null, "togglePause", undefined);
-next[0].onclick = sendEvent.bind(null, "next", undefined);
+previous.onclick = sendEvent.bind(null, "previous", undefined);
+previous.longpress = rewind.start.bind(null, -1.5);
+previous.longpress.onend = rewind.stop;
+
+next.onclick = sendEvent.bind(null, "next", undefined);
+next.longpress = rewind.start.bind(null, 1.5);
+next.longpress.onend = rewind.stop;
+
+pause.onclick = sendEvent.bind(null, "togglePause", undefined);
 like[0].onclick = sendEvent.bind(null, "toggleLike", undefined);
-like[0].onlongpress = sendEvent.bind(null, "toggleDislike", undefined);
-dislike.onlongpress = sendEvent.bind(null, "toggleDislike", undefined);
+like[0].longpress = sendEvent.bind(null, "toggleDislike", undefined);
+dislike.longpress = sendEvent.bind(null, "toggleDislike", undefined);
 dislike.onclick = sendEvent.bind(null, "toggleDislike", undefined);
 
 trackImage[0].onclick = () => {
@@ -238,19 +239,4 @@ modal[0].onclick = function () {
     modal[0].addEventListener("animationend", removeClass);
     modal[0].classList.add("modal-background-reverse");
     openCoverAnimate(CoverAnimation.element, true);
-}
-
-closeNotification.onclick = function () {
-    notificationTimeLeft.removeEventListener("transitionend", NotificationControl.boundListener);
-    NotificationControl.closeNotification.apply(NotificationControl);
-}
-
-notification.onmouseenter = () => {
-    NotificationControl.stayShown();
-}
-
-notification.onmouseleave = () => {
-    if (NotificationControl.isShown) {
-        NotificationControl.hide(2500);
-    }
 }

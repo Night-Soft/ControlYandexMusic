@@ -5,45 +5,39 @@ let WhatNew = {
             yesNews.classList.remove("yesNews-disable");
             yesNews.onclick = () => { modalNews.style.display = "none"; }
         }
-        this.setLocale(chrome.i18n.getMessage("locale"), showNew);
+        this.setLocale(translate("locale"), showNew);
 
     },
     getWhatNew: async () => {
-        try {
-            return (await fetch("../data/what-new.json")).json();
+        try {    
+            const result = await (await fetch("../data/what-new.json")).json();
+            return Promise.resolve(result.versions);
         } catch (error) {
             return Promise.reject(error);
         }
     },
     setLocale(locale, callback) {
-        this.getWhatNew().then((whatNewJson) => {
+        this.getWhatNew().then((versions) => {
             let version = document.getElementById("Version");
-            version.innerHTML = chrome.i18n.getMessage("shortName") + " " + chrome.runtime.getManifest().version;
-            let listChangesCoontent = document.getElementsByClassName("list-changes-coontent")[0];
-            listChangesCoontent.innerHTML = "";
-            for (let i = 0; i < whatNewJson["versions"].length; i++) {
-                let versionChanges = document.createElement("DIV");
-                let version = document.createElement("H2");
-                let changes = document.createElement("H2");
-                versionChanges.className = "version-changes";
-                version.id = "Version";
-                changes.className = "versions";
-                version.innerHTML = whatNewJson["versions"][i][0];
-                switch (locale) {
-                    case "EN":
-                        changes.innerHTML = whatNewJson["versions"][i][1].messageEn;
-                        break;
-                    case "RU":
-                        changes.innerHTML = whatNewJson["versions"][i][1].messageRu;
-                        break;
-                    default:
-                        changes.innerHTML = whatNewJson["versions"][i][1].messageEn;
-                        break;
-                }
-                versionChanges.appendChild(version);
-                versionChanges.appendChild(changes);
-                listChangesCoontent.appendChild(versionChanges);
+            version.innerHTML = translate("shortName") + " " + chrome.runtime.getManifest().version;
+            let listChangesContent = document.getElementsByClassName("list-changes-coontent")[0];
+            listChangesContent.innerHTML = "";
+
+            const messageLng = locale === "RU" ? "messageRu": "messageEn"
+            const predicate = function ({ value }) {
+                const [version, messages] = value;
+                const message = messages[messageLng];
+                return { message, version }
             }
+
+            const versionsTemplate = [
+                ["div", { class: "version-changes" },
+                    ["h2", { id: "Version" }, "{{ version }}"],
+                    ["h2", { "a:innerHTML": true, class: "versions" }, "{{ message }}"]
+                ]
+            ];
+
+            new Component(versionsTemplate, versions, predicate).appendToElement(listChangesContent);
             callback();
         });
     }
