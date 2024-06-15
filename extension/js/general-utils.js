@@ -108,20 +108,24 @@ const LivePlaylist = class {
         this.#firstElement = undefined;
         this.#lastElement = undefined;
     }
+    
     #minIndex;
     #maxIndex;
     get minIndex() { return this.#minIndex; }
     get maxIndex() { return this.#maxIndex; }
+    
     #firstElement;
     #lastElement;
     get firstElement() { return this.#firstElement; }
     get lastElement() { return this.#lastElement; }
+
     updateMinMaxIndex(value) {
         this.#minIndex = Math.min(...Array.from(this.elements.keys()));
         this.#maxIndex = Math.max(...Array.from(this.elements.keys()));
         this.#firstElement = this.elements.get(this.#minIndex);
         this.#lastElement = this.elements.get(this.#maxIndex);
     }
+
     // The node before which newNode is inserted.
     getReferenceElement(currentIndex) { 
         if (currentIndex < this.#maxIndex) {
@@ -131,9 +135,7 @@ const LivePlaylist = class {
             const itemTrack = this.elements.get(this.#minIndex)?.itemTrack;
             return itemTrack ? itemTrack : null;
         }
-
         return null;
-
     }
 
     getIndexes = (currentPos, quantity = 10, insertDirection = "center") => { 
@@ -169,71 +171,75 @@ const LivePlaylist = class {
 }
 
 const Component = class {
-    #regex = /\{\{\s*(\w+)\s*\}\}/;
+    #regex = /\{\{\s*(\w+(?:\.\w+)*)\s*\}\}/;
+    #varList = new Map();
     #innerAttributes = new Map();
     nodes = [];
+
     constructor(template, array, predicate) {
         if (!Array.isArray(template)) return;
 
         this.template = template;
         this.#createElements(template, array, predicate);
-        this.#innerAttributes.clear();
+    }
+
+    #addVars(varString) {
+        let strKey = varString.match(this.#regex);
+        if (strKey) {
+            strKey = strKey[1].trim();
+            let properties = strKey.split(".");
+            if (properties.length > 1) strKey = properties;
+            this.#varList.set(varString, strKey);
+        }
+    }
+
+    #getVarsFromTemplate(template) {
+        template.forEach((data, index) => {
+            if (Array.isArray(data)) this.#getVarsFromTemplate(data);
+            if (typeof data === "string") this.#addVars(data);
+            if(typeof data === "object" && index === 1) {
+                Object.entries(data).forEach((value) => {
+                    if (typeof value[1] === "string") this.#addVars(value[1]);
+                });
+            }
+        });
+    }
+
+    #getVarValueFromList(varString, predicate) {
+        const strKey = this.#varList.get(varString);
+        if (typeof strKey === 'string') {
+            const value = predicate[strKey];
+            return value ? value : String(value);
+        } 
+        if(Array.isArray(strKey)) {
+            const value = strKey.reduce((prev, key, i) => i === 0 ? predicate[key] : prev[key], 0);
+            return value ? value : String(value);
+        }
+        return null;
     }
 
     #createElements(template, array, predicate) {
         if (Array.isArray(array)) {
             if (typeof predicate === "function") {
                 if (predicate.length === 2) {  // predicate function has 'element' parameter
+                    this.#getVarsFromTemplate(template);
                     array.forEach((value, index, array) => {
                         template.forEach(template => {
                             this.nodes.push(this.#createOnlyTag(template));
-                            const element = this.nodes[index];
-                            const data = predicate({ value, index, array }, element);
-                            if (this.#varValueList.size > 0) {
-                                this.#createTag(this.#innerAttributes.get(element), data, element, true);
-                            } else {
-                                this.#createTag(this.#innerAttributes.get(element), data, element);
-                            }
+                            this.#createTag(
+                                this.#innerAttributes.get(this.nodes[index]),
+                                predicate({ value, index, array }, this.nodes[index]),
+                                this.nodes[index]
+                            );
                         });
                     });
-
-                    // array.some((value, index, array) => {
-                    //     template.forEach(template => {
-                    //         this.nodes.push(this.#createOnlyTag(template));
-                    //         const element = this.nodes[index];
-                    //         const data = predicate({ value, index, array }, element);
-                    //         if (this.#varValueList.size > 0) {
-                    //             this.#createTag(this.#innerAttributes.get(element), data, element, true);
-                    //         } else {
-                    //             this.#createTag(this.#innerAttributes.get(element), data, element);
-                    //         }
-                    //     });
-                    //     return true;
-                    // });
-                    // array.slice(1).forEach((value, index, array) => {
-                    //     index++;
-                    //     template.forEach(template => {
-                    //         this.nodes.push(this.#createOnlyTag(template));
-                    //         const element = this.nodes[index];
-                    //         const data = predicate({ value, index, array }, element);
-                    //         if (this.#varValueList.size > 0) {
-                    //             this.#createTag(this.#innerAttributes.get(element), data, element, true);
-                    //         } else {
-                    //             this.#createTag(this.#innerAttributes.get(element), data, element);
-                    //         }
-                    //     });
-                    // });
                     return;
                 }
+
+                this.#getVarsFromTemplate(template);
                 array.forEach((value, index, array) => {
                     template.forEach(template => {
-                        const data = predicate({ value, index, array });
-                        if (this.#varValueList.size > 0) {
-                            console.log(this.#varValueList)
-                            this.nodes.push(this.#createTag(template, data, undefined, true));
-                        } else {
-                            this.nodes.push(this.#createTag(template, data));
-                        }
+                        this.nodes.push(this.#createTag(template, predicate({ value, index, array })));
                     });
                 });
                 return;
@@ -263,113 +269,88 @@ const Component = class {
         return element;
     }
 
-    #setAttributes(attr, element, predicate, isTagCreated) {
-        if (isTagCreated) { // todo
-            [...element.children].forEach((element) => {
-                this.#createTag(this.#innerAttributes.get(element), predicate, element);
-            });
-        }
-        attr.forEach(([attr, value]) => {
-            if (typeof value === 'string') {
-                const strKey = value.match(this.#regex)?.[1]?.trim();
-                if (strKey) value = predicate[strKey];
+    #setAttributes(attr, element, predicate) {
+        let strKey, eventName;
+        attr.forEach(value => {
+            if (typeof value[1] === 'string' && value[1].startsWith("{{")) {
+                strKey = this.#getVarValueFromList(value[1], predicate);
+                if (strKey) value[1] = strKey
             }
 
-            if (element[attr] !== undefined && typeof value === "function") {
-                element[attr] = value;
+            if (element[value[0]] !== undefined && typeof value[1] === "function") {
+                element[value[0]] = value[1];
                 return;
             }
 
-            if (attr === 'class' && Array.isArray(value)) {
-                element.setAttribute(attr, value.join(" "));
+            if (value[0] === 'class' && Array.isArray(value[1])) {
+                element.setAttribute(value[0], value[1].join(" "));
                 return;
             }
-            if (attr === 'style' && typeof value === "object") {
-                Object.entries(value).forEach(([property, value]) => {
-                    element.style[property] = value;
+
+            if (value[0] === 'style' && typeof value[1] === "object") {
+                Object.entries(value[1]).forEach((value) => {
+                    element.style[value[0]] = value[1];
                 });
                 return;
             }
 
-            if (attr.startsWith("ev:")) {
-                const eventName = attr.split(":")[1];
-                if (typeof value === 'function') {
-                    element.addEventListener(eventName, value);
-                } else if (Array.isArray(value)) {
-                    element.addEventListener(eventName, ...value);
+            if (value[0].startsWith("ev:")) {
+                eventName = value[0].split(":")[1];
+                if (typeof value[1] === 'function') {
+                    element.addEventListener(eventName, value[1]);
+                } else if (Array.isArray(value[1])) {
+                    element.addEventListener(eventName, ...value[1]);
                 } else {
                     throw new TypeError();
                 }
                 return;
             }
-            element.setAttribute(attr, value);
+            element.setAttribute(value[0], value[1]);
         });
     }
-    #varValueList = new Map();
-    #getVarValueFromList(varString, predicate) {
-        return predicate?.[this.#varValueList.get(varString)];
-    }
-    #getVarValue(varString, predicate) {
-        if (typeof varString !== 'string') return null;
-        const strKey = varString.match(this.#regex)?.[1]?.trim();
-        if (strKey) {
-            const value = predicate[strKey];
-            this.#varValueList.set(varString, strKey);
-            return value ? value : String(value);
+
+    /* 
+    tag[0] = tag
+    tag[1] = attrs
+    tag[2] = tagInside
+    tag[...3.4.5] = otherTag
+    */
+    #createTag(tag, predicate, element) {
+        let attr = tag[1];
+        let tagInside = tag[2];
+        if (predicate) {
+            if (typeof attr === "string") {
+                const varAttr = this.#getVarValueFromList(attr, predicate);
+                if (varAttr) attr = varAttr;
+            }
+            if (typeof tagInside === "string") {
+                const varTagInside = this.#getVarValueFromList(tagInside, predicate);
+                if (varTagInside !== undefined) tagInside = varTagInside;
+            }
         }
-        return null;
-    }
-    #getVariables([tag, attr, tagInside, ...otherTag], predicate){
-        let varAttr, varTagInside;
-        varAttr = this.#getVarValue(attr, predicate);
+
+        if (element && predicate) { 
+            [...element.children].forEach((element) => {
+                this.#createTag(this.#innerAttributes.get(element), predicate, element);
+            });
+            this.#setAttributes(Object.entries(attr), element, predicate);
+        } else {
+            element = document.createElement(tag[0]);
+            this.#setAttributes(Object.entries(attr), element, predicate);
+            if (Array.isArray(tagInside)) { 
+                element.appendChild(this.#createTag(tagInside, predicate));
+            }
+
+            // otherTag
+            tag.slice(3).forEach(tags => {
+                element.appendChild(this.#createTag(tags, predicate));
+            });
+        }
+
         if (typeof tagInside === "string") {
-            varTagInside = this.#getVarValue(tagInside, predicate);
-            if (varTagInside === null) varTagInside = tagInside;
+            const innerHtml = attr[":innerHTML"];
+            element[innerHtml ? "innerHTML" : "innerText"] = tagInside;
         }
-        if (varAttr) attr = varAttr;
-        // TODO
-    }
-    #createTag([tag, attr, tagInside, ...otherTag], predicate, element, isVarList) {
-        let isTagCreated = false;
-        let varAttr, varTagInside;
-
-        if (isVarList) {
-            varAttr = this.#getVarValueFromList(attr, predicate);
-            if (typeof tagInside === "string") {
-                varTagInside = this.#getVarValueFromList(tagInside, predicate);
-                if (varTagInside === null) varTagInside = tagInside;
-            }
-            if (varAttr) attr = varAttr;
-        } else {
-            varAttr = this.#getVarValue(attr, predicate);
-            if (typeof tagInside === "string") {
-                varTagInside = this.#getVarValue(tagInside, predicate);
-                if (varTagInside === null) varTagInside = tagInside;
-            }
-            if (varAttr) attr = varAttr;
-        }
-
-        if (predicate && element) { // if element created
-            this.#setAttributes(Object.entries(attr), element, predicate, true);
-            isTagCreated = true;
-        } else {
-            element = document.createElement(tag);
-            this.#setAttributes(Object.entries(attr), element, predicate, false);
-            if (Array.isArray(tagInside)) { // array
-                element.appendChild(this.#createTag(tagInside, predicate, undefined, isVarList));
-            }
-        }
-
-        if (varTagInside) {
-            //console.log(varTagInside)
-            const innerHtml = attr["a:innerHTML"];
-            element[innerHtml ? "innerHTML" : "innerText"] = varTagInside;
-        }
-
-        if (isTagCreated === false) {
-            otherTag.forEach(tags => element.appendChild(this.#createTag(tags, predicate, undefined, isVarList)));
-        }
-
         return element;
     }
 
@@ -386,6 +367,122 @@ const Component = class {
             element.appendChild(value);
         });
     }
+}
+
+const ToggleAnimation = class {
+    openClass = {
+        name: undefined,
+        params: []
+    };
+    closeClass = {
+        name: undefined,
+        params: []
+    };
+    onendRemove = true;
+    #isOpen = false;
+    onOpenEnd;
+    onCloseEnd;
+
+    constructor(element, {
+        open,
+        close,
+        display,
+        onOpenEnd,
+        onCloseEnd,
+        onendRemove
+    } = {}) {
+        Object.defineProperties(this, {
+            onOpenEnd: {
+                get() { return onOpenEnd; },
+                set(value) {
+                    if (typeof value !== "function") {
+                        onOpenEnd = undefined;
+                        throw new TypeError();
+                    }
+                    onOpenEnd = value;
+                }
+            },
+            onCloseEnd: {
+                get() { return onCloseEnd; },
+                set(value) {
+                    if (typeof value !== "function") {
+                        onCloseEnd = undefined;
+                        throw new TypeError();
+                    }
+                    onCloseEnd = value;
+                }
+            }
+        });
+        this.element = element;
+
+        this.#setClass(open, this.openClass);
+        this.#setClass(close, this.closeClass);
+        this.display = display;
+        if (typeof onendRemove == 'boolean') {
+            this.onendRemove = onendRemove;
+        }
+
+    }
+    #setClass(cssClass, currentClass) {
+        if(typeof cssClass === "string") {
+            currentClass.name = cssClass;  
+        } else if(typeof cssClass === "object") {
+            currentClass.name = cssClass.name;  
+            currentClass.params = Object.entries(cssClass).filter(value => value[0] !== "name");
+        }
+    }
+
+    openAnimationend = () => {
+        if (this.onendRemove) this.element.classList.remove(this.openClass.name);
+        this.onOpenEnd?.();
+    }
+    closeAnimationend = () => {
+        if (this.onendRemove) this.element.classList.remove(this.closeClass.name);
+        if (typeof this.display === "object") {
+            this.element.style.display = this.display.close;
+        }
+        this.onCloseEnd?.();
+    }
+
+    open = () => {
+        this.element.classList.remove(this.closeClass.name);
+        this.element.classList.remove(this.openClass.name);
+
+        this.element.offsetHeight; // reflow
+        this.element.classList.add(this.openClass.name);
+        this.openClass.params.forEach(([key, value]) => this.element.style[key] = value);
+        this.closeClass.params.forEach(([key]) => this.element.style[key] = "");
+
+        if (typeof this.display === "object") {
+            this.element.style.display = this.display.open;
+        }
+        this.element.addEventListener("animationend", this.openAnimationend, { once: true });
+
+        this.#isOpen = true;
+    }
+    close = () => {
+        this.element.classList.remove(this.closeClass.name);
+        this.element.classList.remove(this.openClass.name);
+
+        this.element.offsetHeight; // reflow
+
+        this.closeClass.params.forEach(([key, value]) => this.element.style[key] = value);
+        this.openClass.params.forEach(([key]) => this.element.style[key] = "");
+
+        this.element.classList.add(this.closeClass.name);
+        this.element.addEventListener("animationend", this.closeAnimationend, { once: true });
+        
+        this.#isOpen = false;
+    }
+
+    toggle() {
+        if(this.#isOpen) {
+            this.close();
+        } else {
+            this.open();
+        }
+    }
+    
 }
 
 const supported = typeof window == 'undefined' ? true : "onscrollend" in window;
@@ -474,7 +571,6 @@ const EventEmitter = {
 
 let onMessageAddListener = () => {
     const onDisconnect = () => {
-        Extension.isConnection = false;
         port.isConnection = false;
         Player.isPlay = false;
         showNoConnected();
@@ -488,16 +584,8 @@ let onMessageAddListener = () => {
 
     port.onDisconnect.addListener(onDisconnect);
     port.onMessage.addListener(function (request) {
-        if (request.response) {
-            if (request.response.isConnect === true) {
-                Extension.isConnection = true;
-                port.isConnection = true;
-                Player.playlist.clear();
-                artistsName.innerText = "Artists";
-                trackName.innerText = "Track";
-            } else {
-                onDisconnect();
-            }
+        if (request.response?.isConnect === false) {
+            onDisconnect();
         }
     });
 }
@@ -536,6 +624,7 @@ let showNotification = (text, ms, isMouseEvent) => {
 const NotificationControl = class {
     static instances = [];
     #notification;
+    #textNotification;
     #timeLeftLine;
     #closeBtn;
     #buttonElement;
@@ -543,60 +632,65 @@ const NotificationControl = class {
         if (NotificationControl.instances.length) return NotificationControl.instances[0];
 
         this.#notification = document.getElementsByClassName("notification")[0];
+        this.#textNotification = document.getElementsByClassName("h2-notification")[0];
         this.#timeLeftLine = document.getElementsByClassName("notification-time-left")[0];
         this.#closeBtn = document.getElementsByClassName("close-notification")[0];
         this.#buttonElement = document.getElementsByClassName("notification-action")[0];
 
         this.#notification.onmouseenter = this.#stayShown;
-        this.#notification.onmouseleave = () => {
-            if (this.isShown) this.#hide(2500);
-        }
+        this.#notification.onmouseleave = () => { if (this.isShown) this.#hide(2500); }
         this.#closeBtn.onclick = () => {
             this.#timeLeftLine.removeEventListener("transitionend", this.closeNotification);
             this.closeNotification();
         }
-        const thisLink = this;
-        let btnParams = new Proxy({ button: thisLink.#buttonElement }, {
-            get(target, property, receiver) {
-                return Reflect.get(target, property, receiver);
-            },
-            set(target, property, newValue, receiver) {
-                let result;
-                if(property === "text") {
-                    result = Reflect.set(target, property, newValue, receiver);
-                    thisLink.#buttonElement.innerHTML = newValue;
-                }
-                if (property === "onclick") {
-                    result = Reflect.set(target, property, newValue, receiver);
-                    thisLink.#buttonElement.onclick = newValue;
-                }
-                return typeof result === "boolean" ? result : false;
-            }
-        });
 
+        const thisLink = this;
         Object.defineProperties(this.params, {
-            button: {
-                get() { return btnParams },
-                set(value) {
-                    if (value === null || value === undefined) {
-                        btnParams.text = value;
-                        btnParams.onclick = value;
-                        thisLink.#buttonElement.style.display = "";
-                        return;
-                    }
-                    if (typeof value !== "object") throw new TypeError("Button is not an Object");
-                    if (value?.text) btnParams.text = value.text;
-                    if (typeof value?.onclick === "function") btnParams.onclick = value.onclick;
-                    thisLink.#buttonElement.style.display = "block";
-                },
-                enumerable: true
-            },
             text: {
-                get() { return textNotification.innerHTML; },
-                set(value) { textNotification.innerHTML = value; },
+                get() { return thisLink.#textNotification.innerText; },
+                set(value) { thisLink.#textNotification.innerText = value; },
                 enumerable: true
             }            
         });
+
+        if (this.#buttonElement) {
+            let btnParams = new Proxy({ button: thisLink.#buttonElement }, {
+                get(target, property, receiver) {
+                    return Reflect.get(target, property, receiver);
+                },
+                set(target, property, newValue, receiver) {
+                    let result;
+                    if(property === "text") {
+                        result = Reflect.set(target, property, newValue, receiver);
+                        thisLink.#buttonElement.innerText = newValue;
+                    }
+                    if (property === "onclick") {
+                        result = Reflect.set(target, property, newValue, receiver);
+                        thisLink.#buttonElement.onclick = newValue;
+                    }
+                    return typeof result === "boolean" ? result : false;
+                }
+            });
+
+            Object.defineProperties(this.params, {
+                button: {
+                    get() { return btnParams },
+                    set(value) {
+                        if (value === null || value === undefined) {
+                            btnParams.text = value;
+                            btnParams.onclick = value;
+                            thisLink.#buttonElement.style.display = "";
+                            return;
+                        }
+                        if (typeof value !== "object") throw new TypeError("Button is not an Object");
+                        if (value?.text) btnParams.text = value.text;
+                        if (typeof value?.onclick === "function") btnParams.onclick = value.onclick;
+                        thisLink.#buttonElement.style.display = "block";
+                    },
+                    enumerable: true
+                },
+            });
+        }
 
         NotificationControl.instances.push(this);
     }
@@ -717,11 +811,11 @@ const NotificationControl = class {
 
 /**
  * 
- * @param  {...string | null} params null returns all properties.
+ * @param  {...string | null} params null, undefined, returns all properties.
  *  id, pinned, active, status, title, url, ...
  * @returns {object | boolean}
  */
-let getYandexMusicTab = (...params) => {
+let getYandexMusicTab = (...params) => { 
     return new Promise(function (resolve) {
         chrome.tabs.query({
             windowType: "normal"
@@ -755,8 +849,9 @@ let getYandexMusicTab = (...params) => {
 }
 
 const getPopupWindowId = async function () {
-    let windows = await chrome.windows.getAll({ populate: true, windowTypes: ['popup'] });
-    windows = windows.filter((window) => {
+    let windows = (await chrome.windows.getAll({
+        populate: true, windowTypes: ['popup']
+    })).filter((window) => {
         window = window.tabs.filter(tab => {
             return tab.url.includes(chrome.runtime.id + "/popup.html");
         });
@@ -772,14 +867,13 @@ let sendEvent = (event, forceObject = false) => {
 }
 
 let sendEventBackground = (event, callback) => { // event should be as object.
-    chrome.runtime.sendMessage(event, function(response) {
-        if (response != undefined) {
-            if (response.options) {
-                setOptions(response.options); // options.js
+    chrome.runtime.sendMessage(event, response => {
+        if(callback){
+            if(callback.name === "setOptions" ) {
+                callback(response.options);
+                return;
             }
-            if (callback != undefined) {
-                callback(response);
-            }
+            callback(response);
         }
     });
 };
@@ -814,7 +908,7 @@ let testImage = (url, size = 400, callback) => {
         };
         modalCover[0].onload = () => {
             modal[0].style.display = "flex";
-            callback.animate(callback.parameter); // call animation
+            callback.animate(callback.parameter); 
         }
 
     } catch (error) {
@@ -855,17 +949,12 @@ const openCoverAnimate = function(element, reverse = false) {
     keyframe.transform = ['translate(' + left + 'px, ' + top + 'px)', 'translate(0px, 0px)'];
     keyframe.borderRadius = [borderRadiusStart, borderRadiusEnd];
 
-    if (reverse) {
-        options.direction = 'reverse'
-    } else {
-        options.direction = 'normal';
-    }
+    options.direction = reverse ? "reverse" : "normal";
 
     modalCover[0].animate(keyframe, options);
 }
 
 let openCover = (item, url) => {
-    // to do:
     testImage(url, 400, { animate: openCoverAnimate, parameter: item });
 }
 
@@ -873,7 +962,7 @@ let toggleLike = (isLike, toggleInList = true) => {
     like[0].style.backgroundImage = `url(img/${isLike ? "liked" : "not-liked"}.png)`;
     if (toggleInList === false) return;
     Player.likeItem.classList.remove("list-item-liked", "list-item-not-liked", "list-item-disliked");
-    Player.likeItem.classList.add(isLike ? "list-item-liked" : "list-item-not-liked");
+    isLike && Player.likeItem.classList.add("list-item-liked"); // : list-item-not-liked
 }
 
 let toggleDislike = (isDisliked, notifyMe = false, toggleInList = true) => {
@@ -899,7 +988,7 @@ const createPopup = function () {
 
 let openNewTab = (tabId) => {
     loaderContainer.style.display = "block";
-    appDetected.innerHTML = chrome.i18n.getMessage("waitWhilePage");
+    appDetected.innerText = chrome.i18n.getMessage("waitWhilePage");
     appQuestion.style.display = "none";
     yesNoNew.style.display = "none";
 
@@ -916,25 +1005,23 @@ let openNewTab = (tabId) => {
 
 let showNoConnected = () => {
     getYandexMusicTab().then((tabId) => {
-        if (Extension.isConnection == false) {
+        if (port.isConnection == false) {
             if (tabId) {
-                appDetected.innerHTML = chrome.i18n.getMessage("appDetected");
-                appQuestion.innerHTML = chrome.i18n.getMessage("appQuestion");
-                bntNo.style.display = "none";
+                appDetected.innerText = chrome.i18n.getMessage("appDetected");
+                appQuestion.innerText = chrome.i18n.getMessage("appQuestion");
                 loaderContainer.style.display = "none";
                 btnNew.style.display = "";
                 yesNoNew.style.display = "flex";
-                btnYes.innerHTML = chrome.i18n.getMessage("reload");
+                btnYes.innerText = chrome.i18n.getMessage("reload");
                 noConnect.style.display = "flex";
                 appQuestion.style.display = "";
                 noConnect.classList.add("puff-in-center");
             } else {
-                appDetected.innerHTML = chrome.i18n.getMessage("appNoDetected");
-                appQuestion.innerHTML = chrome.i18n.getMessage("appNoQuestion");
+                appDetected.innerText = chrome.i18n.getMessage("appNoDetected");
+                appQuestion.innerText = chrome.i18n.getMessage("appNoQuestion");
                 loaderContainer.style.display = "none";
                 btnNew.style.display = "none";
-                bntNo.style.display = "none";
-                btnYes.innerHTML = chrome.i18n.getMessage("yes");
+                btnYes.innerText = chrome.i18n.getMessage("yes");
                 yesNoNew.style.display = "flex";
                 noConnect.style.display = "flex";
                 appQuestion.style.display = "";
@@ -946,7 +1033,7 @@ let showNoConnected = () => {
 let splitSeconds = (currentSeconds) => {
     const timeUnits = [3600, 60, 0]; // hours, minutes, seconds
     const time = [];
-    timeUnits.forEach((value, index) => {
+    timeUnits.forEach((value) => {
         if (value == 0) {
             time.push(Math.floor(currentSeconds));
             return;
@@ -982,8 +1069,8 @@ let getDurationAsString = (duration = 0) => {
 }    
 
 let setMediaData = (trackTitle, trackArtists, iconTrack) => {
-    artistsName[0].innerHTML = trackArtists;
-    trackName[0].innerHTML = trackTitle;
+    artistsName[0].innerText = trackArtists;
+    trackName[0].innerText = trackTitle;
     artistsName[0].style.fontSize = "";
     trackName[0].style.fontSize = "";
     if (Extension.windowName == "extension") {
@@ -1047,10 +1134,9 @@ HTMLElement.prototype.setStyle = function (style) {
         }
         return;
     }
-    let keys = Object.keys(style);
-    for (let i = 0; i < keys.length; i++) {
-        this.style[keys[i]] = style[keys[i]];
-    }
+    Object.entries(style).forEach((value) => {
+        this.style[value[0]] = value[1];
+    });
 };
 
 Object.defineProperty(HTMLDivElement.prototype, "longpress", {

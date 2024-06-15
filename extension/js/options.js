@@ -1,7 +1,6 @@
 let checkboxAllNotifications = document.getElementById('checkboxAllNotifications');
 let playPauseNotify = document.getElementById('n1');
 let prevNextNotify = document.getElementById('n2');
-let checkBoxIncreaseCover = document.getElementById("n4");
 let checkBoxDislikeButton = document.getElementById("n5");
 let checkboxSavePopupSize = document.getElementById("n6");
 let checkBoxReassign = document.getElementById("n7");
@@ -35,17 +34,15 @@ let prevThemeSelected;
 
 let Options = {
     theme: { name:"default"},
-    pxOrPercent: undefined,
     pinTab: undefined,
     positionStep: undefined,
     volumeStep: undefined,
     isAllNoifications: undefined,
     isPlayPauseNotify: undefined,
     isPrevNextNotify: undefined,
-    isShowWhatNew: undefined,
+    isNewFeaturesShown: undefined,
     version: undefined,
     oldVersionDescription: undefined,
-    isButtonsReduced: true,
     isSaveSizePopup: undefined,
     reassign: {
         isReassign: undefined,
@@ -53,8 +50,8 @@ let Options = {
     },
     defaultPopup: {
         pxOrPercent: false,
-        width: 250,
-        height: 110,
+        width: 380,
+        height: 580,
         maxWidth: window.screen.availWidth,
         maxHeight: window.screen.availHeight
     },
@@ -74,27 +71,27 @@ showMore.onclick = async () => {
     if (ThemesListState.isCreated) {
         if (ThemesListState.isOpen) {
             ThemesListState.isOpen = false;
-            showMore.innerHTML = translate("showMore");
+            showMore.innerText = translate("showMore");
             gradients.classList.remove("show-gradients");
         } else {
             ThemesListState.isOpen = true;
-            showMore.innerHTML = translate("hide");
+            showMore.innerText = translate("hide");
             gradients.classList.add("show-gradients");
         }
         return;
     }
 
-    showMore.innerHTML = "...";
+    showMore.innerText = "...";
     let result;
     try {
         result = await (await fetch("https://api.npoint.io/7584522679dbcdf3c2ef")).json();
         result = Object.entries(result);
     } catch (error) {
         ThemesListState.isCreated = false;
-        showMore.innerHTML = "Error!";
+        showMore.innerText = "Error!";
         return;
     }
-    const start = window.performance.now();
+
     const gradientContainer = new Component([["div", { class: "gradient-container" }]]).nodes[0];
 
     const onclick = function () {
@@ -114,7 +111,6 @@ showMore.onclick = async () => {
     }
     const regex = /rgb\((\d+),\s*(\d+),\s*(\d+)\)/g;
 
-    ///
     const template = [
         ["div", { "ev:click": onclick, class: "{{gradientClass}}", style: "{{styleGradient}}" },
             ["span", { class: "gradient-name", style: "{{style}}" }, "{{name}}"]]
@@ -145,7 +141,7 @@ showMore.onclick = async () => {
         }
 
         DataStorage.set(element, { gradientStr, index, name, textColor });
-        return { gradientClass, styleGradient, name, style, }
+        return { gradientClass, styleGradient, name, style }
     }
 
     gradients.appendChild(gradientContainer);
@@ -159,10 +155,9 @@ showMore.onclick = async () => {
 
     gradients.appendChild(cssGradientIO);
 
-    showMore.innerHTML = translate("hide");
+    showMore.innerText = translate("hide");
+    
     gradients.classList.add("show-gradients");
-    const end = window.performance.now();
-    console.log("time to create", end - start);
     gradients.addEventListener("transitionend", () => {
         gradients.scrollIntoView({ block: "center", behavior: "smooth" });
         if (prevThemeSelected) {
@@ -182,9 +177,11 @@ const writeOptions = (options) => {
 
 pinTab.onclick = async () => {
     writeOptions({ pinTab: pinTab.checked });
+
+    let notification;
     let { id: tabId, pinned } = await getYandexMusicTab("id", "pinned");
     const notificationBtn = { text: translate("yes") }
-    let notification;
+    
     if (pinTab.checked && pinned === false) {
         notification = showNotification(translate("pinTabNow"), 7000);
         notificationBtn.onclick = async () => {
@@ -194,6 +191,7 @@ pinTab.onclick = async () => {
         }
         notification.button = notificationBtn;
     }
+    
     if (!pinTab.checked && pinned === true) {
         notification = showNotification(translate("unpinTab"), 7000);
         notificationBtn.onclick = async () => {
@@ -201,7 +199,6 @@ pinTab.onclick = async () => {
             notification.text = translate(pinned ? "unpinTab" : "tabUnpinned");
             notification.button.text = translate(pinned ? "yes" : "cancel");
         }
-
         notification.button = notificationBtn
     }
 }
@@ -224,17 +221,17 @@ const PopupSize = {
 const updatePopupSize = () => {
     let width, height, pxOrPercent;
 
-    if (checkboxSavePopupSize.checked) {
-        const popupBounds = Options.popupBounds ? Options.popupBounds : Options.defaultPopup;
-        ; ({ width, playlistHeight: height } = popupBounds);
-        pxOrPercent = document.getElementById("PxOrPercentCheckbox").checked;
+    if (checkboxSavePopupSize.checked && Options.popupBounds) {
+        ; ({ width, playlistHeight: height } = Options.popupBounds);
     } else {
-        ; ({ width, height, pxOrPercent } = Options.defaultPopup);
+        ; ({ width, height } = Options.defaultPopup);
     }
 
+    pxOrPercent = document.getElementById("PxOrPercentCheckbox").checked;
+
     if (pxOrPercent) {
-        spanPxOrPercent[0].innerHTML = "%";
-        spanPxOrPercent[1].innerHTML = "%"; 
+        spanPxOrPercent[0].innerText = "%";
+        spanPxOrPercent[1].innerText = "%"; 
         popupWidth.min = PopupSize.minWidthP;
         popupHeight.min = PopupSize.minHeightP;
         popupWidth.max = 100;
@@ -242,8 +239,8 @@ const updatePopupSize = () => {
         popupWidth.value = Math.round(width * 100 / PopupSize.width.max);
         popupHeight.value = Math.round(height * 100 / PopupSize.height.max);
     } else {
-        spanPxOrPercent[0].innerHTML = "px";
-        spanPxOrPercent[1].innerHTML = "px"; 
+        spanPxOrPercent[0].innerText = "px";
+        spanPxOrPercent[1].innerText = "px"; 
         popupWidth.min = PopupSize.width.min;
         popupHeight.min = PopupSize.height.min;
         popupWidth.max = PopupSize.width.max;
@@ -258,10 +255,6 @@ popupHeight.min = PopupSize.height.min;
 popupWidth.max = PopupSize.width.max;
 popupHeight.max = PopupSize.height.max;
 
-const savePopupSizeDelay = new ExecutionDelay(() => {
-    writeOptions({ defaultPopup: Options.defaultPopup });
-});
-
 checkboxSavePopupSize.onclick = function () {
     updatePopupSize();
     writeOptions({ isSaveSizePopup: checkboxSavePopupSize.checked });
@@ -274,70 +267,95 @@ pxOrPercent.onclick = function () {
     updatePopupSize();
 }
 
-const onPopupWidth = function (dimension, event) {
+const savePopupSizeDelay = new ExecutionDelay(() => {
+    writeOptions({ defaultPopup: Options.defaultPopup });
+});
+
+const sendSliderStepDelay = new ExecutionDelay((options) => {
+    sendSliderStepDelay.clearArguments();
+    writeOptions(options);
+    setOptions(options);
+});
+
+const onWheel = function (event) {
     event.preventDefault();
 
     if (event.deltaY != undefined) {
         if (event.deltaY < 0) {
             this.value = Number(this.value) + 1;
+            if (Number(this.value) > Number(this.max)) this.value = this.max;
+
         } else {
             this.value = Number(this.value) - 1;
+            if (Number(this.value) < Number(this.min)) this.value = this.min;
         }
     }
-
-    if (this.value > this.max) this.value = this.max; 
-    let value = parseInt(this.value)
-    if (pxOrPercent.checked) {
-        Options.defaultPopup[dimension] = Math.floor(value * PopupSize[dimension].max / 100);
-    } else {
-        Options.defaultPopup[dimension] = value;
-    }
-    savePopupSizeDelay.start();
 }
-const onPopupWidthBinded = onPopupWidth.bind(popupWidth, "width");
-popupWidth.oninput = onPopupWidthBinded;
-popupWidth.onwheel = onPopupWidthBinded;
 
-const onPopupHeightBinded = onPopupWidth.bind(popupHeight, "height");
-popupHeight.oninput = onPopupHeightBinded;
-popupHeight.onwheel = onPopupHeightBinded;
+const onfocusout = function (input) {
+    this.onwheel = null;
+    
+    let value = parseInt(this.value);
+    let isAnim = false;
 
-const sendSliderStepDelay = new ExecutionDelay((options) => {
-    writeOptions(options);
-    setOptions(options)
-});
+    if (value > parseInt(this.max)) {
+        this.value = this.max;
+        isAnim = true;
+    } 
+    if (value < parseInt(this.min)) {
+        this.value = this.min;
+        isAnim = true;
+    } 
 
-const onSliderStep = function (slider, event) {
-    event.preventDefault();
-    if (event.deltaY < 0) {
-        this.value = Number(this.value) + 1;
-    } else {
-        this.value = Number(this.value) - 1;
+    if (isAnim) {
+        const red = "rgb(219, 0, 0)";
+        const topColor = document.querySelector(":root").style.getPropertyValue("--topColor");
+        this.animate({
+            backgroundColor: [topColor, red, topColor, red, topColor, red, topColor],
+        }, { duration: 2000 });
     }
-    if (Number(this.value) > Number(this.max)) { this.value = this.max; }
-    if (Number(this.value) < Number(this.min)) { this.value = this.min; }
 
-    const previousArgs = sendSliderStepDelay.getFunction().arguments?.[0];
-    const currentArgs = { [`${slider}Step`]: Number(this.value) }
-    if (typeof previousArgs === 'object' && sendSliderStepDelay.isStarted === true) {
-        if (Object.keys(previousArgs)[0] !== Object.keys(currentArgs)[0]) {
-            sendSliderStepDelay.execute();
+    value = parseInt(this.value);
+    if (input === "width" || input === "height") {
+        if (pxOrPercent.checked) {
+            Options.defaultPopup[input] = Math.floor(value * PopupSize[input].max / 100);
+        } else {
+            Options.defaultPopup[input] = value;
         }
+        savePopupSizeDelay.start();
+        return;
     }
-    sendSliderStepDelay.setArgumetns(currentArgs).start();
+
+    if (input === "position" || input === "volume") {
+        let options = sendSliderStepDelay.getFunction().arguments?.[0];
+        if (options) {
+            options[`${input}Step`] = value;
+        } else {
+            options = { [`${input}Step`]: value };
+        }
+        let send = false
+        Object.entries(options).forEach(([key])=> {
+            if(options[key] !== Options[key]) send = true;
+        });
+        send && sendSliderStepDelay.setArgumetns(options).start();
+    }
 }
 
-const onPositionStep = onSliderStep.bind(positionStep, "position");
-positionStep.oninput = onPositionStep;
-positionStep.onwheel = onPositionStep;
+popupWidth.addEventListener("focus", () => { popupWidth.onwheel = onWheel });
+popupWidth.addEventListener("focusout", onfocusout.bind(popupWidth, "width"));
 
-const onVolumeStep = onSliderStep.bind(volumeStep, "volume");
-volumeStep.oninput = onVolumeStep;
-volumeStep.onwheel = onVolumeStep;
+popupHeight.addEventListener("focus", () => { popupHeight.onwheel = onWheel });
+popupHeight.addEventListener("focusout", onfocusout.bind(popupHeight, "height"));
+
+positionStep.addEventListener("focus", () => { positionStep.onwheel = onWheel });
+positionStep.addEventListener("focusout", onfocusout.bind(positionStep, "position"));
+
+volumeStep.addEventListener("focus", () => { volumeStep.onwheel = onWheel });
+volumeStep.addEventListener("focusout", onfocusout.bind(volumeStep, "volume"));
 
 const toggleSetCurrentSizeBtn = function () {
     getPopupWindowId().then((windowId) => {
-        savePopupSize.innerHTML = translate(windowId ? "useCurrnetSize" : "usePrevSize");
+        savePopupSize.innerText = translate(windowId ? "useCurrnetSize" : "usePrevSize");
     });
 }
 
@@ -370,6 +388,7 @@ darkTheme.onclick = () => {
     writeOptions({ theme: { name: "dark" } });
     setOptions({ theme: { name: "dark" } });
 }
+
 otherTheme.onclick = () => {
     if (Options.theme.index) {
         if (ThemesListState.isOpen) {
@@ -377,13 +396,9 @@ otherTheme.onclick = () => {
                 prevThemeSelected.scrollIntoView({ block: "center", behavior: "smooth" });
             }
         } else {
-            // to do
-            if (ThemesListState.isCreated === false) {
-                showMore.onclick();
-            } else {
-                showMore.onclick();
-                prevThemeSelected.scrollIntoView({ block: "center", behavior: "smooth" });
-            }
+            showMore.onclick();
+            if (ThemesListState.isCreated === false)  return;
+            prevThemeSelected.scrollIntoView({ block: "center", behavior: "smooth" });
         }
         return;
     }
@@ -391,10 +406,6 @@ otherTheme.onclick = () => {
     setOptions({ theme: OtherTheme });
 }
 
-checkBoxIncreaseCover.onclick = function () {
-    writeOptions({ isButtonsReduced: checkBoxIncreaseCover.checked });
-    setOptions({ isButtonsReduced: checkBoxIncreaseCover.checked });
-}
 checkBoxDislikeButton.onclick = function () {
     writeOptions({ isDislikeButton: checkBoxDislikeButton.checked });
     setOptions({ isDislikeButton: checkBoxDislikeButton.checked });
@@ -421,13 +432,9 @@ checkBoxReassign.onclick = function () {
     }
 }
 
-// now the shortcut key which uses as play/ pause will be used for open popup;
-// check new version and show what new
 let checkNew = () => {
-    if (Options.isShowWhatNew !== true) return;
-    WhatNew.openNews(); 
-    Options.isShowWhatNew = false;
-    writeOptions({ isShowWhatNew: false });
+    if (Options.isNewFeaturesShown !== true) return;
+    WhatNew.openNews();
 }
 
 let setOptions = (options) => {
@@ -470,7 +477,7 @@ let setOptions = (options) => {
         Options.isPrevNextNotify = options.isPrevNextNotify;
     }
     if (options.theme != undefined) {
-        if (typeof options.theme == "string") { // remove on next update
+        if (typeof options.theme == "string") { //todo: remove on next update
             Options.theme.name = options.theme;
             setTheme(options.theme);
         } else {
@@ -478,21 +485,8 @@ let setOptions = (options) => {
             setTheme(options.theme.name);
         }
     }
-    if (options.isCoverIncrease != undefined) { // remove on next update
-        chrome.storage.local.remove("isCoverIncrease");
-        writeOptions({ isButtonsReduced: options.isCoverIncrease })
-        Options.isButtonsReduced = options.isCoverIncrease;
-        checkBoxIncreaseCover.checked = options.isCoverIncrease;
-        toggleCoverSize(options.isCoverIncrease);
-    } 
-    if (options.isButtonsReduced != undefined) { 
-        Options.isButtonsReduced = options.isButtonsReduced;
-        checkBoxIncreaseCover.checked = options.isButtonsReduced;
-        toggleCoverSize(options.isButtonsReduced);
-    } else if (options.hasOwnProperty("isButtonsReduced")) { toggleCoverSize(true); }
-
-    if (options.isShowWhatNew != undefined) {
-        Options.isShowWhatNew = options.isShowWhatNew;
+    if (options.isNewFeaturesShown != undefined) {
+        Options.isNewFeaturesShown = options.isNewFeaturesShown;
     }
     if (options.version != undefined) {
         Options.version = options.version;
@@ -505,17 +499,9 @@ let setOptions = (options) => {
         Options.isDislikeButton = options.isDislikeButton;
         checkBoxDislikeButton.checked = options.isDislikeButton;
         if (options.isDislikeButton) {
-            toggleCoverSize(true);
-            checkBoxIncreaseCover.checked = true;
             dislike.style.display = "block";
-            disableOptions(contentLabel[4], !checkBoxDislikeButton.checked);
         } else {
             dislike.style.display = "none";
-            disableOptions(contentLabel[4], !checkBoxDislikeButton.checked);
-            if (Options.isButtonsReduced == false) {
-                toggleCoverSize(false);
-                checkBoxIncreaseCover.checked = false;
-            }
         }
     }
     if (options.isSaveSizePopup != undefined) {
@@ -523,10 +509,10 @@ let setOptions = (options) => {
         Options.isSaveSizePopup = options.isSaveSizePopup;
         if (Options.isSaveSizePopup) {
             disableOptions(setupPopupSize);
-            spanPopupSize.innerHTML = translate("previousPopupSize");
+            spanPopupSize.innerText = translate("previousPopupSize");
         } else {
             disableOptions(setupPopupSize, true);
-            spanPopupSize.innerHTML = translate("defaultPopupSize");
+            spanPopupSize.innerText = translate("defaultPopupSize");
         }
     }
     if (options.popupBounds != undefined) {
@@ -544,8 +530,8 @@ let setOptions = (options) => {
     }
 }
 
-chrome.runtime.sendMessage({ getOptions: true }, function (response) {
-    if (response != undefined && response.options) {
+sendEventBackground({ getOptions: true }, (response) => {
+    if (response.options) {
         EventEmitter.on("Options", () => {
             if (typeof Extension == 'object') {
                 setOptions(response.options); // options.js

@@ -114,7 +114,7 @@ let setActionHandler = () => {
 
 }
 
-function getTracks() {
+function getTracks(changeTrack = false) {
     let trackInfo = {
         tracksList: externalAPI.getTracksList(),
         sourceInfo: externalAPI.getSourceInfo(),
@@ -125,11 +125,12 @@ function getTracks() {
         currentTrack: externalAPI.getCurrentTrack(),
         isPlaying: externalAPI.isPlaying(),
         progress: externalAPI.getProgress(),
-        trackInfo: trackInfo,
         controls: externalAPI.getControls(),
         volume: externalAPI.getVolume(),
-        speed: externalAPI.getSpeed()
-    },);
+        speed: externalAPI.getSpeed(),
+        trackInfo,
+        changeTrack
+    });
 }
 
 function togglePause() {
@@ -305,7 +306,7 @@ let prevPosition = 0,
 // change track
 externalAPI.on(externalAPI.EVENT_TRACK, function () {
     prevPosition = 0;
-    getTracks();
+    getTracks(true);
     setMediaMetaData();
 });
 

@@ -1,8 +1,8 @@
 {
     "versions": [
         ["3.4.0", {
-            "messageEn": "• Now, in the settings, you have the option to specify the step by which the slider changes when scrolling with a roller. <br> • Lots of new color themes.",
-            "messageRu": "• В настройках теперь можно задать шаг, на который должен меняться слайдер при прокрутке роликом. <br> • Множество новых цветовых тем."
+            "messageEn": "• Now, in the settings, you have the option to specify the step by which the slider changes when scrolling with a roller. <br> • Auto-pin Yandex.Music tab. <br> • Setting the popup window size. <br> • Lots of new color themes.",
+            "messageRu": "• В настройках теперь можно задать шаг, на который должен меняться слайдер при прокрутке роликом. <br> • Автозакрепление вкладки. <br> • Настройка размера всплывающего окна. <br> • Множество новых цветовых тем."
         }],
         ["3.3.0", {
             "messageEn": "• Added track loading bar.",

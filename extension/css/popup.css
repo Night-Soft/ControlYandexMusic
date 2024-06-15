@@ -79,9 +79,7 @@ body {
 }
 .modal-list-menu-popup {
     display: none;
-    height: auto;
-    top: 115px;
-    bottom: 0px;
+    top: unset;
     border-radius: 5px 5px 0px 0px;
     background-color: var(--listTrackBackground);
 }
@@ -139,7 +137,7 @@ body {
 }
 
 .groove-box {
-    margin-top: unset;
+    margin: 2px 0px;
     height: auto;
 }
 
@@ -156,13 +154,14 @@ body {
 
 .content {
     padding-top: unset;
-    margin-top: 2px;
+    margin: 4px 0px;
 }
 
 .content-track {
     justify-content: left;
     flex-direction: row;
     height: 40px;
+    margin: 0px;
     width: auto;
 }
 
@@ -273,9 +272,6 @@ body {
     display: none;
     left: 0px;
     width: calc(100% - 10px);
-    top: 113px;
-    -webkit-clip-path: inset(7px 0 0 0);
-    clip-path: inset(7px 0 0 0);
 
 }
 
@@ -283,9 +279,6 @@ body {
     display: none;
     left: 0px;
     width: calc(100% - 10px);
-    -webkit-clip-path: inset(0 0 7px 0);
-    clip-path: inset(0 0 7px 0);
-    bottom: -7px;
 
 }
 
@@ -400,9 +393,6 @@ body {
         height: 20px;
         -webkit-mask-size: 30px;
     }
-    .modal-list-menu-popup {
-        top: 120px;
-    }
     .item-track {
         height: unset;
         width: unset;
@@ -442,9 +432,6 @@ body {
     .list-dislike {
         min-width: 24px;
         height: 24px
-    }
-    .track-position-top {
-        top: 107px;
     }
     .list-item-like {
         min-width: 22px;

@@ -1,12 +1,21 @@
 let WhatNew = {
+    _isCreated: false,
+    get isCreated() { return this._isCreated },
+    set isCreated(value) {
+        if (value) return;
+        if (typeof value === "boolean") this._isCreated = value;
+        listChangesContent.innerText = "";
+    },
     openNews() {
-        let showNew = () => {
+        const animate = () => {
             modalNews.style.display = "flex";
-            yesNews.classList.remove("yesNews-disable");
-            yesNews.onclick = () => { modalNews.style.display = "none"; }
+            modalNews.animate({ opacity: [0, 1] }, { duration: 400 });
         }
-        this.setLocale(translate("locale"), showNew);
-
+        if (!this._isCreated) {
+            this.setLocale(translate("locale"), animate);
+            return;
+        }
+        animate();
     },
     getWhatNew: async () => {
         try {    
@@ -16,12 +25,11 @@ let WhatNew = {
             return Promise.reject(error);
         }
     },
-    setLocale(locale, callback) {
+    setLocale(locale, animate) {
         this.getWhatNew().then((versions) => {
             let version = document.getElementById("Version");
-            version.innerHTML = translate("shortName") + " " + chrome.runtime.getManifest().version;
+            version.innerText = translate("shortName") + " " + chrome.runtime.getManifest().version;
             let listChangesContent = document.getElementsByClassName("list-changes-coontent")[0];
-            listChangesContent.innerHTML = "";
 
             const messageLng = locale === "RU" ? "messageRu": "messageEn"
             const predicate = function ({ value }) {
@@ -30,15 +38,15 @@ let WhatNew = {
                 return { message, version }
             }
 
-            const versionsTemplate = [
+            new Component([
                 ["div", { class: "version-changes" },
-                    ["h2", { id: "Version" }, "{{ version }}"],
-                    ["h2", { "a:innerHTML": true, class: "versions" }, "{{ message }}"]
+                    ["h2", {  id: "Version" }, "{{ version }}"],
+                    ["h2", { ":innerHTML": true, class: "versions" }, "{{ message }}"]
                 ]
-            ];
-
-            new Component(versionsTemplate, versions, predicate).appendToElement(listChangesContent);
-            callback();
+            ], versions, predicate).appendToElement(listChangesContent);
+            this.isCreated = true;
+            
+            animate();
         });
     }
 }

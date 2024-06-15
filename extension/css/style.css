@@ -59,6 +59,7 @@ a {
     padding: 3px 5px 5px;
     border-radius: 5px;
     margin-left: 4px;
+    transition: 0.4s;
 }
 span {
     align-self: center;
@@ -71,7 +72,6 @@ span {
 .title {
     font-size: 1.6rem;
     text-align: center;
-    margin: 0px auto 5px;
     font-family: var(--fontFamily);
 }
 
@@ -81,7 +81,7 @@ span {
     flex-direction: row;
     font-size: 2rem;
     vertical-align: middle;
-    padding-top: 15px;
+    margin: 10px 0px 6px;
 }
 
 .control {
@@ -170,7 +170,7 @@ span {
 
 .content-track {
     display: flex;
-    height: 150px;
+    margin: 4px;
 }
 .toggle {}
 
@@ -257,7 +257,7 @@ span {
     width: 50%;
     padding: 3px 0px 3px;
 }
-.loading-screen {
+/* .loading-screen {
     display: flex;
     justify-content: center;
     transition: 0.350s;
@@ -268,7 +268,7 @@ span {
     height: 100%;
     position: absolute;
     background: radial-gradient(circle at 25% 27%, rgba(0, 14, 51, 1) 0%, rgba(0, 7, 26, 1) 100%);
-}
+} */
 .loading-img{
     width: 50%;
 }
@@ -340,11 +340,9 @@ span {
 
 .groove-box {
     width: 100%;
-    height: 30px;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    margin-top: calc(8px + var(--pixselsForReduce));
 }
 
 .groove-content {
@@ -539,8 +537,8 @@ span {
 }
 
 :root {
-    --coverBackgroundSize: 45px;
-    --pixselsForReduce: 0px;
+    --coverBackgroundSize: 35px;
+    --pixselsForReduce: 20px;
     --progress-height: 10px;
     --progress-handle-size: 24px;
     --volume-height: 7px;
@@ -777,14 +775,8 @@ span {
 
 .popup-btn {
     cursor: pointer;
-    background-image: url(../img/popup.svg);
-    background-repeat: no-repeat, repeat;
-    background-position: center;
     width: 35px;
     height: 35px;
-    background-size: contain;
-    background-repeat: no-repeat, repeat;
-    background-position: center;
     transition: var(--transitionDuration);
 }
 
@@ -829,12 +821,12 @@ span {
     display: none;
     width: calc(80% - 10px);
     right: 10px;
-    top: -5px;
-    position: fixed;
+    top: -6px;
+    position: absolute;
     height: 24px;
     z-index: +1;
-    -webkit-clip-path: inset(5px 0 0 0);
-    clip-path: inset(5px 0 0 0);
+    -webkit-clip-path: inset(6px 0 0 0);
+    clip-path: inset(6px 0 0 0);
     cursor: pointer;
 
 }
@@ -859,9 +851,9 @@ span {
     position: fixed;
     height: 24px;
     z-index: +1;
-    -webkit-clip-path: inset(0 0 5px 0);
-    clip-path: inset(0 0 5px 0);
-    bottom: -5px;
+    -webkit-clip-path: inset(0 0 6px 0);
+    clip-path: inset(0 0 6px 0);
+    bottom: -6px;
     cursor: pointer;
 
 }
@@ -1021,10 +1013,10 @@ span {
     flex-direction: row;
     justify-content: flex-end;
     position: fixed;
-    left: 0;
-    top: 0;
+    top: 0px;
+    left: 0px;
     width: 100%;
-    height: 100%;
+    height: -webkit-fill-available;
     overflow-y: auto;
     overflow-x: hidden;
     background-color: var(--listTrackBackground);
@@ -1121,7 +1113,7 @@ span {
 
 
 .content-menu {
-    display: none;
+    display: flex;
     position: absolute;
     width: 80%;
     height: 100%;
@@ -1163,7 +1155,7 @@ span {
 
 .side-help:hover {
     padding: 15px;
-    height: 130px;
+    border-radius: 5px 5px 0px 0px;
 }
 
 label {
@@ -1172,7 +1164,7 @@ label {
     font-weight: 400;
     vertical-align: middle;
     align-self: center;
-    width: 100%;
+    
 }
 
 .subtitle {
@@ -1180,8 +1172,8 @@ label {
 }
 
 .list-menu {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
     overflow: auto;
     justify-content: space-around;
     height: calc(100% - 30px);
@@ -1289,8 +1281,8 @@ label {
     word-wrap: break-word;
 }
 
-.show-gradients > a {
-    grid-column: span 4;
+.show-gradients>a:hover {
+    background: #dbdbdb;
 }
 
 #DefaultTheme {
@@ -1374,6 +1366,10 @@ input::-webkit-inner-spin-button {
 .content-label > #PopupPercent  {
     margin-right: 0px;
     margin-left: 5px;
+}
+
+.content-label > label {
+    width: auto;
 }
 
 .title-menu {
@@ -1761,6 +1757,8 @@ input::-webkit-inner-spin-button {
     flex-direction: row;
     justify-content: center;
     width: 100%;
+    height: 60px;
+    overflow: hidden;
     background-color: #172334;
     margin-top: 5px;
     border-radius: 10px;
@@ -1800,11 +1798,10 @@ input::-webkit-inner-spin-button {
     transition: 0.5s;
     background: #172334;
     width: 50%;
-    height: 60px;
+    height: 100%;
     background-size: 40px;
     margin: auto;
     cursor: pointer;
-    border-radius: 10px;
     color: white;
     text-align: center;
     font-size: 1rem;
@@ -1812,6 +1809,8 @@ input::-webkit-inner-spin-button {
 
 .donationalerts-menu:hover {
     background-color: #004D65;
+    border-radius: 0px 10px 10px 0px;
+
 }
 
 .donationalerts-image {
@@ -1869,16 +1868,16 @@ input::-webkit-inner-spin-button {
     transition: 0.5s;
     background-repeat: no-repeat, repeat;
     width: 50%;
-    height: 60px;
+    height: 100%;
     margin: auto;
     cursor: pointer;
-    border-radius: 10px;
     font-size: 1rem;
 }
 
 .paypal-menu:hover {
     background-color: #004D65;
     background-blend-mode: screen;
+    border-radius: 10px 0px 0px 10px;
 }
 
 .no-connect {
@@ -2009,16 +2008,6 @@ input::-webkit-inner-spin-button {
     background-color: #efbf00;
     position: fixed;
     bottom: 0px;
-}
-
-.yesNews-disable {
-    background-color: #8e8e8e;
-    color: rgb(200, 200, 200);
-    cursor: default;
-}
-
-.yesNews-disable:hover {
-    border: none;
 }
 
 .loader {

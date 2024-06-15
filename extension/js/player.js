@@ -9,10 +9,8 @@ let trackPositionTop = document.querySelector(".track-position-top");
 let trackPositionBottom = document.querySelector(".track-position-bottom");
 let tracksListTitle = document.querySelector(".title-list");
 let previousSelectItem;
-let previousSlider;
 let selectedItem;
 let likeItem;
-let itemTracks = [];
 
 const PlayerInfo = class {
     constructor() {
@@ -31,7 +29,6 @@ const PlayerInfo = class {
                     if (typeof value !== "boolean" || value == this.track.liked) return;
 
                     this.track.liked = value;
-                    this.likeItem.setAttribute("like", value);
                     if (value == true && this.track.disliked == true) {
                         this.track.disliked = false;
                         selectedItem.style.filter = "";
@@ -49,7 +46,6 @@ const PlayerInfo = class {
                     this.track.disliked = value;
                     if (value) {
                         this.track.liked = false;
-                        this.likeItem.setAttribute("like", value);
                         toggleLike(false);
                     }
 
@@ -62,7 +58,7 @@ const PlayerInfo = class {
                     if (Number.isFinite(value)) {
                         duration = value;
                         sliderProgress.maxScale = value;
-                        durationSpan.innerHTML = getDurationAsString(value);
+                        durationSpan.innerText = getDurationAsString(value);
                     }
                 },
                 enumerable: true
@@ -218,13 +214,11 @@ const PlayerInfo = class {
         this.isUpdateTimer = true;
     }
     stopUpdater() {
-        try {
-            this.isUpdateTimer = false;
-            clearInterval(this.#positionUpdaterId);
-            if (toggleLoadingWaitingBarDelay.isStarted || toggleLoadingWaitingBarDelay.isShown) {
-                toggleLoadingWaitingBarDelay.execute(false);
-            }
-        } catch (error) { console.log(error); }
+        this.isUpdateTimer = false;
+        clearInterval(this.#positionUpdaterId);
+        if (toggleLoadingWaitingBarDelay.isStarted || toggleLoadingWaitingBarDelay.isShown) {
+            toggleLoadingWaitingBarDelay.execute(false);
+        }
     }
     /**
     * @param {object} progress - {duration, position, loaded}.
@@ -265,7 +259,7 @@ let updateTracksList = ({ tracksList, sourceInfo, index: tabIndex }) => {
                     indexesForCreated = playlist.getIndexes(index, quantity);
                 }
 
-                if (indexesForCreated) createReactiveList(indexesForCreated);
+                if (indexesForCreated) addPlaylistElements(indexesForCreated);
                 return;
             }
             selectItem(playlist.elements.get(index).itemTrack, index);
@@ -289,23 +283,22 @@ let updateTracksList = ({ tracksList, sourceInfo, index: tabIndex }) => {
 
     updateTitle(Player.info.source);
 
-    const indexes = playlist.getIndexes(Player.list.tabTracks.get(tabIndex).index, 15);
-    createReactiveList(indexes, tabIndex);
+    const indexes = playlist.getIndexes(Player.list.tabTracks.get(tabIndex).index, 60);
+    addPlaylistElements(indexes, tabIndex);
 }
 
 let updateTitle = (title) => {
     if (title.title != undefined) {
-        tracksListTitle.innerHTML = title.title;
+        tracksListTitle.innerText = title.title;
     } else {
-        tracksListTitle.innerHTML = title.type;
+        tracksListTitle.innerText = title.type;
     }
 }
 
 let isFirstLoad = true;
-let createReactiveList = (indexesForCreated, currentTabIndex) => {
+let addPlaylistElements = (indexesForCreated, currentTabIndex) => {
     let isScrollTocenter = false;
     let isTimeGreaterThanOneHour = false;
-    console.time("playlist created");
 
     function predicate({ value: index }, itemTrack) {
         const likeItem = itemTrack.childNodes[1];
@@ -405,7 +398,7 @@ let createReactiveList = (indexesForCreated, currentTabIndex) => {
             onmouseenter,
             onmouseleave,
             onclick,
-            trackTitle: track.title,
+            track,
             artistsTitle: getArtists(track),
             duration: getDurationAsString(track.duration)
         }
@@ -416,11 +409,11 @@ let createReactiveList = (indexesForCreated, currentTabIndex) => {
             ["div", { class: "item-track-content" },
                 ["img", "{{imgAttr}}"],
                 ["div", { class: "content-item-name" },
-                    ["div", { class: "item-name-track" }, "{{trackTitle}}"],
+                    ["div", { class: "item-name-track" }, "{{track.title}}"],
                     ["div", { class: "item-artists",}, "{{artistsTitle}}"],
                 ],
             ],
-            ["div", { class: "{{likeClass}}" }], // to do
+            ["div", { class: "{{likeClass}}" }], 
             ["span", { class: "track-time" }, "{{duration}}"]
         ]
     ];
@@ -445,7 +438,6 @@ let createReactiveList = (indexesForCreated, currentTabIndex) => {
             isScrollTocenter = true;
         }
     });
-    console.timeEnd("playlist created");
 
     if (isFirstLoad === false) {
         if(isScrollTocenter) scrollToCenter();
@@ -454,8 +446,8 @@ let createReactiveList = (indexesForCreated, currentTabIndex) => {
 
     EventEmitter.on("playlistIsOpen", () => {
         function addScroll() {
-            listTracks.addEventListener("scroll", checkTrackPosition.start.bind(checkTrackPosition));
-            listTracks.addEventListener("scroll", checkForNewElement.start.bind(checkForNewElement));
+            listTracks.addEventListener("scroll", checkTrackPosition.start);
+            listTracks.addEventListener("scroll", checkForNewElement.start);
             listTracks.removeEventListener("scrollend", addScroll);
             clearTimeout(timeoutId);
             isFirstLoad = false;
@@ -540,7 +532,7 @@ let selectItem = (item, index) => {
     selectedItem = item;
     Player.index = index;
     
-    if (!document.hasFocus() && !isFirstLoad) { //
+    if (!document.hasFocus() && !isFirstLoad) { 
         scrollToCenter();
         return;
     };
@@ -565,7 +557,6 @@ let showTrackPosition = new ExecutionDelay(
     }, { delay: 200 }
 );
 
-
 const checkTrackPosition = new ExecutionDelay(() => {
     const rect = selectedItem.getClientRects();
     if (rect.length === 0) return;
@@ -574,16 +565,15 @@ const checkTrackPosition = new ExecutionDelay(() => {
     let playlistTop = listTracksContainer.getClientRects()[0].top - height;
 
     if (playlistTop > top) {
-        if (isTrackPosition !== "top") {
-            isTrackPosition = "top";
-            showTrackPosition.start("top");
-        }
+        if (isTrackPosition === "top") return;
+        isTrackPosition = "top";
+        showTrackPosition.start("top");
         return;
+
     } else if (top > innerHeight) {
-        if (isTrackPosition !== "bottom") {
-            isTrackPosition = "bottom";
-            showTrackPosition.start("bottom");
-        }
+        if (isTrackPosition === "bottom") return;
+        isTrackPosition = "bottom";
+        showTrackPosition.start("bottom");
         return;
     }
     // remove track position
@@ -613,14 +603,14 @@ const checkForNewElement = new ExecutionDelay(() => {
     if (firstElementY > -elementSize + top) {
         const quantity = listHeight / height > 10 ? Math.floor(listHeight / height) : 10;
         const indexes = playlist.getIndexes(playlist.firstElement.index, quantity, "up");
-        if (indexes) createReactiveList(indexes);
+        if (indexes) addPlaylistElements(indexes);
         return;
     }
 
     if (lastElementY < elementSize + bottom - height) {
         const quantity = listHeight / height > 10 ? Math.floor(listHeight / height) : 10;
         const indexes = playlist.getIndexes(playlist.lastElement.index, quantity, "down");
-        if (indexes) createReactiveList(indexes);
+        if (indexes) addPlaylistElements(indexes);
     }
 }, { delay: 200, isThrottling: true });
 

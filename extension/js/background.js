@@ -46,14 +46,12 @@ let Options = {
     isAllNoifications: undefined,
     isPlayPauseNotify: undefined,
     isPrevNextNotify: undefined,
-    isShowWhatNew: undefined,
+    isNewFeaturesShown: undefined,
     version: undefined,
     oldVersionDescription: undefined,
-    isDarkTheme: undefined,
     theme: undefined,
-    isButtonsReduced: undefined,
     isDislikeButton: undefined,
-    isSaveSizePopup: undefined,
+    isSaveSizePopup: true,
     popupBounds: undefined,
     reassign: undefined,
 }
@@ -250,27 +248,10 @@ chrome.commands.onCommand.addListener(function(command) {
 });
 
 chrome.runtime.onMessageExternal.addListener(
-    function(request, sender, sendResponse) {
-        if (request.eventTrack == true) {
-            if (Background.isAllReaded) {
-                showNotification(request);
-            } else(
-                getOptions().then((result) => {
-                    showNotification(request);
-                })
-            )
-            return;
+    function(request) {
+        if (request.changeTrack || request.key) {
+            showNotification(request);
         }
-        if (request.key == true) {
-            if (Background.isAllReaded) {
-                showNotification(request);
-            } else {
-                getOptions().then((result) => {
-                    showNotification(request);
-                });
-            }
-        }
-        //return true;
     });
 
 chrome.runtime.onMessage.addListener( // content, extension, script
@@ -486,7 +467,7 @@ let showNotification = async(request) => {
     let isLike = request.currentTrack.liked;
     // get options
     if (Background.isAllReaded == false || Background == undefined) {
-        await getOptions();
+        await getOptions(["isAllNoifications", "isPlayPauseNotify", "isPrevNextNotify"]);
     }
     if (Options.isAllNoifications == true) {
         setNotifications(nameTrack, nameArtists, iconTrack);
@@ -513,7 +494,7 @@ let showNotification = async(request) => {
         case 'toggleLike-key':
             let liked = chrome.i18n.getMessage("liked");
             let disliked = chrome.i18n.getMessage("disliked");
-            if (isLike) { // noGood
+            if (isLike) { 
                 iconTrack = "../img/like.png";
                 nameArtists = liked;
             } else {
@@ -526,7 +507,7 @@ let showNotification = async(request) => {
 
 }
 
-let lastUrl, lastBase64Url, notificationsTimeout;
+let lastUrl, lastBase64Url;
 let setNotifications = async(trackTitle, trackArtists, iconTrack) => {
     if (iconTrack == undefined) {
         iconTrack = chrome.runtime.getURL("../img/icon.png");
@@ -549,30 +530,17 @@ let setNotifications = async(trackTitle, trackArtists, iconTrack) => {
         iconTrack = chrome.runtime.getURL("../img/icon.png");
     }
     chrome.notifications.getAll((notifications) => {
+        const notification = {
+            title: trackTitle,
+            message: trackArtists,
+            iconUrl: iconTrack,
+            eventTime: Date.now() + 7000
+        }
+        
         if (notifications.YandexMusicControl) {
-            chrome.notifications.update("YandexMusicControl", {
-                title: trackTitle,
-                message: trackArtists,
-                iconUrl: iconTrack
-            }, function(callback) {
-                try {
-                    clearTimeout(notificationsTimeout);
-                    notificationsTimeout = setTimeout(function() {
-                        chrome.notifications.clear("YandexMusicControl");
-                    }, 7000);
-                } catch (error) {}
-            });
+            chrome.notifications.update("YandexMusicControl", notification);
         } else {
-            chrome.notifications.create("YandexMusicControl", {
-                type: "basic",
-                title: trackTitle,
-                message: trackArtists,
-                iconUrl: iconTrack
-            }, function(callback) {
-                notificationsTimeout = setTimeout(function() {
-                    chrome.notifications.clear("YandexMusicControl");
-                }, 7000);
-            });
+            chrome.notifications.create("YandexMusicControl", { type: "basic", ...notification });
         }
     });
 }
@@ -644,31 +612,12 @@ let readOption = (options = null) => {
 }
 
 let writeOptions = (option) => {
-    let keysOptions = Object.keys(Options);
-    let keysOption = Object.keys(option);
-
-    next: for (let i = 0; i < keysOptions.length; i++) {
-        for (let j = 0; j < keysOption.length; j++) {
-            if (keysOptions[i] == keysOption[j]) {
-                chrome.storage.local.set({ [keysOptions[i]]: option[keysOptions[i]] });
-                Options[keysOptions[i]] = option[keysOptions[i]];
-                continue next;
-            }
+    Object.keys(option).forEach((key) => {
+        if (Options.hasOwnProperty(key)) {
+            Options[key] = option[key];
+            chrome.storage.local.set({ [key]: option[key] });
         }
-
-    }
-    if (option.remove) {
-        chrome.storage.local.remove(option.remove);
-        if (Array.isArray(option.remove)) {
-            option.remove.forEach(element => {
-                delete Options[element];
-            });
-            return;
-        }
-        if (typeof option.remove == "string") {
-            delete Options[option.remove];
-        }
-    }
+    });
 }
 
 const checkNewVersion = async () => {
@@ -684,7 +633,7 @@ const checkNewVersion = async () => {
             writeOptions({
                 version: manifestVersion,
                 oldVersionDescription: currentVersionDescription,
-                isShowWhatNew: true
+                isNewFeaturesShown: true
             });
         }
         return Promise.resolve({ isNewVersion: true });
@@ -704,7 +653,7 @@ let getOptions = async (option = null, send = false) => { // read and send
     }
     return new Promise((resolve, reject) => {
         readOption(option).then((result) => { // read from parameter
-            if (option === null && result.isShowWhatNew) {
+            if (option === null && result.isNewFeaturesShown) {
                 sendMessage({ options: Options });
             }
             if (send) sendMessage({ options: Options });

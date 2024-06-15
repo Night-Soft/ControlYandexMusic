@@ -3,7 +3,7 @@
         "message": "Yandex Music control"
     },
     "appDesc": {
-        "message": "Control your music from any app! Integrates with Windows and Linux operating systems."
+        "message": "Control your music from any app! You can create a pop-up window with the player or open it in the sidebar."
     },
     "shortName": {
         "message": "Yandex Music"
@@ -40,9 +40,6 @@
     },
     "yes": {
         "message": "Yes"
-    },
-    "no": {
-        "message": "No"
     },
     "continue": {
         "message": "Continue"
@@ -84,10 +81,10 @@
         "message": "Show notifications when control from keyboard: "
     },
     "playPauseNotify": {
-        "message": "Notification when play / pause."
+        "message": "Notification when play / pause"
     },
     "prevNextNotify": {
-        "message": "Notification when previous / next track."
+        "message": "Notification when previous / next track"
     },
     "selectTheme": {
         "message": "Select color theme:"
@@ -100,9 +97,6 @@
     },
     "darkTheme": {
         "message": "Dark"
-    },
-    "increaseCover": {
-        "message": "Reduce the control buttons and enlarge the image"
     },
     "whatNew": {
         "message": "What's New"
@@ -126,19 +120,19 @@
         "message": "There is no shortcut key set for this action!"
     },
     "shortcutKeyOpenPopup": {
-        "message": "Select a shortcut key to open and activate the popup. (The default shortcut key will be reassigned)."
+        "message": "Select a shortcut key to open and activate the popup. (The default shortcut key will be reassigned)"
     },
     "checkBoxReassignFirstHalf": {
         "message": "Now the shortcut key which uses as '"
     },
     "checkBoxReassignSecondHalf": {
-        "message": "' will be used for open popup."
+        "message": "' will be used for open popup"
     },
     "openPopup": {
         "message": "Open popup window<br>'"
     },
     "selectedShortcutKey": {
-        "message": "Choose from the list below."
+        "message": "Choose from the list below"
     },
     "successfullyCreated": {
         "message": "The window was successfully created!"

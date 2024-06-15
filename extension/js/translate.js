@@ -1,61 +1,59 @@
 let Translate = {
     onload: function() {
-        title[0].innerHTML = chrome.i18n.getMessage("title");
-        about.innerHTML = chrome.i18n.getMessage("about");
-        contactMe.innerHTML = chrome.i18n.getMessage("contactMe");
-        shortCuts.innerHTML = chrome.i18n.getMessage("openShortcuts");
+        title[0].innerText = chrome.i18n.getMessage("title");
+        about.innerText = chrome.i18n.getMessage("about");
+        contactMe.innerText = chrome.i18n.getMessage("contactMe");
+        shortCuts.innerText = chrome.i18n.getMessage("openShortcuts");
         let titleHelp = document.getElementById("help");
-        titleHelp.innerHTML = chrome.i18n.getMessage("helpMenu");
+        titleHelp.innerText = chrome.i18n.getMessage("helpMenu");
         let writeLettr = document.getElementsByTagName("h3")[0];
         let aMail = document.createElement("A");
         aMail.href = "mailto:NightSoftware@outlook.com";
-        aMail.innerHTML = "NightSoftware@outlook.com";
-        writeLettr.innerHTML = chrome.i18n.getMessage("writeLetter");
+        aMail.innerText = "NightSoftware@outlook.com";
+        writeLettr.innerText = chrome.i18n.getMessage("writeLetter");
         writeLettr.appendChild(aMail);
         getYandexMusicTab().then(tabId => {
             if (tabId == false) {
-                btnYes.innerHTML = chrome.i18n.getMessage("yes");
+                btnYes.innerText = chrome.i18n.getMessage("yes");
             } else {
-                btnYes.innerHTML = chrome.i18n.getMessage("reload");
+                btnYes.innerText = chrome.i18n.getMessage("reload");
             }
         });
-        bntNo.innerHTML = chrome.i18n.getMessage("no");
-        btnNew.innerHTML = chrome.i18n.getMessage("new");
+        btnNew.innerText = chrome.i18n.getMessage("new");
         let settings = document.getElementById("settings");
         settings.innerText = chrome.i18n.getMessage("settings");
-        showNotify.innerHTML = chrome.i18n.getMessage("showNotify");
-        playPauseNotify.labels[0].innerHTML = chrome.i18n.getMessage("playPauseNotify");
-        prevNextNotify.labels[0].innerHTML = chrome.i18n.getMessage("prevNextNotify");
+        showNotify.innerText = chrome.i18n.getMessage("showNotify");
+        playPauseNotify.labels[0].innerText = chrome.i18n.getMessage("playPauseNotify");
+        prevNextNotify.labels[0].innerText = chrome.i18n.getMessage("prevNextNotify");
         let yesNews = document.getElementById("YesNews");
-        yesNews.innerHTML = chrome.i18n.getMessage("continue");
+        yesNews.innerText = chrome.i18n.getMessage("continue");
         let whatNew = document.getElementById("whatNew");
-        whatNew.innerHTML = chrome.i18n.getMessage("whatNew");
+        whatNew.innerText = chrome.i18n.getMessage("whatNew");
         let versions = document.getElementsByClassName("versions")[0];
-        versions.innerHTML = chrome.i18n.getMessage("whatNew");
+        versions.innerText = chrome.i18n.getMessage("whatNew");
         let selectColorTheme = document.getElementById("SelectColorTheme");
-        selectColorTheme.innerHTML = chrome.i18n.getMessage("selectTheme");
+        selectColorTheme.innerText = chrome.i18n.getMessage("selectTheme");
         let defaultTheme = document.getElementById("DefaultTheme");
         let lightTheme = document.getElementById("LightTheme");
         let darkTheme = document.getElementById("DarkTheme");
-        defaultTheme.lastChild.innerHTML = chrome.i18n.getMessage("defaultTheme");
-        lightTheme.lastChild.innerHTML = chrome.i18n.getMessage("lightTheme");
-        darkTheme.lastChild.innerHTML = chrome.i18n.getMessage("darkTheme");
-        let checkBoxIncreaseCover = document.getElementById("checkBoxIncreaseCover");
-        checkBoxIncreaseCover.innerHTML = chrome.i18n.getMessage("increaseCover");
+        defaultTheme.lastChild.innerText = chrome.i18n.getMessage("defaultTheme");
+        lightTheme.lastChild.innerText = chrome.i18n.getMessage("lightTheme");
+        darkTheme.lastChild.innerText = chrome.i18n.getMessage("darkTheme");
         let addDislikeButton = document.getElementById("checkBoxDislikeButton");
-        addDislikeButton.innerHTML = chrome.i18n.getMessage("addDislikeButton");
+        addDislikeButton.innerText = chrome.i18n.getMessage("addDislikeButton");
         let checkBoxReassignT = document.getElementById("checkBoxReassign");
-        checkBoxReassignT.innerHTML = chrome.i18n.getMessage("noShortcutSelected");
+        checkBoxReassignT.innerText = chrome.i18n.getMessage("noShortcutSelected");
         let shortcutKeyOpenPopup = document.getElementById("shortcutKeyOpenPopup");
-        shortcutKeyOpenPopup.innerHTML = chrome.i18n.getMessage("shortcutKeyOpenPopup");
+        shortcutKeyOpenPopup.innerText = chrome.i18n.getMessage("shortcutKeyOpenPopup");
         let selectedShortcutKeyT = document.getElementsByClassName("select-shortcut-key")[0];
-        selectedShortcutKeyT.innerHTML = chrome.i18n.getMessage("selectedShortcutKey");
+        selectedShortcutKeyT.innerText = chrome.i18n.getMessage("selectedShortcutKey");
         let allNotifications = document.getElementById("allNotifications");
-        allNotifications.innerHTML = chrome.i18n.getMessage("allNotifications");
-        pinTab.innerHTML = chrome.i18n.getMessage("pinTab");
-        document.getElementById("StepChange").innerHTML = chrome.i18n.getMessage("stepChange");
-        document.getElementById("SecondsPosition").innerHTML = chrome.i18n.getMessage("secondsPosition");
-        document.getElementById("InterestVolume").innerHTML = chrome.i18n.getMessage("interestVolume");
+        allNotifications.innerText = chrome.i18n.getMessage("allNotifications");
+        let pinTab = document.getElementById("PinTab");
+        if(pinTab) pinTab.innerText = chrome.i18n.getMessage("pinTab");
+        document.getElementById("StepChange").innerText = chrome.i18n.getMessage("stepChange");
+        document.getElementById("SecondsPosition").innerText = chrome.i18n.getMessage("secondsPosition");
+        document.getElementById("InterestVolume").innerText = chrome.i18n.getMessage("interestVolume");
     }
 }
 

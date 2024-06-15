@@ -136,7 +136,7 @@ let Slider = class {
 
         let x = event.x - this.groove.offsetLeft;
         if (x >= 0 && x <= this.groove.offsetWidth) {
-            // nothing to do with x
+            // nothing todo with x
         } else if (x > this.groove.offsetWidth) {
             x = this.groove.offsetWidth;
         } else if (x < 0) { x = 0; }
@@ -170,7 +170,7 @@ let Slider = class {
     }
 
     setTooltipData(data) {
-        this.Tooltip.element.innerHTML = data;
+        this.Tooltip.element.innerText = data;
     }
 
     showTooltip(bool) {

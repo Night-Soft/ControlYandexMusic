@@ -23,7 +23,6 @@ let listsSortcutKeys = document.getElementsByClassName("list-shortcut-keys")[0];
 let selectedShortcutKey = document.getElementsByClassName("select-shortcut-key")[0];
 
 let isMenuListOpen = false;
-let isMenuOpen = false;
 
 // list settings
 
@@ -36,6 +35,14 @@ about.onclick = () => {
         url: "about.html"
     })
 }
+yesNews.onclick = () => {
+    modalNews.animate({ opacity: [1, 0] }, { duration: 400 }).onfinish = () => {
+        modalNews.style.display = "";
+    };
+    if(Options.isNewFeaturesShown === false) return;
+    Options.isNewFeaturesShown = false;
+    writeOptions({ isNewFeaturesShown: false });
+}
 
 popupBtn.onclick = createPopup;
 
@@ -44,38 +51,38 @@ let setKeyDescription = (clear = false, shortcutKey, result) => {
     selectedShortcutKey.style.background = "";
     if (clear) {
         let checkBoxReassignT = document.getElementById("checkBoxReassign");
-        checkBoxReassignT.innerHTML = translate("noShortcutSelected");
-        selectedShortcutKey.innerHTML = translate("selectedShortcutKey");
+        checkBoxReassignT.innerText = translate("noShortcutSelected");
+        selectedShortcutKey.innerText = translate("selectedShortcutKey");
         for (let j = 0; j < listsSortcutKeys.children.length; j++) {
             listsSortcutKeys.childNodes[j].style.background = "";
         }
         return;
     } else {
         if (shortcutKey != undefined) {
-            selectedShortcutKey.innerHTML = shortcutKey.innerHTML;
+            selectedShortcutKey.innerText = shortcutKey.innerText;
             if (result != undefined) {
                 if (result.shortcut != undefined && result.shortcut != '') {
                     selectedShortcutKey.innerHTML = translate("openPopup") + result.shortcut + "'";
                 } else if (result.name != undefined) {
                     selectedShortcutKey.style.background = "#DB0000"
-                    selectedShortcutKey.innerHTML = "'" + result.description + "' " + translate("isNoKeyAction");
+                    selectedShortcutKey.innerText = "'" + result.description + "' " + translate("isNoKeyAction");
                 }
             }
         }
         try {
             if (result == undefined) {
                 let checkBoxReassignT = document.getElementById("checkBoxReassign");
-                checkBoxReassignT.innerHTML = translate("noShortcutSelected");
+                checkBoxReassignT.innerText = translate("noShortcutSelected");
                 return;
             }
             let checkBoxReassignT = document.getElementById("checkBoxReassign");
             let checkBoxReassignText = translate("checkBoxReassignFirstHalf") + result.description + translate("checkBoxReassignSecondHalf");
-            checkBoxReassignT.innerHTML = checkBoxReassignText;
+            checkBoxReassignT.innerText = checkBoxReassignText;
             if (result.shortcut != undefined && result.shortcut != '') {
                 selectedShortcutKey.innerHTML = translate("openPopup") + result.shortcut + "'";
             } else if (result.name != undefined) {
                 selectedShortcutKey.style.background = "#DB0000"
-                selectedShortcutKey.innerHTML = "'" + result.description + "' " + translate("isNoKeyAction");
+                selectedShortcutKey.innerText = "'" + result.description + "' " + translate("isNoKeyAction");
             }
         } catch (error) { }
     }
@@ -99,26 +106,30 @@ let writeReassignOptions = () => {
 settings.onclick = (event) => {
     const span = document.getElementById("settings");
     if (event.target != settings && event.target !== span) return;
+    const listSettingsToggleAnim = new ToggleAnimation(listSettings, {
+        open: "scale-from-top",
+        close: "scale-from-top-out",
+        display: {
+            open: "flex",
+            close: "none"
+        }
+    });
 
     toggleSetCurrentSizeBtn();
     if (isSettingsOpen) {
-        listSettings.classList.remove("scale-from-top");
-        listSettings.className += " scale-from-top-out";
-        listSettings.addEventListener("animationend", endAnimationList);
+        listSettingsToggleAnim.close();
         isSettingsOpen = false;
     } else {
         settings.style.background = "var(--topColor)";
         settings.style.padding = "15px";
         settings.style.borderRadius = "5px";
-        listSettings.removeEventListener("animationend", endAnimationList);
-        listSettings.classList.remove("scale-from-top-out");
-        listSettings.className += " scale-from-top";
-        listSettings.style.display = "flex";
+        listSettingsToggleAnim.open();
+
         isSettingsOpen = true;
-        listsSortcutKeys.innerHTML = "";
+        listsSortcutKeys.innerText = "";
 
         let notification;
-        chrome.commands.getAll().then((result) => { // to do:
+        chrome.commands.getAll().then((result) => { 
             for (let i = 1; i < result.length; i++) {
                 const onclick = function () {
                     if (Options.selectedShortcutKey != undefined) {
@@ -137,15 +148,11 @@ settings.onclick = (event) => {
                     Options.selectedShortcutKey = result[i];
                     Options.selectedShortcutKey.index = i;
 
-                    if (result[i].shortcut == '') {
-                        notification ??= showNotification(translate("noShortcutKeyAction"));
-                        notification.onfinish = () => {
-                            notification = true;
-                        }
-                    } else {
-                        notification?.close?.();
-                        console.log("close")
-
+                    if (result[i].shortcut == '' && !notification) {
+                        notification = showNotification(translate("noShortcutKeyAction"));
+                        notification.onfinish = () => { notification = true; }
+                    } else if (result[i].shortcut !== '' && typeof notification === "object") {
+                        notification.close();
                     }
 
                     this.style.background = "var(--topColor)";
@@ -199,20 +206,13 @@ settings.onmouseenter = () => {
     }
 }
 
-let endAnimationList = () => {
-    listSettings.classList.remove("scale-from-top-out");
-    listSettings.classList.remove("scale-from-top");
-    listSettings.style.display = "none";
-    listSettings.removeEventListener("animationend", endAnimationList);
-}
-
 contactMe.onclick = () => {
     window.open("mailto:nightsoftware@outlook.com");
 }
 
-whatNew.onclick = () => {
+whatNew.onclick = () => { 
     WhatNew.openNews();
-}
+};
 
 shortCuts.onclick = () => {
     chrome.tabs.create({
@@ -252,9 +252,7 @@ closeSide.onclick = () => {
 }
 
 modalListMenu.onclick = (e) => {
-    if (e.target !== modalListMenu) {
-        return;
-    }
+    if (e.target !== modalListMenu) return;
     toggleListMenu();
 }
 
@@ -266,83 +264,53 @@ let isFirstScroll = false;
 let firstScroll = () => {
     if (!isFirstScroll) {
         if (Player.info.tracks.length > 0) {
-            EventEmitter.emit("playlistIsOpen");
-
+            requestIdleCallback(()=>{
+                EventEmitter.emit("playlistIsOpen");
+            });
         }
         isFirstScroll = true;
     }
 }
 
+let playlistToggleAnim = new ToggleAnimation(listTracks, {
+    open: "slide-left",
+    close: "slide-left-out",
+});
+
+let listMenuToggleAnim = new ToggleAnimation(modalListMenu, {
+    open: "opacity",
+    close: "opacity-reverse",
+    display: {
+        open: "flex",
+        close: "none"
+    },
+    onOpenEnd() { firstScroll() }
+});
+
 let toggleListMenu = () => {
     hamburgerMenuList.classList.toggle("change-list");
-    let removeOpacity = () => {
-        modalListMenu.classList.remove("opacity");
-        modalListMenu.removeEventListener("animationend", removeOpacity);
-        isMenuListOpen = true;
-        firstScroll();
-    }
-    let removeOpacityReverse = () => { // run after 0.7s
-        modalListMenu.classList.remove("opacity-reverse");
-        modalListMenu.style.display = "none"
-        modalListMenu.removeEventListener("animationend", removeOpacityReverse);
-    }
-    let endListAnimation = () => {
-        modalListMenu.style.display = "none"
-        isMenuListOpen = false;
-        listTracks.removeEventListener("animationend", endListAnimation);
-    }
-    if (isMenuListOpen == false) { // open menu
-        modalListMenu.addEventListener("animationend", removeOpacity);
-        modalListMenu.classList.add("opacity");
-        listTracks.classList.add("slide-left");
-        modalListMenu.style.display = "flex";
-    } else {
-        modalListMenu.classList.add("opacity-reverse");
-        modalListMenu.addEventListener("animationend", removeOpacityReverse);
-        listTracks.classList.remove("slide-left");
-        listTracks.classList.add("slide-left-out");
-        listTracks.addEventListener("animationend", endListAnimation);
-
-    }
+    playlistToggleAnim.toggle();
+    listMenuToggleAnim.toggle();
 }
 
-let endAnimation = (ev) => {
-    ev.stopPropagation();
-    isMenuOpen = false;
-    containerMenu.removeEventListener("animationend", endAnimation);
-}
+let menuToggleAnim = new ToggleAnimation(containerMenu, {
+    open: "slide-right",
+    close: "slide-out",
+});
+
+let sideToggleAnim = new ToggleAnimation(document.getElementsByClassName("modal-side")[0], {
+    open: "opacity",
+    close: "opacity-reverse",
+    display: {
+        open: "block",
+        close: "none"
+    }
+});
 
 let toggleMenu = () => {
     container.classList.toggle("change");
-    let modalSide = document.getElementsByClassName("modal-side")[0];
-    let removeOpacity = () => {
-        modalSide.classList.remove("opacity");
-        modalSide.removeEventListener("animationend", removeOpacity);
-        isMenuOpen = true;
-    }
-    let removeOpacityReverse = () => { // run aferr 0.7s
-        modalSide.classList.remove("opacity-reverse");
-        modalSide.style.display = "none"
-        modalSide.removeEventListener("animationend", removeOpacityReverse);
-    }
-    if (isMenuOpen == false) {
-        modalSide.addEventListener("animationend", removeOpacity);
-        modalSide.classList.add("opacity");
-        containerMenu.style.display = "flex";
-        modalSide.style.display = "block"
-        containerMenu.className = containerMenu.className.replace(" slide-out", " slide-right");
-    } else {
-        modalSide.classList.add("opacity-reverse");
-        modalSide.addEventListener("animationend", removeOpacityReverse);
-        containerMenu.className = containerMenu.className.replace(" slide-right", " slide-out");
-        addAnimListener();
-    }
-}
-
-let addAnimListener = () => {
-    if (isMenuOpen == true) {
-        containerMenu.addEventListener("animationend", endAnimation);
-    }
+    menuToggleAnim.toggle();
+    sideToggleAnim.toggle();
 }
 
 let setFontSize = (fontSize = 1.4) => {

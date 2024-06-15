@@ -22,7 +22,7 @@ let Themes = {
         colors: {
             dark: "#222222",
             white: "#EEEEEE",
-            grey: "929292",
+            grey: "#929292",
             red: "#DB0000",
             yellow: "#EDCD00"
         }
@@ -199,7 +199,7 @@ let setTheme = (theme = "default", windowName = "default") => {
         if (Extension.windowName == 'extension') {
             otherTheme.style.display = "flex";
             otherTheme.style.background = gradient;
-            otherThemeName.innerHTML = name;
+            otherThemeName.innerText = name;
 
             if (otherTheme.classList.contains("user-theme-selected") == false) {
                 otherTheme.classList.add("user-theme-selected");
@@ -233,7 +233,7 @@ let setTheme = (theme = "default", windowName = "default") => {
         } else {
             dark();
         }
-        // to do
+
         const middleLight = middleColor.array[2];
         const toggleLight = middleLight + 50 > 100 ? middleLight - 50 : middleLight + 50;
         const sliderShadow = topColor.array[2] > 45 ? "rgb(0 0 0 / 15%)" : "rgb(255 255 255 / 15%)";
@@ -351,16 +351,6 @@ let setTheme = (theme = "default", windowName = "default") => {
         }
         return;
     } catch (error) {}
-}
-
-let toggleCoverSize = (increase = false) => {
-    if (increase) {
-        rootCss.style.setProperty('--pixselsForReduce', '20px');
-        rootCss.style.setProperty('--coverBackgroundSize', '35px');
-    } else {
-        rootCss.style.setProperty('--pixselsForReduce', '0px');
-        rootCss.style.setProperty('--coverBackgroundSize', '45px');
-    }
 }
 
 let disableOptions = (element, turnOn = false) => {

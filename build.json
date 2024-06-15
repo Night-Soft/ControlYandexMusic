@@ -29,6 +29,8 @@
     "ignore": [
         "extension/img/icon-pre-release.png",
         "extension/img/icon-dev.png",
+        "extension/img/path.svg",
+        "extension/img/popup.svg",
         "extension/js/gaq.js",
         "extension/js/gtag.js",
         "extension/data/what-new Edge.json"

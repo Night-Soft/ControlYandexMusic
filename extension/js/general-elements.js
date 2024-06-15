@@ -8,7 +8,6 @@ let modal = document.getElementsByClassName("modal");
 let modalCover = document.getElementsByClassName("modal-cover");
 let like = document.getElementsByClassName("like");
 let btnYes = document.getElementById("Yes");
-let bntNo = document.getElementById("No");
 let btnNew = document.getElementById("New");
 let appDetected = document.getElementById("AppDetected");
 let appQuestion = document.getElementById("AppQuestion");
@@ -18,7 +17,6 @@ let yesNoNew = document.getElementsByClassName("yes-no-new")[0];
 let transition = document.getElementsByClassName("transition");
 let hamburgerMenuList = document.getElementsByClassName("hamburger-menu-list")[0];
 let dislike = document.getElementsByClassName("dislike")[0];
-let textNotification = document.getElementsByClassName("h2-notification")[0];
 let notificationTrackName = document.getElementsByClassName("notification-track-name")[0];
 let contentListMenu = document.getElementsByClassName("content-list-menu")[0];
 let modalListMenu = document.getElementsByClassName("modal-list-menu")[0];
@@ -59,7 +57,6 @@ let Extension = {
                     onMessageAddListener();
                     resolve(true);
                 } else {
-                    Extension.isConnection = false;
                     showNoConnected();
                     resolve(false);
                 }
@@ -67,11 +64,24 @@ let Extension = {
         });
     },
     windowName: windowName(),
-    isConnection: undefined
 };
 
 chrome.runtime.onMessage.addListener( // background, content-script
     (request, sender, sendResponse) => {
+        if (request.getId) {
+            Player.playlist.clear();
+            Player.info = { source: {}, tracks: [] }
+            Player.setProgress({ loaded: 0, duration: 0, position: 0 });
+            artistsName[0].innerText = "Artists";
+            trackName[0].innerText = "Track";
+            trackImage[0].style.backgroundImage = "";
+            requestAnimationFrame(() => {
+                requestIdleCallback(()=>{ // stop timer in 'scroll' event, in listtrack
+                    checkTrackPosition.stop();
+                    checkForNewElement.stop();
+                });
+            });
+        }
         if (request.onload) {
             if (port.isConnection == false) {
                 Extension.createConnection();
@@ -93,14 +103,11 @@ chrome.runtime.onMessage.addListener( // background, content-script
                 });
             });
         }
-
-        // to do
         if (request.options) {
-            setOptions(request.options);
-            if (Extension.windowName === "extension") {
-                if (request.options.isShowWhatNew) {
-                    checkNew();
-                }
+            if (request.writeOptions) {
+                setOptions(request.options, true);
+            } else {
+                setOptions(request.options);
             }
         }
         if (request.savePopupBounds && Extension.windowName === "extension") {
@@ -114,10 +121,10 @@ chrome.runtime.onMessage.addListener( // background, content-script
         } 
     });
 
-    chrome.runtime.onMessageExternal.addListener( // injected script
+chrome.runtime.onMessageExternal.addListener( // injected script
     (request, sender, sendResponse) => {
         switch (request.event) {
-            case 'currentTrack': // get from the key
+            case 'currentTrack': 
                 if (request.trackInfo.index == -1) {
                     showNotification(chrome.i18n.getMessage("playlistEmpty"), 7000);
                     return;
@@ -191,18 +198,15 @@ btnYes.onclick = () => {
     getYandexMusicTab().then(tabId => openNewTab(tabId));
 }
 
-bntNo.onclick = () => {
-    noConnect.classList.add("puff-out-center");
-    noConnect.addEventListener("animationend", () => {
-        noConnect.style.display = "none";
-
-    });
-}
-
- //
 btnNew.onclick = openNewTab;
 
-previous.onclick = sendEvent.bind(null, "previous", undefined);
+previous.onclick = ()=>{
+    if (Player.info.source.type === "radio") {
+        sendEvent({ play: Player.index > 0 ? Player.index - 1 : 0 }, true);
+        return;
+    }
+    sendEvent("previous");
+};
 previous.longpress = rewind.start.bind(null, -1.5);
 previous.longpress.onend = rewind.stop;
 

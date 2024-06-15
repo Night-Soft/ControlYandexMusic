@@ -22,7 +22,7 @@ if (Extension.windowName == "popup") {
             sendEventBackground({ savePopupBounds: ev });
         }
     }, { delay: 200 });
-    chrome.windows.onBoundsChanged.addListener(boundsChanged.start.bind(boundsChanged));
+    chrome.windows.onBoundsChanged.addListener(boundsChanged.start);
 
     const popupClosed = sendEventBackground.bind(null, { popupClosed: true });
     window.addEventListener("beforeunload", popupClosed);
@@ -86,6 +86,7 @@ let PopupWindow = class {
     }
     set width(value) {
         if (!Number.isInteger(value)) return;
+        if (value < 250) value = 250;
         this.#width = value + this.frameWidth;
     }
 
@@ -97,6 +98,7 @@ let PopupWindow = class {
     }
     set height(value) {
         if (!Number.isInteger(value)) return;
+        if (value < 110) value = 110;
         this.#height = value + this.frameHeight;
     }
 
@@ -119,8 +121,8 @@ let PopupWindow = class {
     }
 
 }
-let popupWindow = new PopupWindow();
 
+let popupWindow = new PopupWindow();
 let list = document.getElementById("listTrack");
 /** @param {boolean} show show playlist or hide  */
 let togglePlaylist = (show) => {
@@ -133,7 +135,8 @@ let togglePlaylist = (show) => {
         if (show) {
             animH.onfinish = () => {
                 hamburgerMenuList.classList.add("playlist-open");
-                hamburgerMenuList.style.top = "120px";
+                const top = listTrack.getClientRects()[0].top;
+                hamburgerMenuList.style.top = `${top}px`;
                 hamburgerMenuList.style.right = "10px";
                 keyframeHamburger = { opacity: ['0', '1'] };
                 hamburgerMenuList.animate(keyframeHamburger, optionsHamburger);
@@ -165,7 +168,6 @@ let togglePlaylist = (show) => {
         let anim = list.animate(keyframe, options);
         popupWindow.isPlaylistOpen = true;
         anim.onfinish = () => {
-            list.style.height = "auto";
             list.style.overflowY = "auto";
             EventEmitter.emit("playlistIsOpen");
         }
@@ -206,9 +208,6 @@ if (typeof hamburgerMenuList != "undefined") {
     }
 }
 
-//END EXTENSION
-
-// START OPTIONS
 let Options = {
     theme: {},
     positionStep: undefined,
@@ -218,7 +217,7 @@ let Options = {
 }
 
 
-let setOptions = (options) => {
+let setOptions = (options, isWrite) => {
     if (options.positionStep != undefined) {
         Options.positionStep = options.positionStep;
         if (typeof sliderProgress != "undefined") {
@@ -244,33 +243,31 @@ let setOptions = (options) => {
             dislike.style.display = "none";
         }
     }
-    if (Extension.windowName == "popup") {
-        if (options.hasOwnProperty("isSaveSizePopup") && options.hasOwnProperty("writeOptions") === false) {
-            if (options.isSaveSizePopup === false || options.isSaveSizePopup === undefined) {
-                Options.isSaveSizePopup = options.isSaveSizePopup;
-                popupWindow.playlistHeight = window.innerHeight;
-                popupWindow.width = window.innerWidth;
-                popupWindow.height = window.innerHeight;
-            }
-            if (options.popupBounds != undefined) {
-                Options.popupBounds = options.popupBounds;
-                if (options.isSaveSizePopup) {
-                    popupWindow.playlistHeight = options.popupBounds.playlistHeight;
-                    popupWindow.height = options.popupBounds.height;
-                }
-                if (options.popupBounds.isTrackListOpen || options.popupBounds.isTrackListOpen == undefined) {
-                    // to do:
-                    // popupWindow.height = options.popupBounds.height;
-                    
-                    togglePlaylist(true);
-                    return;
-                }
-            }
-        }
-        popupWindow.correctMinSize();
+
+    if (isWrite) return;
+
+    if (Extension.windowName == "popup" && typeof options.isSaveSizePopup === 'boolean') {
+        Options.isSaveSizePopup = options.isSaveSizePopup;
+        popupWindow.playlistHeight = window.innerHeight;
+        popupWindow.width = window.innerWidth;
+        popupWindow.height = window.innerHeight;
         rootCss.style.setProperty('--transitionDuration', '0.7s');
+
+        if (options.popupBounds != undefined) {
+            Options.popupBounds = options.popupBounds;
+            if (options.isSaveSizePopup) {
+                popupWindow.playlistHeight = options.popupBounds.playlistHeight;
+                popupWindow.height = options.popupBounds.height;
+            }
+            if (options.popupBounds.isTrackListOpen || options.popupBounds.isTrackListOpen == undefined) {
+                togglePlaylist(true);
+                return;
+            }
+        } else {
+            togglePlaylist(true);
+        }
     }
 }
-// END OPTIONS
+
 sendEventBackground({ getOptions: true }, setOptions);
 Extension.onload();
