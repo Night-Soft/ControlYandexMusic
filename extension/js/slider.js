@@ -1,4 +1,5 @@
 let Slider = class {
+    grooveOffsetLeft;
     onmousemovedown(event) { }
     onmousedown(event) { }
     onmouseup(event) { }
@@ -6,7 +7,7 @@ let Slider = class {
     onmouseenter(event) { }
     onmouseleave(event) {}
     onwheel(event) { }
-    constructor(groove, currentGroove, handle, tooltip) {
+    constructor(groove, currentGroove, handle, tooltip, position = 0) {
         this.groove = groove;
         this.currentGroove = currentGroove;
         this.handle = handle;
@@ -16,7 +17,7 @@ let Slider = class {
             isTooltip: true,
             delay: false
         }
-        this.scale = 50;
+        this.scale = position;
         this.maxScale = 100;
         this.isMouseEnter = false;
         this.isOwnDataToltip = false;
@@ -32,8 +33,6 @@ let Slider = class {
         groove.addEventListener("wheel", this.#wheel.bind(this));
 
         groove.addEventListener("mouseenter", this.#delayTootip);
-
-
     }
     #wheelStep = 4;
     get wheelStep() { return this.#wheelStep; }
@@ -61,6 +60,7 @@ let Slider = class {
     }
     #mousemove(event) {
         event.preventDefault();
+        if (!this.grooveOffsetLeft) this.grooveOffsetLeft = this.groove.getClientRects()[0]?.left;
         this.setTooltipPosition(event);
         this.onmousemove(event);
     }
@@ -124,17 +124,31 @@ let Slider = class {
             this.handle.style.transition = 'none';
         }
     }
+    position = ""; 
+    #onPositionListeners = new Set();
+    onPosition = (listener) => {
+        this.#onPositionListeners.add(listener);
+    };
+    offPosition = (listener) => {
+        this.#onPositionListeners.delete(listener);
+    };
+    #onToltipListeners = new Set();
+    onToltip = (listener) => {
+        this.#onToltipListeners.add(listener);
+    }
     setPosition(event) {
         if (isFinite(event)) { // from wheel and constructor
             if (event > this.maxScale) event = this.maxScale;
             let x = event * 100 / this.maxScale;
-            this.currentGroove.style.width = x + "%";
+            this.position = x;
+            this.currentGroove.style.width = this.position + "%";
             this.handle.style.left = `calc(${x}% - ${this.handle.offsetWidth}px / 2)`;
             this.scale = event;
+            this.#onPositionListeners.forEach(callback => callback(this.position));
             return;
         }
 
-        let x = event.x - this.groove.offsetLeft;
+        let x = event.x - this.grooveOffsetLeft;
         if (x >= 0 && x <= this.groove.offsetWidth) {
             // nothing todo with x
         } else if (x > this.groove.offsetWidth) {
@@ -142,15 +156,18 @@ let Slider = class {
         } else if (x < 0) { x = 0; }
 
         x = x * 100 / this.groove.offsetWidth;
-        this.currentGroove.style.width = x + "%";
+        this.position = x;
+        this.currentGroove.style.width = this.position +"%"
         this.handle.style.left = `calc(${x}% - ${this.handle.offsetWidth}px / 2)`;
         this.scale = (x * this.groove.offsetWidth / 100) * 100 / this.groove.offsetWidth;
+        this.#onPositionListeners.forEach(callback => callback(this.position));
     }
     setTooltipPosition(event) {
         if (isFinite(event)) {
             if (this.Tooltip.isTooltip) {
                 let x = event * 100 / this.maxScale;
                 this.Tooltip.element.style.left = `calc(${x}% - ${this.Tooltip.element.offsetWidth}px / 2)`;
+                this.#onToltipListeners.forEach(callback => callback(x, event));
                 if (this.isOwnDataToltip) return;
                 if (x <= this.maxScale && x >= 0) { // percent
                     this.setTooltipData(Math.floor(x));
@@ -159,9 +176,9 @@ let Slider = class {
             return;
         }
         if (this.Tooltip.isTooltip) {
-        
-            let x = (event.x - this.groove.offsetLeft) * 100 / this.groove.offsetWidth;
+            let x = (event.x - this.grooveOffsetLeft) * 100 / this.groove.offsetWidth;
             this.Tooltip.element.style.left = `calc(${x}% - ${this.Tooltip.element.offsetWidth}px / 2)`;
+            this.#onToltipListeners.forEach(callback => callback(x, event.x));
             if (this.isOwnDataToltip) return;
             if (x <= this.maxScale && x >= 0) { // percent
                 this.setTooltipData(Math.floor(x));
@@ -203,7 +220,7 @@ let handleVol = document.getElementsByClassName("slider-handle")[0];
 let tooltipVol = document.getElementsByClassName("slider-toltip")[0];
 let sliderVolumeContent = document.getElementsByClassName("slider-content")[0];
 
-let sliderVolume = new Slider(sliderVolumeElement, currentGrooveVol, handleVol, tooltipVol);
+let sliderVolume = new Slider(sliderVolumeContent, currentGrooveVol, handleVol, tooltipVol, 100);
 sliderVolume.wheelStep = Options.volumeStep;
 if (typeof volumeStep != "undefined") {
     volumeStep.value = sliderVolume.wheelStep;
@@ -213,7 +230,7 @@ const sendVolumeDelay = new ExecutionDelay(() => {
     sendEvent({ setVolume: sliderVolume.scale / 100 }, true);
 }, {
     delay: 200,
-    isThrottling: true
+    isThrottle: true
 });
 
 sliderVolume.onmousemovedown = sendVolumeDelay.start.bind(sendVolumeDelay);
@@ -247,16 +264,16 @@ if (typeof positionStep != "undefined") {
 }
 
 const sendPositionDelay = new ExecutionDelay((event) => {
-    sliderProgress.setTooltipData(getDurationAsString(getSeconds(event.x - sliderProgress.groove.offsetLeft)));
-    setTime(getSeconds(event.x - sliderProgress.groove.offsetLeft));
+    sliderProgress.setTooltipData(getDurationAsString(getSeconds(event.x - sliderProgress.grooveOffsetLeft)));
+    setTime(getSeconds(event.x - sliderProgress.grooveOffsetLeft));
 }, {
     delay: 200,
-    isThrottling: true
+    isThrottle: true
 });
 
 let seconds;
 sliderProgress.onmousemove = (event) => {
-    seconds = getSeconds(event.x - sliderProgress.groove.offsetLeft);
+    seconds = getSeconds(event.x - sliderProgress.grooveOffsetLeft);
     if (seconds > Player.duration) {
         seconds = Player.duration;
     } else if (seconds < 0) {
@@ -270,7 +287,7 @@ sliderProgress.onmousemovedown = (event) => {
 }
 
 sliderProgress.onmousedown = (event) => {
-    setTime(getSeconds(event.x - sliderProgress.groove.offsetLeft));
+    setTime(getSeconds(event.x - sliderProgress.grooveOffsetLeft));
 }
 
 sliderProgress.onwheel = (event) => {
@@ -278,6 +295,14 @@ sliderProgress.onwheel = (event) => {
     sliderProgress.setTooltipData(getDurationAsString(Player.position + seconds));
     setTime(Player.position + seconds);
 }
+
+const prog = document.querySelector(".progress");
+if (prog) {
+    sliderProgress.onPosition((position)=>{
+        prog.style.width = position + "%";
+    });
+}
+
 
 const getSeconds = function (currentPosition, duration = Player.duration) {
     return parseFloat((currentPosition / sliderProgress.groove.offsetWidth * duration).toFixed(6));

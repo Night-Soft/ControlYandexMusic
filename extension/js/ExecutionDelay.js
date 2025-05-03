@@ -1,7 +1,7 @@
 const ExecutionDelay = class {
     #callback;
     #delay;
-    #isThrottling;
+    #isThrottle;
     #context;
     #args;
     #timeoutId;
@@ -16,7 +16,7 @@ const ExecutionDelay = class {
     * @param {Object | null} [options.context=null] - The context in which the function will be executed (default: null).
     * @param {boolean} [options.startNow=false] - Initiates execution immediately upon initialization (default: false).
     * @param {boolean} [options.executeNow=false] - Executes the function immediately upon initialization (default: false).
-    * @param {boolean} [options.isThrottling=false] - Sets whether function calls are throttled (default: false).
+    * @param {boolean} [options.isThrottle=false] - Sets whether function calls are throttled (default: false).
     * @param  {...any} args - Additional arguments to be passed to the function.
     */
     constructor(callback, {
@@ -24,11 +24,11 @@ const ExecutionDelay = class {
         context = null,
         startNow = false,
         executeNow = false,
-        isThrottling = false
+        isThrottle = false
     } = {}, ...args) {
         this.delay = delay;
         this.setContext(context);
-        this.isThrottling = isThrottling;
+        this.isThrottle = isThrottle;
 
         if (typeof callback == 'function') {
             this.setFunction(callback, ...args);
@@ -43,11 +43,11 @@ const ExecutionDelay = class {
         this.#delay = value;
     }
 
-    get isThrottling() { return this.#isThrottling; }
-    set isThrottling(value) {
+    get isThrottle() { return this.#isThrottle; }
+    set isThrottle(value) {
         if (typeof value !== 'boolean') { throw new TypeError(`The '${value}' is not 'boolean'`); }
         if (value == false) { this.#args = undefined; }
-        this.#isThrottling = value;
+        this.#isThrottle = value;
     }
 
     get isStarted() { return this.#isTimeout; }
@@ -100,7 +100,7 @@ const ExecutionDelay = class {
      */
     start = (...args) => {
         if (typeof this.#callback != 'function') { throw new Error('The function is missing.'); }
-        if (this.#isThrottling == true) {
+        if (this.#isThrottle == true) {
             if (args.length > 0) { this.#args = args; }
             if (this.#isTimeout == true) return this.#promise;
         }
@@ -112,8 +112,11 @@ const ExecutionDelay = class {
             // this.#fulfilled - function for set promise state to fulfilled with stop().
             this.#fulfilled = (message) => { resolve({ causeStops: message }); }
             this.#timeoutId = setTimeout(() => {
+                this.#isTimeout = false;
+                this.#fulfilled = undefined;
+                
                 let result;
-                if (this.#isThrottling) {
+                if (this.#isThrottle) {
                     result = this.#callback.apply(this.#context, this.#args);
                 } else {
                     if (args.length > 0) {
@@ -123,8 +126,6 @@ const ExecutionDelay = class {
                     }
                 }
 
-                this.#isTimeout = false;
-                this.#fulfilled = undefined;
                 resolve({ result, info: `Function completed with delay ${this.#delay}.` });
 
             }, this.#delay);

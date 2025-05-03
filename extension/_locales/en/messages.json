@@ -202,5 +202,14 @@
     },
     "useCurrnetSize": {
         "message": "Use current popup size"
+    },
+    "width": {
+        "message": "width:"
+    },
+    "height": {
+        "message": "height:"
+    },
+    "openInCurrentTab": {
+        "message": "Open in current tab."
     }
 }

@@ -75,15 +75,26 @@ body {
     background-color: rgb(0 0 0 / 10%);
     backdrop-filter: blur(2px);
     border-bottom-left-radius: 5px;
+    border-top-right-radius: 4px;
     z-index: 3;
 }
 .modal-list-menu-popup {
     display: none;
     top: unset;
-    border-radius: 5px 5px 0px 0px;
+    border-radius: 14px 14px 0px 0px;
     background-color: var(--listTrackBackground);
 }
+.hamburger-menu-list {
+    top: 35px;
+    right: 6px;
+}
 
+.controls-container {
+    margin: 6px;
+}
+.controls-overlay {
+    border-radius: 14px;
+}
 .content-list-menu-popup {
     width: 100%;
 }
@@ -118,18 +129,11 @@ body {
     filter: var(--slider-shadow);
 }
 
-.slider-progress-popup {
-    margin-left: 10px;
-    margin-right: 10px;
-}
-
-.slider-content-popup {
-    display: flex;
-    justify-content: space-around;
-    color: white;
-}
 .slider-toltip {
-    margin-top: -36px;
+    margin-top: -44px;
+}
+.slider-toltip-volume{
+    margin-top: -44px;
 }
 
 .content-time {
@@ -137,19 +141,8 @@ body {
 }
 
 .groove-box {
-    margin: 2px 0px;
+    margin: 4px 0px;
     height: auto;
-}
-
-.current-time {
-    margin-left: 5px;
-    padding: unset;
-    padding-right: unset;
-}
-
-.duration {
-    margin-right: 5px;
-    padding: unset;
 }
 
 .content {
@@ -288,6 +281,10 @@ body {
 
 }
 
+.list-track::-webkit-scrollbar-track {
+    margin-top: 14px;
+}
+
 .list-like {
     min-width: 30px;
     height: 30px;
@@ -334,6 +331,15 @@ body {
 
 .loader-container {
     margin: 20px
+}
+
+.popup-gotab-container {
+    right: 0px;
+    padding-right: 0px;
+}
+
+.popup-go-tab-btn-content {
+    /* border-radius: 4px 0px 0px 4px; */
 }
 
 @media screen and (max-height: 103px) {

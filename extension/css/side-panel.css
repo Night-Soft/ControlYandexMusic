@@ -3,15 +3,21 @@
     margin-right: 45px;
 }
 
-.popup-btn-container {
-    position: absolute;
-    right: 2px;
-    top: 0px;
-    cursor: pointer;
-    border-radius: 0px 0px 0px 5px;
-    padding: 0px 4px 2px 4px;
-    transition: 0.45s;
+.popup-gotab-container {
+    padding-right: 6px;
 }
+
 .title-list {
     margin: 5px 4px;
+}
+
+.list-track::-webkit-scrollbar-track {
+    margin-bottom: 14px;
+}
+
+.popup-btn {
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    transition: var(--transitionDuration);
 }

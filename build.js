@@ -162,7 +162,7 @@ const buildRelease = async (version = "release", browserName = "chrome") => {
   let zip = new JSZip();
   readFiles("extension/").forEach((file) => {
     for (let i = 0; i < ignore.length; i++) {
-      if (file == ignore[i]) {
+      if (file == ignore[i] || file.startsWith(ignore[i])) {
         console.log("ignore", ignore[i]);
         return false;
       }

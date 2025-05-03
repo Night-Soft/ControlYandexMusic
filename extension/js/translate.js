@@ -54,6 +54,8 @@ let Translate = {
         document.getElementById("StepChange").innerText = chrome.i18n.getMessage("stepChange");
         document.getElementById("SecondsPosition").innerText = chrome.i18n.getMessage("secondsPosition");
         document.getElementById("InterestVolume").innerText = chrome.i18n.getMessage("interestVolume");
+        document.getElementById("WidthPopup").textContent = chrome.i18n.getMessage("width");
+        document.getElementById("HeightPopup").textContent = chrome.i18n.getMessage("height");
     }
 }
 

@@ -4,22 +4,56 @@
     "description": "__MSG_appDesc__",
     "short_name": "__MSG_shortName__",
     "default_locale": "en",
-    "version": "3.4.0",
-    "web_accessible_resources": [{
-        "resources": ["js/ExecutionDelay.js", "js/injected.js", "./what-new.json"],
-        "matches": ["https://music.yandex.ua/*", "https://music.yandex.ru/*", "https://music.yandex.by/*", "https://avatars.yandex.net/*"]
-    }],
+    "version": "4.0.0",
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "js/externalAPI/*.js",
+                "js/ExecutionDelay.js",
+                "js/injected.js",
+                "./what-new.json"
+            ],
+            "matches": [
+                "https://music.yandex.ua/*",
+                "https://music.yandex.ru/*",
+                "https://music.yandex.by/*",
+                "https://avatars.yandex.net/*",
+                "https://next.music.yandex.ru/*"
+            ]
+        }
+    ],
     "icons": {
         "200": "img/icon.png"
     },
     "background": {
         "service_worker": "js/background.js"
     },
-    "content_scripts": [{
-        "matches": ["https://music.yandex.ua/*", "https://music.yandex.ru/*", "https://music.yandex.by/*", "https://avatars.yandex.net/*"],
-        "all_frames": false,
-        "js": ["js/content-script.js"]
-    }],
+    "content_scripts": [
+        {
+            "matches": [
+                "https://music.yandex.ua/*",
+                "https://music.yandex.ru/*",
+                "https://music.yandex.by/*",
+                "https://next.music.yandex.ru/*"
+            ],
+            "run_at": "document_start",
+            "js": [
+                "js/externalAPI/content-script/add-API.js"
+            ]
+        },
+        {
+            "matches": [
+                "https://music.yandex.ua/*",
+                "https://music.yandex.ru/*",
+                "https://music.yandex.by/*",
+                "https://next.music.yandex.ru/*"
+            ],
+            "run_at": "document_idle",
+            "js": [
+                "js/content-script.js"
+            ]
+        }
+    ],
     "action": {
         "default_icon": "img/icon.png",
         "default_popup": "index.html"
@@ -59,7 +93,12 @@
         }
     },
     "externally_connectable": {
-        "matches": ["https://music.yandex.ua/*", "https://music.yandex.ru/*", "https://music.yandex.by/*"]
+        "matches": [
+            "https://music.yandex.ua/*",
+            "https://music.yandex.ru/*",
+            "https://music.yandex.by/*",
+            "https://next.music.yandex.ru/*"
+        ]
     },
     "content_security_policy": {
         "extension_pages": "script-src 'self'; object-src 'self'"
@@ -78,6 +117,8 @@
         "https://music.yandex.ua/*",
         "https://music.yandex.ru/*",
         "https://music.yandex.by/*",
-        "https://avatars.yandex.net/*"
+        "https://avatars.yandex.net/*",
+        "https://next.music.yandex.ru/*",
+        "https://night-soft.github.io/YmExternalAPI/*"
     ]
 }

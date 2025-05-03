@@ -56,8 +56,8 @@ let Options = {
         maxHeight: window.screen.availHeight
     },
     popupBounds: undefined,
-    selectedShortcutKey: undefined
-
+    selectedShortcutKey: undefined,
+    isOpenInCurrentTab: undefined
 };
 
 const ThemesListState = {
@@ -107,7 +107,6 @@ showMore.onclick = async () => {
         Options.theme.name = name;
         Options.theme.color = textColor;
         writeOptions({ theme: Options.theme });
-        setOptions({ theme: Options.theme });
     }
     const regex = /rgb\((\d+),\s*(\d+),\s*(\d+)\)/g;
 
@@ -170,13 +169,8 @@ showMore.onclick = async () => {
     ThemesListState.isOpen = true;
 }
 
-const writeOptions = (options) => {
-    if (typeof options != "object") { throw new TypeError("The 'options' is not an 'object!'"); }
-    sendEventBackground({ writeOptions: true, options });
-}
-
 pinTab.onclick = async () => {
-    writeOptions({ pinTab: pinTab.checked });
+    writeOptions({ pinTab: pinTab.checked }, false);
 
     let notification;
     let { id: tabId, pinned } = await getYandexMusicTab("id", "pinned");
@@ -258,7 +252,6 @@ popupHeight.max = PopupSize.height.max;
 checkboxSavePopupSize.onclick = function () {
     updatePopupSize();
     writeOptions({ isSaveSizePopup: checkboxSavePopupSize.checked });
-    setOptions({ isSaveSizePopup: checkboxSavePopupSize.checked });
 }
 
 pxOrPercent.onclick = function () {
@@ -268,13 +261,12 @@ pxOrPercent.onclick = function () {
 }
 
 const savePopupSizeDelay = new ExecutionDelay(() => {
-    writeOptions({ defaultPopup: Options.defaultPopup });
+    writeOptions({ defaultPopup: Options.defaultPopup }, false);
 });
 
 const sendSliderStepDelay = new ExecutionDelay((options) => {
     sendSliderStepDelay.clearArguments();
     writeOptions(options);
-    setOptions(options);
 });
 
 const onWheel = function (event) {
@@ -361,32 +353,26 @@ const toggleSetCurrentSizeBtn = function () {
 
 checkboxAllNotifications.onclick = () => {
     writeOptions({ isAllNoifications: checkboxAllNotifications.checked });
-    setOptions({ isAllNoifications: checkboxAllNotifications.checked });
 }
 
 playPauseNotify.onclick = () => {
     writeOptions({ isPlayPauseNotify: playPauseNotify.checked });
-    setOptions({ isPlayPauseNotify: playPauseNotify.checked });
 }
 
 prevNextNotify.onclick = () => {
     writeOptions({ isPrevNextNotify: prevNextNotify.checked });
-    setOptions({ isPrevNextNotify: prevNextNotify.checked });
 }
 
 defaultTheme.onclick = () => {
     writeOptions({ theme: { name: "default" } });
-    setOptions({ theme: { name: "default" } });
 }
 
 lightTheme.onclick = () => {
     writeOptions({ theme: { name: "light" } });
-    setOptions({ theme: { name: "light" } });
 }
 
 darkTheme.onclick = () => {
     writeOptions({ theme: { name: "dark" } });
-    setOptions({ theme: { name: "dark" } });
 }
 
 otherTheme.onclick = () => {
@@ -403,12 +389,10 @@ otherTheme.onclick = () => {
         return;
     }
     writeOptions({ theme: OtherTheme });
-    setOptions({ theme: OtherTheme });
 }
 
 checkBoxDislikeButton.onclick = function () {
     writeOptions({ isDislikeButton: checkBoxDislikeButton.checked });
-    setOptions({ isDislikeButton: checkBoxDislikeButton.checked });
 }
 
 checkBoxReassign.onclick = function () {
@@ -419,7 +403,6 @@ checkBoxReassign.onclick = function () {
     if (checkBoxReassign.checked) {
         if (Options.selectedShortcutKey != undefined) {
             writeOptions({ reassign });
-            setOptions({ reassign });
         } else {
             checkBoxReassign.checked = false;
             showNotification(chrome.i18n.getMessage("noShortcutSelected"));
@@ -428,13 +411,12 @@ checkBoxReassign.onclick = function () {
         reassign.shortCut = undefined;
         setKeyDescription(true);
         writeOptions({ reassign } );
-        setOptions({ reassign });
     }
 }
 
 let checkNew = () => {
     if (Options.isNewFeaturesShown !== true) return;
-    WhatNew.openNews();
+    //WhatNew.openNews(); // todo: remove //
 }
 
 let setOptions = (options) => {
@@ -526,13 +508,16 @@ let setOptions = (options) => {
         Options.reassign.shortCut = options.reassign.shortCut;
         checkBoxReassign.checked = options.reassign.isReassign;
         Options.selectedShortcutKey = options.reassign.shortCut;
-
     }
+    if (options.isOpenInCurrentTab != undefined) {
+        Options.isOpenInCurrentTab = options.isOpenInCurrentTab;
+        document.querySelector("#checkboxOpenCurTab").checked = options.isOpenInCurrentTab;
+     }
 }
 
-sendEventBackground({ getOptions: true }, (response) => {
+getOptions((response) => {
     if (response.options) {
-        EventEmitter.on("Options", () => {
+        EventEmitter.on("Options", () => { // todo check EventEmitter "Options"
             if (typeof Extension == 'object') {
                 setOptions(response.options); // options.js
                 checkNew();

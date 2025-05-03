@@ -54,6 +54,7 @@ let Options = {
     isSaveSizePopup: true,
     popupBounds: undefined,
     reassign: undefined,
+    isOpenInCurrentTab: undefined,
 }
 
 let PopupWindow = class {
@@ -272,21 +273,16 @@ chrome.runtime.onMessage.addListener( // content, extension, script
         }
         if (request.getOptions == true) {
             if (Background.isAllReaded) {
-                sendResponse({
-                    options: Options
-                });
+                sendResponse({ options: Options });
             } else {
                 getOptions().then((result) => {
                     sendResponse({ options: result });
                 });
             }
-            // return;
         } else if (request.getOptions != undefined) {
-            if (request.send != undefined) {
-                getOptions(request.getOptions, request.send);
-            } else {
-                getOptions(request.getOptions);
-            }
+            getOptions(request.getOptions).then((result) => {
+                sendMessage({ options: result });
+            });
         }
         if (request.writeOptions != undefined) {
             writeOptions(request.options);
@@ -319,13 +315,15 @@ let sendEvent = (event) => { // to content script
     }
 }
 
+let host = ["https://music.yandex", "https://next.music.yandex"];
 let getYandexMusicTab = () => {
     return new Promise(function(resolve, reject) {
         chrome.tabs.query({
             windowType: "normal"
         }, function(tabs) {
             for (let i = tabs.length - 1; i >= 0; i--) {
-                if (tabs[i].url.startsWith("https://music.yandex")) {
+                let url = tabs[i].url;
+                if (url.startsWith(host[0]) || url.startsWith(host[1])) {
                     resolve(tabs[i].id);
                     break;
                 } else if (i == 0) {
@@ -467,7 +465,7 @@ let showNotification = async(request) => {
     let isLike = request.currentTrack.liked;
     // get options
     if (Background.isAllReaded == false || Background == undefined) {
-        await getOptions(["isAllNoifications", "isPlayPauseNotify", "isPrevNextNotify"]);
+        await getOptions("isAllNoifications", "isPlayPauseNotify", "isPrevNextNotify");
     }
     if (Options.isAllNoifications == true) {
         setNotifications(nameTrack, nameArtists, iconTrack);
@@ -569,6 +567,8 @@ let readOption = (options = null) => {
     if (options !== null && typeof options !== 'string' && Array.isArray(options) !== true) {
         throw new TypeError(`Wrong options type. '${options}'`);
     }
+    if (Array.isArray(options) && options.length === 0) options = null;
+
     let existingOptions = [];
     if (options !== null) {
         if (Array.isArray(options)) {
@@ -644,10 +644,9 @@ const checkNewVersion = async () => {
  * option takes parameters.
  * @param {null | string[] | string} option null for get all options,
  *  get needed ["theme", "version"] or "popupBounds".
- * @param {boolean} send force send message with options.
  * @return {object} Result as object.
  */
-let getOptions = async (option = null, send = false) => { // read and send
+let getOptions = async (...option) => {
     if (option !== null && typeof option !== 'string' && Array.isArray(option) !== true) {
         throw new TypeError(`Wrong option type. ${option}`);
     }
@@ -656,7 +655,6 @@ let getOptions = async (option = null, send = false) => { // read and send
             if (option === null && result.isNewFeaturesShown) {
                 sendMessage({ options: Options });
             }
-            if (send) sendMessage({ options: Options });
             resolve(result);
         }, (rejected) => {
             reject(rejected);

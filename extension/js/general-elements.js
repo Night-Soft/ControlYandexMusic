@@ -181,6 +181,9 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 Player.setProgress(request.progress);
                 break;
             case "PROGRESS":
+                if (request.progress.duration === 0) {
+                    request.progress.duration = Player.track.duration;
+                }
                 Player.setProgress(request.progress);
                 break;
             case "change_track":
@@ -190,6 +193,9 @@ chrome.runtime.onMessageExternal.addListener( // injected script
             case "play_error":
                 Player.isPlay = request.isPlaying;
                 Player.setProgress(request.progress);
+                break;
+            case "uploadTracksMeta":
+                Player.updateCanUploadTracks();
                 break;
         }
     });
@@ -244,3 +250,55 @@ modal[0].onclick = function () {
     modal[0].classList.add("modal-background-reverse");
     openCoverAnimate(CoverAnimation.element, true);
 }
+
+document.querySelector("#checkboxOpenCurTab").onclick = function () {
+    writeOptions({ isOpenInCurrentTab: this.checked }, true);
+}
+
+
+const progress = document.querySelector(".progress");
+const progressContent = document.querySelector(".progress-content");
+const content = document.querySelector(".content");
+const controlsContainer = document.querySelector(".controls-container");
+
+let isProgressShoved = false;
+const showProgressDelay = new ExecutionDelay((event) => {
+    if (isProgressShoved) return;
+    isProgressShoved = true;
+
+    if (hideProgressDelay.isStarted) {
+        const lastHide = hideProgressDelay.getFunction().arguments[0].timeStamp;
+        const lastShow = event.timeStamp;
+        if (lastShow < lastHide) return;
+        hideProgressDelay.stop();
+    }
+    controlsContainer.style.overflow = "";
+    progress.style.transition = "400ms";
+    progress.style.opacity = "0";
+    progressContent.style.opacity = "1";
+    progressContent.style.transform = "translateY(0px)";
+    content.style.transform = "translateY(0px)";
+}, { delay: 150, isThrottle: true });
+
+controlsContainer.onmouseenter = showProgressDelay.start;
+
+const hideProgressDelay = new ExecutionDelay((event) => {
+    if (!isProgressShoved) return;
+    isProgressShoved = false;
+    
+    if (showProgressDelay.isStarted) {
+        const lastShow = showProgressDelay.getFunction().arguments[0].timeStamp;
+        const lastHide = event.timeStamp;
+        if (lastShow > lastHide) return;
+        showProgressDelay.stop();
+    };
+    controlsContainer.style.overflow = "hidden";
+    progress.style.transition = "";
+    progress.style.opacity = "1";
+    progressContent.style.opacity = "0";
+    progressContent.style.transform = "";
+    content.style.transform = "";
+
+}, { delay: 1250, isThrottle: true });
+
+controlsContainer.onmouseleave = hideProgressDelay.start;

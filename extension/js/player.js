@@ -19,9 +19,12 @@ const PlayerInfo = class {
         let duration = 0;
         let position = 0;
         let loaded = 0;
+        let canUploadTracks = false;
+        let canAddTracks = false;
         let isPlay;
         let isRepeat;
         let isShuffle;
+
         Object.defineProperties(this, {
             liked: {
                 get() { return this.track.liked },
@@ -49,7 +52,7 @@ const PlayerInfo = class {
                         toggleLike(false);
                     }
 
-                    toggleDislike(value, true); 
+                    toggleDislike(value, true);
                 }
             },
             duration: {
@@ -109,6 +112,24 @@ const PlayerInfo = class {
                     if (Number.isFinite(value)) {
                         volume = value;
                         setVolume(value);
+                    }
+                },
+                enumerable: true
+            },
+            canUploadTracks: {
+                get() { return canUploadTracks; },
+                set(value) {
+                    if (typeof value === "boolean") {
+                        canUploadTracks = value;
+                    }
+                },
+                enumerable: true
+            },
+            canAddTracks: {
+                get() { return canAddTracks; },
+                set(value) {
+                    if (typeof value === "boolean") {
+                        canAddTracks = value;
                     }
                 },
                 enumerable: true
@@ -233,6 +254,14 @@ const PlayerInfo = class {
         this.list.tracks.clear();
         this.playlist.clear();
     }
+    updateCanUploadTracks() {
+        this.canUploadTracks = this.info.tracks.some(track => track === null);
+    }
+    updateLikeDislike(newLikes) {
+        newLikes.forEach(({ itemTrack, liked, disliked }) => {
+            toggleListLikes(itemTrack.children[1], liked, disliked);
+        });
+    }
 } 
 
 const Player = new PlayerInfo();
@@ -242,8 +271,38 @@ let updateTracksList = ({ tracksList, sourceInfo, index: tabIndex }) => {
     Player.track = tracksList[tabIndex];
     Player.disliked = tracksList[tabIndex].disliked;
 
-    if (equals(tracksList, Player.info.tracks)) {
+    if (Player.info.source.playlistId === sourceInfo.playlistId) {
+        const newLikes = [];
+        Player.playlist.elements.forEach(({ itemTrack, tabIndex }) => { 
+            const { liked: likedPrev, disliked: dislikedPrev } = Player.info.tracks[tabIndex];
+            const { liked, disliked } = tracksList[tabIndex];
+            if(likedPrev === liked && dislikedPrev === disliked) return;
+
+            newLikes.push({ itemTrack, liked, disliked });
+        });
+
+        let indexInList = -1;
+        tracksList.forEach((track, tabIndex) => {
+            if (typeof track === "object" && track !== null) {
+                indexInList++;
+                const value = { index: indexInList, tabIndex, track };
+                Player.list.tabTracks.set(tabIndex, value);
+                Player.list.tracks.set(indexInList, value);
+            }
+        });
+
+        Player.info.tracks = tracksList;
+        Player.updateCanUploadTracks();
+        Player.updateLikeDislike(newLikes);
+
+        if (Player.canAddTracks) {
+            Player.canAddTracks = false;
+            checkForNewElement.execute();
+        }
+
+        // todo update likes
         const { index } = Player.list.tabTracks.get(tabIndex);
+
         if (index >= 0 && Player.index != index) {
             if (!playlist.elements.get(index)) {
                 let quantity = 10;
@@ -256,7 +315,7 @@ let updateTracksList = ({ tracksList, sourceInfo, index: tabIndex }) => {
                     quantity = index - playlist.maxIndex + 10;
                     indexesForCreated = playlist.getIndexes(playlist.maxIndex, quantity, "down");
                 } else {
-                    indexesForCreated = playlist.getIndexes(index, quantity);
+                    indexesForCreated = playlist.getIndexes(index, quantity, "center");
                 }
 
                 if (indexesForCreated) addPlaylistElements(indexesForCreated);
@@ -271,6 +330,12 @@ let updateTracksList = ({ tracksList, sourceInfo, index: tabIndex }) => {
     Player.info.source = sourceInfo;
     Player.clearPlaylist();
 
+    if (isTrackPosition) {
+        trackPositionBottom.style.display = "none";
+        trackPositionTop.style.display = "none";
+        isTrackPosition = false;
+    }
+
     let index = -1;
     tracksList.forEach((track, tabIndex) => {
         if (typeof track === "object" && track !== null) {
@@ -280,6 +345,7 @@ let updateTracksList = ({ tracksList, sourceInfo, index: tabIndex }) => {
             Player.list.tracks.set(index, value);
         }
     });
+    Player.updateCanUploadTracks();
 
     updateTitle(Player.info.source);
 
@@ -307,7 +373,7 @@ let addPlaylistElements = (indexesForCreated, currentTabIndex) => {
         const { tabIndex, track } = Player.list.tracks.get(index);
         const coverCick = function() {
             Player.coverItem = this;
-            openCover(this, track.cover, openCoverAnimate);
+            openCover(this, track.cover);
         }
         const onmouseenter = (ev) => {
             ev.stopPropagation();
@@ -539,6 +605,24 @@ let selectItem = (item, index) => {
     if (EventEmitter.getEvent("playlistIsOpen")?.isEmitted) checkTrackPosition.execute();
 }
 
+//
+// const TrackPosition = {
+//     show(position, animate = false, delay = true) {
+//         if (position === "top") {
+//             trackPositionTop.style.display = "block";
+//             trackPositionBottom.style.display = "none";
+//             trackPositionTop.animate({ opacity: [0, 1] }, { duration: 700 });
+//         } else if (position === "bottom") {
+//             trackPositionTop.style.display = "none";
+//             trackPositionBottom.style.display = "block";
+//             trackPositionBottom.animate({ opacity: [0, 1] }, { duration: 700 });
+//         }
+//     },
+//     hide(position, animate = false) { }
+// }
+
+//
+
 let isTrackPosition = false;
 let showTrackPosition = new ExecutionDelay(
     (position) => {
@@ -577,11 +661,11 @@ const checkTrackPosition = new ExecutionDelay(() => {
         return;
     }
     // remove track position
-    if (isTrackPosition == false) { return; }
+    if (isTrackPosition == false) return; 
     isTrackPosition = false;
     showTrackPosition.stop();
 
-    let = keyframe = { opacity: [1, 0] };
+    let keyframe = { opacity: [1, 0] };
     trackPositionBottom.animate(keyframe, { duration: 700 }).onfinish = () => {
         if (isTrackPosition == false) {
             trackPositionBottom.style.display = "none";
@@ -592,27 +676,49 @@ const checkTrackPosition = new ExecutionDelay(() => {
             trackPositionTop.style.display = "none";
         }
     };
-}, { delay: 500, isThrottling: true });
+}, { delay: 500, isThrottle: true });
+
+const checkUploadTracks = (direction) => {
+    const listHeight = listTracks.getClientRects()[0].height;
+    const height = playlist.firstElement.itemTrack.getClientRects()[0].height;
+
+    const quantity = listHeight / height > 10 ? Math.floor(listHeight / height) : 10;
+    const index = direction === "up" ? playlist.firstElement.index : playlist.lastElement.index;
+    const indexes = playlist.getIndexes(index, quantity, direction);
+
+    if (indexes) addPlaylistElements(indexes);
+    if (indexes?.length >= 10) return;
+    if (!Player.canUploadTracks) return;
+
+    if (direction === "up") {
+        const minIndex = Player.playlist.minIndex;
+        if (minIndex - 10 >= 10) {
+            Player.canUploadTracks = false;
+            Player.canAddTracks = true;
+            sendEvent({ uploadTracksMeta: direction }, true);
+        }
+    } else if (direction === "down") {
+        const fullListSize = Player.info.tracks.length - 1;
+        const tracksSize = Player.list.tracks.size - 1;
+        const maxIndex = Player.playlist.maxIndex;
+        if (tracksSize - maxIndex <= 10 && maxIndex < fullListSize) {
+            Player.canUploadTracks = false;
+            Player.canAddTracks = true;
+            sendEvent({ uploadTracksMeta: direction }, true);
+        }
+    }
+}
 
 const checkForNewElement = new ExecutionDelay(() => {
-    const {top, bottom, height: listHeight} = listTracks.getClientRects()[0];
+    const {top, bottom} = listTracks.getClientRects()[0];
     const { top: firstElementY, height } = playlist.firstElement.itemTrack.getClientRects()[0];
     const lastElementY = playlist.lastElement.itemTrack.getClientRects()[0].top;
     const elementSize = height * 5; 
 
-    if (firstElementY > -elementSize + top) {
-        const quantity = listHeight / height > 10 ? Math.floor(listHeight / height) : 10;
-        const indexes = playlist.getIndexes(playlist.firstElement.index, quantity, "up");
-        if (indexes) addPlaylistElements(indexes);
-        return;
-    }
+    if (firstElementY > -elementSize + top) checkUploadTracks("up");
+    if (lastElementY < elementSize + bottom - height) checkUploadTracks("down");
 
-    if (lastElementY < elementSize + bottom - height) {
-        const quantity = listHeight / height > 10 ? Math.floor(listHeight / height) : 10;
-        const indexes = playlist.getIndexes(playlist.lastElement.index, quantity, "down");
-        if (indexes) addPlaylistElements(indexes);
-    }
-}, { delay: 200, isThrottling: true });
+}, { delay: 200, isThrottle: true });
 
 const scrollToCenter = () => {
     selectedItem.scrollIntoView({ block: "center", behavior: "smooth" });
@@ -726,14 +832,15 @@ const showVolumeDelay = new ExecutionDelay(() => {
     sliderVolumeContent.style.display = "block";
     isVolume = true;
     sliderVolumeContent.animate({ opacity: [0, 1] }, { duration: 300 });
-}, { delay: 150, isThrottling: true });
+}, { delay: 150, isThrottle: true });
 
 const hideVolumeDelay = new ExecutionDelay(() => {
     isVolume = false;
     sliderVolumeContent.animate({ opacity: [1, 0], }, { duration: 300 }).onfinish = () => {
         sliderVolumeContent.style.display = "none";
     };
-}, { delay: 850, isThrottling: true });
+}, { delay: 850, isThrottle: true });
+hideVolumeDelay.execute(); // todo
 
 toggleVolume.onmouseenter = () => {
     if (isVolume == false) { showVolumeDelay.start(); }

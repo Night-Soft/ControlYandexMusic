@@ -33,6 +33,7 @@
         "extension/img/popup.svg",
         "extension/js/gaq.js",
         "extension/js/gtag.js",
-        "extension/data/what-new Edge.json"
+        "extension/data/what-new Edge.json",
+        "extension/js/externalAPI/.git"
     ]
 }

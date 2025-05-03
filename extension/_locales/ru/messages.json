@@ -202,5 +202,14 @@
     },
     "useCurrnetSize": {
         "message": "Использовать текущий размер всплывающего окна"
+    },
+    "width": {
+        "message": "ширина:"
+    },
+    "height": {
+        "message": "высота:"
+    },
+    "openInCurrentTab": {
+        "message": "Открыть в текущей вкладке."
     }
 }

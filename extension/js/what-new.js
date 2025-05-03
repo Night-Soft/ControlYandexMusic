@@ -37,11 +37,10 @@ let WhatNew = {
                 const message = messages[messageLng];
                 return { message, version }
             }
-
             new Component([
                 ["div", { class: "version-changes" },
                     ["h2", {  id: "Version" }, "{{ version }}"],
-                    ["h2", { ":innerHTML": true, class: "versions" }, "{{ message }}"]
+                    ["h2", { "$innerHTML": true, class: "versions" }, "{{ message }}"]
                 ]
             ], versions, predicate).appendToElement(listChangesContent);
             this.isCreated = true;

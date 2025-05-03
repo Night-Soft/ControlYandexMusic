@@ -215,7 +215,7 @@ const Component = class {
             const value = strKey.reduce((prev, key, i) => i === 0 ? predicate[key] : prev[key], 0);
             return value ? value : String(value);
         }
-        return null;
+        return varString; // todo fix return null
     }
 
     #createElements(template, array, predicate) {
@@ -294,6 +294,12 @@ const Component = class {
                 return;
             }
 
+            if (value[0].startsWith("$")) {
+                if (value[0] === "$innerHTML") {
+                    return;
+                }
+            }
+
             if (value[0].startsWith("ev:")) {
                 eventName = value[0].split(":")[1];
                 if (typeof value[1] === 'function') {
@@ -345,11 +351,21 @@ const Component = class {
             tag.slice(3).forEach(tags => {
                 element.appendChild(this.#createTag(tags, predicate));
             });
+
         }
 
         if (typeof tagInside === "string") {
-            const innerHtml = attr[":innerHTML"];
-            element[innerHtml ? "innerHTML" : "innerText"] = tagInside;
+            if (attr.$innerHTML) {
+                element.innerHTML = tagInside;
+            } else if (attr.$innerText) {
+                element.innerText = tagInside;
+            } else {
+                if ("textContext" in element) {
+                    element.textContext = tagInside;
+                } else {
+                    element.innerText = tagInside;
+                }
+            }
         }
         return element;
     }
@@ -760,14 +776,18 @@ const NotificationControl = class {
                 fill: "both"
             }
             this.#notification.animate(keyframe, options).onfinish = () => {
-                this.#empty(ms);
+                if (typeof ms === 'number') {
+                    this.#empty(ms);
+                }
                 this.#addCloseListener();
             };
         } else {
             this.#fill(500);
             this.#timeLeftLine.addEventListener("transitionend", () => {
                 this.#timeLeftLine.addEventListener("transitionend", () => {
-                    this.#empty(ms);
+                    if (typeof ms === 'number') {
+                        this.#empty(ms);
+                    }
                     this.#addCloseListener();
                 }, { once: true });
             }, { once: true });
@@ -820,8 +840,13 @@ let getYandexMusicTab = (...params) => {
         chrome.tabs.query({
             windowType: "normal"
         }, function (tabs) {
+            let host = ["https://music.yandex", "https://next.music.yandex"];
 
-            tabs = tabs.filter(tab => tab.url.startsWith("https://music.yandex"));
+            tabs = tabs.filter((tab) => {
+                let tab1 = tab.url.startsWith(host[0]);
+                let tab2 = tab.url.startsWith(host[1]);
+                return tab1 + tab2 ? true : false;
+            });
             const lastTab = tabs[tabs.length - 1];
 
             if(params[0] === null) {
@@ -878,6 +903,10 @@ let sendEventBackground = (event, callback) => { // event should be as object.
     });
 };
 
+const getOptions = function (callback) {
+    sendEventBackground({ getOptions: true }, callback);
+}
+
 let getUrl = (url, size = 50) => {
     if (url == undefined) {
         url = "img/icon.png"
@@ -899,16 +928,14 @@ let testImage = (url, size = 400, callback) => {
         modalCover[0].onerror = function () {
             if (size > 100) {
                 if (size == 100) {
-                    size += -50;
-                    testImage(getUrl(url, size), size)
+                    testImage(url, size - 50, callback);
+                    return;
                 }
-                size += -100;
-                testImage(getUrl(url, size), size);
+                testImage(url, size - 100, callback);
             }
         };
         modalCover[0].onload = () => {
-            modal[0].style.display = "flex";
-            callback.animate(callback.parameter); 
+            typeof callback === "function" && callback();
         }
 
     } catch (error) {
@@ -955,7 +982,11 @@ const openCoverAnimate = function(element, reverse = false) {
 }
 
 let openCover = (item, url) => {
-    testImage(url, 400, { animate: openCoverAnimate, parameter: item });
+    //testImage(url, item, 400);
+    testImage(url, 400, () => {
+        modal[0].style.display = "flex";
+        openCoverAnimate(item);
+    });
 }
 
 let toggleLike = (isLike, toggleInList = true) => {
@@ -963,6 +994,17 @@ let toggleLike = (isLike, toggleInList = true) => {
     if (toggleInList === false) return;
     Player.likeItem.classList.remove("list-item-liked", "list-item-not-liked", "list-item-disliked");
     isLike && Player.likeItem.classList.add("list-item-liked"); // : list-item-not-liked
+}
+
+const toggleListLikes = (item, isLike, isDislike) => {
+    item.classList.remove("list-item-liked", "list-item-not-liked", "list-item-disliked");
+    isLike && item.classList.add("list-item-liked");
+    if (isDislike) {
+        item.classList.add("list-item-disliked");
+        item.parentElement.style.filter = "opacity(0.5)";
+    } else {
+        item.parentElement.style.filter = "";
+    }
 }
 
 let toggleDislike = (isDisliked, notifyMe = false, toggleInList = true) => {
@@ -986,46 +1028,74 @@ const createPopup = function () {
         });
 }
 
+const getCurrentTab = async () => {
+    const tabs = await chrome.tabs.query({active: true, windowType: "normal"});
+    const url = `chrome-extension://${chrome.runtime.id}`;
+
+    for (const tab of tabs) {
+        if (tab.active && !tab.url.startsWith(url)) return tab.id;
+    }
+}
+
+const writeOptions = (options, isSetOptionsNow = true) => {
+    if (typeof options != "object") { throw new TypeError("The 'options' is not an 'object!'"); }
+    sendEventBackground({ writeOptions: true, options });
+    if (isSetOptionsNow) setOptions(options);
+}
+
 let openNewTab = (tabId) => {
     loaderContainer.style.display = "block";
-    appDetected.innerText = chrome.i18n.getMessage("waitWhilePage");
+    appDetected.innerText = translate("waitWhilePage");
     appQuestion.style.display = "none";
     yesNoNew.style.display = "none";
+    document.querySelector(".open-in-tab").style.display = "none";
 
     if (typeof tabId === 'number') {
         chrome.tabs.reload(tabId);
         return;
     }
 
-    chrome.tabs.create({
-        url: "https://music.yandex.ru/home",
-        active: false
+    if (!Options.isOpenInCurrentTab) {
+        chrome.tabs.create({ url: "https://music.yandex.ru/home", active: false });
+        return;
+    }
+
+    getCurrentTab().then(tabId => {
+        if (tabId) {
+            chrome.tabs.update(tabId, { active: true, url: "https://music.yandex.ru/home" });
+        } else {
+            chrome.tabs.create({ url: "https://music.yandex.ru/home", active: false });
+        }
     });
 }
 
 let showNoConnected = () => {
     getYandexMusicTab().then((tabId) => {
-        if (port.isConnection == false) {
-            if (tabId) {
-                appDetected.innerText = chrome.i18n.getMessage("appDetected");
-                appQuestion.innerText = chrome.i18n.getMessage("appQuestion");
-                loaderContainer.style.display = "none";
-                btnNew.style.display = "";
-                yesNoNew.style.display = "flex";
-                btnYes.innerText = chrome.i18n.getMessage("reload");
-                noConnect.style.display = "flex";
-                appQuestion.style.display = "";
-                noConnect.classList.add("puff-in-center");
-            } else {
-                appDetected.innerText = chrome.i18n.getMessage("appNoDetected");
-                appQuestion.innerText = chrome.i18n.getMessage("appNoQuestion");
-                loaderContainer.style.display = "none";
-                btnNew.style.display = "none";
-                btnYes.innerText = chrome.i18n.getMessage("yes");
-                yesNoNew.style.display = "flex";
-                noConnect.style.display = "flex";
-                appQuestion.style.display = "";
-            }
+        if (port.isConnection) return; 
+        
+        if (tabId) {
+            appDetected.innerText = translate("appDetected");
+            appQuestion.innerText = translate("appQuestion");
+            loaderContainer.style.display = "none";
+            btnNew.style.display = "";
+            yesNoNew.style.display = "flex";
+            btnYes.innerText = translate("reload");
+            noConnect.style.display = "flex";
+            appQuestion.style.display = "";
+            noConnect.classList.add("puff-in-center");
+            document.querySelector(".open-in-tab").style.display = "none";
+        } else {
+            appDetected.innerText = translate("appNoDetected");
+            appQuestion.innerText = translate("appNoQuestion");
+            loaderContainer.style.display = "none";
+            btnNew.style.display = "none";
+            btnYes.innerText = translate("yes");
+            yesNoNew.style.display = "flex";
+            noConnect.style.display = "flex";
+            appQuestion.style.display = "";
+            const labelOpenCurTab = document.getElementById("labelOpenCurTab");
+            labelOpenCurTab.textContent = translate("openInCurrentTab");
+            document.querySelector(".open-in-tab").style.display = "";
         }
     });
 }

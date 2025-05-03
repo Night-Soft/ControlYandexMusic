@@ -117,7 +117,7 @@ const clearSelection = function () {
 
 let setTheme = (theme = "default", windowName = "default") => {
     const light = () => {
-        rootCss.style.setProperty('--slider', '#EBEBEB');
+        rootCss.style.setProperty('--slider', '#dcdcdc');
         rootCss.style.setProperty('--handleWhite', '#ffffff');
         rootCss.style.setProperty('--backgroundControl', 'rgba(252, 252, 255, 0.17)');
         rootCss.style.setProperty('--toggleHover', '#ffffff');
@@ -131,7 +131,9 @@ let setTheme = (theme = "default", windowName = "default") => {
                 darkContentMenu.style.color = "";
                 rootCss.style.setProperty("--settingItemBackground", "rgba(255 255 255 / 50%)");
                 listTrack.style.background = "rgb(255 255 255 / 70%)";
-                rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 40%)');
+                //rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 40%)');
+                rootCss.style.setProperty("--listTrackBackground", 'rgba(200 200 200 / 25%)');
+                
                 rootCss.style.setProperty('--settingItemHover', 'rgba(0,0,0, 0.2)');
                 btnPopup.style.backgroundImage = "";
                 control.forEach((element) => {
@@ -164,7 +166,8 @@ let setTheme = (theme = "default", windowName = "default") => {
 
         switch (windowName) {
             case "default":
-                rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 40%)');
+                //rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 40%)');
+                rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 25%)');
                 rootCss.style.setProperty("--settingItemBackground", "rgba(0 0 0 / 50%)");
                 listTrack.style.background = "";
                 darkContentMenu.setStyle({
@@ -321,8 +324,9 @@ let setTheme = (theme = "default", windowName = "default") => {
                 switch (windowName) {
                     case "default":
                         listTrack.style.background = "";
-                        rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 40%)');
-                        rootCss.style.setProperty("--settingItemBackground", "");
+                       // rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 40%)');
+                       rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 25%)'); 
+                       rootCss.style.setProperty("--settingItemBackground", "");
                         darkTitle[0].style.background = "";
                         darkTitle[0].style.color = "";
                         darkContentMenu.style.background = "";

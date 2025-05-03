@@ -1,5 +1,9 @@
 if (Extension.windowName == "side-panel") {
     document.getElementsByClassName("popup-btn")[0].onclick = createPopup;
+    document.getElementsByClassName("go-tab")[0].onclick = async () => {
+        const id = await getYandexMusicTab();
+        chrome.tabs.update(id, { active: true });
+    }
     sendEventBackground({ sidePanel: true });
 }
 
@@ -26,6 +30,12 @@ if (Extension.windowName == "popup") {
 
     const popupClosed = sendEventBackground.bind(null, { popupClosed: true });
     window.addEventListener("beforeunload", popupClosed);
+    
+    document.getElementsByClassName("go-tab")[0].onclick = async () => {
+        const result = await getYandexMusicTab(null);
+        chrome.windows.update(result.windowId, { focused: true });
+        chrome.tabs.update(result.id, { active: true });
+    }
 }
 
 let PopupWindow = class {
@@ -144,7 +154,7 @@ let togglePlaylist = (show) => {
         } else {
             animH.onfinish = () => {
                 hamburgerMenuList.classList.remove("playlist-open");
-                hamburgerMenuList.style.top = "0px";
+                hamburgerMenuList.style.top = "35px";
                 hamburgerMenuList.style.right = "";
                 keyframeHamburger = { opacity: ['0', '1'] };
                 hamburgerMenuList.animate(keyframeHamburger, optionsHamburger);
@@ -213,7 +223,8 @@ let Options = {
     positionStep: undefined,
     volumeStep: undefined,
     popupBounds: undefined,
-    isSaveSizePopup: undefined
+    isSaveSizePopup: undefined,
+    isOpenInCurrentTab: undefined
 }
 
 
@@ -243,6 +254,11 @@ let setOptions = (options, isWrite) => {
             dislike.style.display = "none";
         }
     }
+    
+    if (options.isOpenInCurrentTab != undefined) {
+        Options.isOpenInCurrentTab = options.isOpenInCurrentTab;
+        document.querySelector("#checkboxOpenCurTab").checked = options.isOpenInCurrentTab;
+     }
 
     if (isWrite) return;
 
@@ -259,7 +275,8 @@ let setOptions = (options, isWrite) => {
                 popupWindow.playlistHeight = options.popupBounds.playlistHeight;
                 popupWindow.height = options.popupBounds.height;
             }
-            if (options.popupBounds.isTrackListOpen || options.popupBounds.isTrackListOpen == undefined) {
+            if (options.popupBounds.isTrackListOpen ||
+                options.popupBounds.isTrackListOpen == undefined) {
                 togglePlaylist(true);
                 return;
             }
@@ -269,5 +286,5 @@ let setOptions = (options, isWrite) => {
     }
 }
 
-sendEventBackground({ getOptions: true }, setOptions);
+getOptions(setOptions);
 Extension.onload();

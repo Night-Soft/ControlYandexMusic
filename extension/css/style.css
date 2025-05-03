@@ -81,7 +81,8 @@ span {
     flex-direction: row;
     font-size: 2rem;
     vertical-align: middle;
-    margin: 10px 0px 6px;
+    margin: 6px 0px;
+    transition: 400ms;
 }
 
 .control {
@@ -370,7 +371,8 @@ span {
 }
 
 .loading-bar {
-    background-color: #c1c1c1;
+    width: 100%;
+    background-color: rgba(193, 193, 193, 0.7);
     top: 0px;
     width: 0%;
     position: absolute;
@@ -407,14 +409,15 @@ span {
 }
 
 .current-time {
-    padding: 0px 20px;
     padding-right: 0px;
     color: var(--color);
+    margin: 0px 10px;
 }
 
 .duration {
-    padding: 0px 20px;
     color: var(--color);
+    float: right;
+    margin: 0px 10px;
 }
 
 .handle {
@@ -489,38 +492,73 @@ span {
     border-top-color: inherit;
     left: 5px;
 }
+.controls-overlay {
+    background-color: var(--listTrackBackground);
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+}
+
+.controls-container {
+    position: relative;
+}
+.controls-content {
+    position: relative;
+    padding: 6px;
+}
 
 .slider-content {
     align-self: center;
+    display: flex;
+    justify-content: space-around;
+    color: white;
+}
+
+.progress-content {
+    transform: translateY(-7px);
+    transition: 400ms;
+    opacity: 0;
 }
 .volume-content {
-    display: none;
+    display: flex;
+    justify-content: space-between;
 }
+
+.content-btn {
+    transition: 400ms;
+    transform: translateY(-7px);
+}
+
 .slider-content-list {
     width: 100%;
     margin: 5px 0px;
 }
 
 .slider {
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    cursor: pointer;
+    display: block;
 }
 
 .handle-toltip {
-    position: absolute;
+    position: relative;
     width: 100%;
     height: 100%;
 }
 .slider-progress {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    cursor: pointer;
     width: 90%;
-    margin: auto;
+    margin: auto 0px;
 }
 
 .slider-groove {
     overflow: hidden;
-    border-radius: 10px;
+    border-radius: 0px;
     width: 60px;
     height: 5px;
     background-color: var(--slider);
@@ -529,7 +567,7 @@ span {
 
 .slider-groove-current {
     position: relative;
-    border-radius: 10px;
+    border-radius: 0px;
     width: 50%;
     height: 5px;
     transition: 350ms;
@@ -540,10 +578,11 @@ span {
     --coverBackgroundSize: 35px;
     --pixselsForReduce: 20px;
     --progress-height: 10px;
-    --progress-handle-size: 24px;
+    --progress-handle-size: 20px;
     --volume-height: 7px;
+    --volume-handle-height: 15px;
     --mainRed: #ff3333;
-    --slider: #EBEBEB;
+    --slider: #ebebeb;
     --progress: #ffdd00;
     --handleWhite: #ffffff;
     --backgroundControl: rgba(252, 252, 255, 0.17);
@@ -573,6 +612,7 @@ span {
     margin: auto;
     width: 100%;
     height: var(--progress-height);
+    border-radius: 10px;
 }
 
 .slider-groove-current-progress {
@@ -582,11 +622,13 @@ span {
 /* volume */
 
 .slider-groove-volume {
+    border-radius: 10px;
     height: var(--volume-height);
 }
 
 .slider-groove-current-volume {
     height: var(--volume-height);
+    border-radius: 10px;
 }
 
 .slider-handle {
@@ -600,13 +642,34 @@ span {
     cursor: pointer;
     transition: 350ms;
     box-shadow: 0px 0px 3px 0px rgba(0, 0, 0, 0.25)
+}
 
+.handle-volume {
+    height: var(--volume-handle-height);
+    margin-top: calc(-1*((var(--volume-height)) / 2 + (var(--volume-handle-height)) / 2));
+}
+
+.progress {
+    position: absolute;
+    width: 0%;
+    height: 100%;
+    background-color: rgba(115, 115, 115, 0.3);
+    transition: 1000ms;
+    z-index: -1;
+}
+
+.progress-pointer {
+    width: 2px;
+    position: absolute;
+    height: 100%;
+    background-color: var(--progress);
+    left: calc(50% - 2px);
 }
 
 .progress-handle {
     width: var(--progress-handle-size);
     height: var(--progress-handle-size);
-    margin-top: calc((var(--progress-handle-size) - var(--progress-height)) / -2);
+    margin-top: calc(-1*((var(--progress-handle-size)) / 2 + (var(--progress-height)) / 2));
 }
 
 .slider-toltip {
@@ -624,7 +687,7 @@ span {
     min-width: 40px;
     padding: 0px 4px;
     height: 20px;
-    margin-top: -40px;
+    margin-top: -46px;
     box-shadow: 0px 0px 3px 0px rgba(0, 0, 0, 0.25)
 }
 
@@ -639,6 +702,10 @@ span {
     border-top: 10px solid;
     border-bottom: 0;
     border-top-color: inherit;
+}
+
+.slider-toltip-volume {
+    margin-top: -44px;
 }
 
 .notification {
@@ -763,6 +830,16 @@ span {
 
 }
 
+.popup-gotab-container {
+    display: flex;
+    justify-content: right;
+    flex-direction: column;
+    position: absolute;
+    align-items: center;
+    right: 0px;
+    padding-right: 6px;
+}
+
 .popup-btn-container:hover {
     filter: drop-shadow(0px 0px 2px rgb(255 255 255 / 25%));
     background-color: var(--hoverColor);
@@ -778,6 +855,34 @@ span {
     width: 35px;
     height: 35px;
     transition: var(--transitionDuration);
+}
+
+.go-tab {
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    transition: var(--transitionDuration);
+}
+
+.popup-go-tab-btn-content {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 0px 2px 2px 2px;
+    transition: 350ms;
+    border-radius: 4px;
+}
+.popup-go-tab-btn-content:hover {
+    filter: drop-shadow(0px 0px 2px rgb(255 255 255 / 25%));
+    background-color: var(--hoverColor);
+}
+
+.popup-go-tab-btn-content:active {
+    filter: drop-shadow(0px 0px 2px rgb(255 255 255 / 25%));
+    background-color: rgba(85, 82, 99, 0.45);
 }
 
 .list-track {
@@ -937,12 +1042,6 @@ span {
     font-size: 1.1rem;
     font-weight: 300;
 }
-
-
-/* .deceiver {
-    background: linear-gradient( 90deg, rgb(0 0 0 / 80%) 0%, rgb(0 0 0 / 40%) 100%);
-    width: 20%;
-} */
 
 .list-track::-webkit-scrollbar {
     width: 10px;
@@ -1398,20 +1497,22 @@ input::-webkit-inner-spin-button {
 }
 
 .opacity {
-    animation: opacity 0.7s linear;
+    animation: opacity 0.7s linear both;
 }
 
 .opacity-reverse {
-    animation: opacity 0.5s reverse;
+    animation: opacity 0.5s reverse both;
     animation-delay: 250ms;
 }
 
 @keyframes opacity {
     0% {
         background-color: rgba(0, 0, 0, 0);
+        backdrop-filter: blur(0px);
     }
 
     100% {
+        backdrop-filter: blur(4px);
         background-color: rgba(0, 0, 0, 0.4);
     }
 }
@@ -1894,6 +1995,7 @@ input::-webkit-inner-spin-button {
     overflow: auto;
     background-color: rgb(0, 0, 0);
     background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
     text-align: center;
     transition: 0.4s;
 }
@@ -1902,6 +2004,20 @@ input::-webkit-inner-spin-button {
     display: flex;
     flex-direction: column;
     margin: 0px 10px;
+}
+.no-connect-content > #AppQuestion {
+    font-weight: 300;
+    font-size: 20px;
+    margin: unset;
+    margin-top: 10px;
+}
+
+.question {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    align-self: center;
 }
 
 .modal-news {
@@ -1931,7 +2047,33 @@ input::-webkit-inner-spin-button {
 }
 
 .versions {
+    margin: 4px 0px;
     font-weight: normal;
+}
+
+.github-btn {
+    display: flex;
+    align-items: center;
+    align-self: center;
+    gap: 10px;
+}
+
+.github-btn .btn {
+    border-radius: 16px;
+    height: 34px;
+    padding: 2px;
+    background-color: white;
+    color: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.github-btn .btn a {
+    background-color: unset;
+    font-weight: 500;
+    font-size: 1.5em;
+    text-decoration-line: unset;
 }
 
 .yes-no-new {
@@ -2040,12 +2182,16 @@ input::-webkit-inner-spin-button {
     animation: scale-in-center 2s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
 }
 
-/* .loader-in-progress {
-    height: var(--progress-handle-size);
-    width: var(--progress-handle-size);
-    margin: unset;
-} */
-
+.open-in-tab {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: center;
+    font-size: 20px;
+    margin: 8px 0px;
+}
+.open-in-tab > label {
+    font-weight: 300;
+}
 .slide-bottom {
     -webkit-animation: slide-bottom 700ms;
     animation: slide-bottom 700ms;

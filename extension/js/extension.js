@@ -21,8 +21,15 @@ let settings = document.getElementsByClassName("settings")[0];
 let popupBtn = document.getElementsByClassName("popup-btn")[0];
 let listsSortcutKeys = document.getElementsByClassName("list-shortcut-keys")[0];
 let selectedShortcutKey = document.getElementsByClassName("select-shortcut-key")[0];
+let gitBtn = document.querySelector(".github-btn .btn ");
 
 let isMenuListOpen = false;
+
+gitBtn.onclick = () => {
+    chrome.tabs.create({
+        url: "https://github.com/Night-Soft/ControlYandexMusic"
+    });
+}
 
 // list settings
 
@@ -94,12 +101,6 @@ let writeReassignOptions = () => {
             isReassign: checkBoxReassign.checked,
             shortCut: Options.selectedShortcutKey
         },
-    });
-    setOptions({
-        reassign: {
-            isReassign: checkBoxReassign.checked,
-            shortCut: Options.selectedShortcutKey
-        }
     });
 }
 
@@ -284,13 +285,27 @@ let listMenuToggleAnim = new ToggleAnimation(modalListMenu, {
         open: "flex",
         close: "none"
     },
-    onOpenEnd() { firstScroll() }
+    onOpenEnd() { firstScroll() },
+    onendRemove: false
+});
+
+let posTopToggleAnim = new ToggleAnimation(trackPositionTop, {
+    close: "slide-left",
+    open: "slide-left-out",
+});
+
+let posBottomToggleAnim = new ToggleAnimation(trackPositionBottom, {
+    close: "slide-left",
+    open: "slide-left-out",
 });
 
 let toggleListMenu = () => {
     hamburgerMenuList.classList.toggle("change-list");
     playlistToggleAnim.toggle();
     listMenuToggleAnim.toggle();
+
+    if (isTrackPosition === "top") posTopToggleAnim.toggle();
+    if (isTrackPosition === "bottom") posBottomToggleAnim.toggle();
 }
 
 let menuToggleAnim = new ToggleAnimation(containerMenu, {
@@ -304,7 +319,8 @@ let sideToggleAnim = new ToggleAnimation(document.getElementsByClassName("modal-
     display: {
         open: "block",
         close: "none"
-    }
+    },
+    onendRemove: false
 });
 
 let toggleMenu = () => {
