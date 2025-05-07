@@ -226,26 +226,22 @@ let PopupWindow = class {
     }
 }
 
-chrome.commands.onCommand.addListener(function(command) {
-    if (command) { // 'next-key' 'previous-key' 'togglePause-key' 'toggleLike-key'
-        if (Options.reassign == undefined) {
-            getOptions("popupBounds", "reassign").then((result) => {
-                if (Options.reassign?.isReassign) { 
-                    if (Options.reassign.shortCut.name == command) {
-                        createUpdatePopup();
-                        return;
-                    }
-                }
-            });
-        } else {
-            if (Options.reassign.isReassign == true && Options.reassign.shortCut.name == command) {
-                createUpdatePopup();
-                return;
-            } else {
-                sendEvent({ commandKey: command, key: true });
-            }
-        }
+function checkCommand(command) {
+    if (Options.reassign?.isReassign && Options.reassign.shortCut.name == command) {
+        createUpdatePopup();
+        return;
     }
+    sendEvent({ commandKey: command, key: true });
+}
+
+chrome.commands.onCommand.addListener(function (command) {
+    //'next-key', 'previous-key', 'togglePause-key', 'toggleLike-key'
+    if (Options.reassign == undefined) {
+        getOptions("popupBounds", "reassign").then(() => checkCommand(command));
+        return;
+    }
+
+    checkCommand(command);
 });
 
 chrome.runtime.onMessageExternal.addListener(
