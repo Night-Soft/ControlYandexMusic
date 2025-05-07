@@ -70,6 +70,59 @@ let getArtists = (list) => {
     }
 }
 
+let setMediaMetaData = () => {
+    const currentTrack = externalAPI.getCurrentTrack();
+    if (!currentTrack) return;
+    let { title, cover, album } = currentTrack;
+
+    if (cover == undefined) {
+        cover = 'img/icon.png'
+    } else {
+        cover = cover.slice(0, -2);
+        cover = 'https://' + cover; // + "400x400"
+    }
+
+    const newMetaData = {
+        title: title,
+        album: album.title,
+        artist: getArtists(externalAPI.getCurrentTrack()),
+        artwork: [30, 50, 80, 100, 200, 300, 400].map(size => {
+            size = size + "x" + size;
+            return { src: cover + size, sizes: size, type: "image/jpg" }
+        })
+    }
+
+    YandexMusicControl.mediaSession.metadata = new YandexMusicControl.MediaMetadata(newMetaData);
+}
+
+let setActionHandler = () => {
+    if ('mediaSession' in navigator) {
+        YandexMusicControl.MediaMetadata = MediaMetadata;
+        YandexMusicControl.mediaSession = navigator.mediaSession;
+
+        MediaMetadata = class { constructor({ }) { } };
+        Object.defineProperty(navigator, 'mediaSession', {
+            value: {
+                setActionHandler() { },
+                setPositionState() { }
+            }
+        });
+        const prevKey = YandexMusicControl.play.bind(YandexMusicControl, 'previous-key');
+        const nextKey = YandexMusicControl.play.bind(YandexMusicControl, 'next-key');
+        YandexMusicControl.mediaSession.setActionHandler('play', togglePauseKey);
+        YandexMusicControl.mediaSession.setActionHandler('pause', togglePauseKey);
+        YandexMusicControl.mediaSession.setActionHandler('previoustrack', prevKey);
+        YandexMusicControl.mediaSession.setActionHandler('nexttrack', nextKey);
+        YandexMusicControl.mediaSession.setActionHandler('seekbackward', function () {
+            externalAPI.setPosition(externalAPI.getProgress().position - 10)
+        });
+        YandexMusicControl.mediaSession.setActionHandler('seekforward', function () {
+            externalAPI.setPosition(externalAPI.getProgress().position + 10)
+        });
+    }
+
+}
+
 function getTracks(changeTrack = false) {
     let trackInfo = {
         tracksList: externalAPI.getTracksList(),
@@ -183,7 +236,6 @@ window.addEventListener("message", function (event) {
         sendMessage("PROGRESS", { progress: externalAPI.getProgress() });
     }
     if (event.data.uploadTracksMeta) {
-        // todo check new design
         externalAPI.uploadTracksMeta(event.data.uploadTracksMeta).finally(() => {
             setTimeout(() => {
                 sendMessage("uploadTracksMeta");
@@ -216,6 +268,11 @@ externalAPI.on(externalAPI.EVENT_STATE, function () {
     };
 
     sendMessage("STATE", { isPlaying, progress });
+    if (isPlaying) {
+        YandexMusicControl.mediaSession.playbackState = "playing";
+    } else {
+        YandexMusicControl.mediaSession.playbackState = "paused";
+    }
 });
 
 externalAPI.on(externalAPI.EVENT_VOLUME, function () {
@@ -248,6 +305,7 @@ let prevPosition = 0,
 externalAPI.on(externalAPI.EVENT_TRACK, function () {
     prevPosition = 0;
     getTracks(true);
+    setMediaMetaData();
 });
 
 const changeTrack = (index) => {
@@ -293,4 +351,5 @@ externalAPI.on(externalAPI.EVENT_PROGRESS, function () {
 
 externalAPI.on(externalAPI.EVENT_READY, () => { 
     getTracks();
+    setActionHandler();
 });

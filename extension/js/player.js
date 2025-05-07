@@ -300,7 +300,6 @@ let updateTracksList = ({ tracksList, sourceInfo, index: tabIndex }) => {
             checkForNewElement.execute();
         }
 
-        // todo update likes
         const { index } = Player.list.tabTracks.get(tabIndex);
 
         if (index >= 0 && Player.index != index) {

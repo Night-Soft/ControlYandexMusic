@@ -416,7 +416,7 @@ checkBoxReassign.onclick = function () {
 
 let checkNew = () => {
     if (Options.isNewFeaturesShown !== true) return;
-    //WhatNew.openNews(); // todo: remove //
+    WhatNew.openNews();
 }
 
 let setOptions = (options) => {
@@ -517,7 +517,7 @@ let setOptions = (options) => {
 
 getOptions((response) => {
     if (response.options) {
-        EventEmitter.on("Options", () => { // todo check EventEmitter "Options"
+        EventEmitter.on("Options", () => {
             if (typeof Extension == 'object') {
                 setOptions(response.options); // options.js
                 checkNew();

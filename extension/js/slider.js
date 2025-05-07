@@ -150,7 +150,6 @@ let Slider = class {
 
         let x = event.x - this.grooveOffsetLeft;
         if (x >= 0 && x <= this.groove.offsetWidth) {
-            // nothing todo with x
         } else if (x > this.groove.offsetWidth) {
             x = this.groove.offsetWidth;
         } else if (x < 0) { x = 0; }

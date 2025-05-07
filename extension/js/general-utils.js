@@ -1043,30 +1043,38 @@ const writeOptions = (options, isSetOptionsNow = true) => {
     if (isSetOptionsNow) setOptions(options);
 }
 
-let openNewTab = (tabId) => {
+let openNewTab = (btn) => {
     loaderContainer.style.display = "block";
     appDetected.innerText = translate("waitWhilePage");
     appQuestion.style.display = "none";
     yesNoNew.style.display = "none";
     document.querySelector(".open-in-tab").style.display = "none";
+    
+    if (btn === "btn-yes") {
+        Promise.all([getYandexMusicTab(), getCurrentTab()]).then(([tabIdYm, tabIdCurrent]) => {
+            if (typeof tabIdYm === 'number') {
+                chrome.tabs.reload(tabIdYm);
+                return;
+            }
 
-    if (typeof tabId === 'number') {
-        chrome.tabs.reload(tabId);
-        return;
+            if (Options.isOpenInCurrentTab) {
+                chrome.tabs.update(tabIdCurrent, {
+                    active: true,
+                    url: "https://music.yandex.ru/home"
+                });
+                return;
+            }
+
+            chrome.tabs.create({
+                active: false,
+                url: "https://music.yandex.ru/home"
+            });
+        });
     }
 
-    if (!Options.isOpenInCurrentTab) {
+    if (btn === "btn-new") {
         chrome.tabs.create({ url: "https://music.yandex.ru/home", active: false });
-        return;
     }
-
-    getCurrentTab().then(tabId => {
-        if (tabId) {
-            chrome.tabs.update(tabId, { active: true, url: "https://music.yandex.ru/home" });
-        } else {
-            chrome.tabs.create({ url: "https://music.yandex.ru/home", active: false });
-        }
-    });
 }
 
 let showNoConnected = () => {
@@ -1156,6 +1164,7 @@ let setPlaybackStateStyle = (isPlaying) => {
     if (isPlaying == false) {
         PauseIcon.style.display = "none";
         PlayIcon.style.display = "block";
+        progress.style.transitionDuration = "250ms";
         if (Options.isReduce) {
             if (Extension.windowName == "extension") {
                 pause.style.backgroundPosition = "16px center";
@@ -1172,6 +1181,7 @@ let setPlaybackStateStyle = (isPlaying) => {
     } else {
         PauseIcon.style.display = "block";
         PlayIcon.style.display = "none";
+        progress.style.transitionDuration = "";
         pause.style.backgroundPosition = "";
         pause.style.backgroundSize = "";
     }

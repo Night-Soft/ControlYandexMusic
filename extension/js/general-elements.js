@@ -182,7 +182,7 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 break;
             case "PROGRESS":
                 if (request.progress.duration === 0) {
-                    request.progress.duration = Player.track.duration;
+                    request.progress.duration = Player.duration;
                 }
                 Player.setProgress(request.progress);
                 break;
@@ -200,11 +200,9 @@ chrome.runtime.onMessageExternal.addListener( // injected script
         }
     });
 
-btnYes.onclick = () => {
-    getYandexMusicTab().then(tabId => openNewTab(tabId));
-}
+btnYes.onclick = () => openNewTab("btn-yes")
 
-btnNew.onclick = openNewTab;
+btnNew.onclick = () => openNewTab("btn-new");
 
 previous.onclick = ()=>{
     if (Player.info.source.type === "radio") {
@@ -264,7 +262,6 @@ const controlsContainer = document.querySelector(".controls-container");
 let isProgressShoved = false;
 const showProgressDelay = new ExecutionDelay((event) => {
     if (isProgressShoved) return;
-    isProgressShoved = true;
 
     if (hideProgressDelay.isStarted) {
         const lastHide = hideProgressDelay.getFunction().arguments[0].timeStamp;
@@ -272,8 +269,10 @@ const showProgressDelay = new ExecutionDelay((event) => {
         if (lastShow < lastHide) return;
         hideProgressDelay.stop();
     }
+
+    isProgressShoved = true;
     controlsContainer.style.overflow = "";
-    progress.style.transition = "400ms";
+    progress.style.transitionDuration = "400ms";
     progress.style.opacity = "0";
     progressContent.style.opacity = "1";
     progressContent.style.transform = "translateY(0px)";
@@ -284,16 +283,17 @@ controlsContainer.onmouseenter = showProgressDelay.start;
 
 const hideProgressDelay = new ExecutionDelay((event) => {
     if (!isProgressShoved) return;
-    isProgressShoved = false;
     
     if (showProgressDelay.isStarted) {
         const lastShow = showProgressDelay.getFunction().arguments[0].timeStamp;
         const lastHide = event.timeStamp;
         if (lastShow > lastHide) return;
         showProgressDelay.stop();
-    };
+    }
+
+    isProgressShoved = false;
     controlsContainer.style.overflow = "hidden";
-    progress.style.transition = "";
+    progress.style.transitionDuration = "";
     progress.style.opacity = "1";
     progressContent.style.opacity = "0";
     progressContent.style.transform = "";
