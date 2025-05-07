@@ -1,0 +1,3 @@
+[submodule "extension/js/externalAPI"]
+	path = extension/js/externalAPI
+	url = https://github.com/Night-Soft/YmExternalAPI.git
