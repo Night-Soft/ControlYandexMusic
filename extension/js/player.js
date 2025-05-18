@@ -267,11 +267,30 @@ const PlayerInfo = class {
 const Player = new PlayerInfo();
 const playlist = Player.playlist;
 
+const compareSource = (next, nextList) => {
+    const prev = Player.info.source;
+
+    if (next.playlistId !== undefined) return next.playlistId === prev.playlistId;
+    if (next.link !== undefined && next.type !== "radio") return next.link === prev.link;
+
+    if (next.type === "radio") {
+        const prevlist = Player.info.tracks;
+
+        if (nextList.length !== prevlist.length) return false;
+
+        for (let i = 0; i < nextList.length; i++) {
+            if (nextList[i].title === prevlist[i].title) continue;
+            return false;
+        }
+        return true;
+    }
+}
+
 let updateTracksList = ({ tracksList, sourceInfo, index: tabIndex }) => {
     Player.track = tracksList[tabIndex];
     Player.disliked = tracksList[tabIndex].disliked;
 
-    if (Player.info.source.playlistId === sourceInfo.playlistId) {
+    if (compareSource(sourceInfo, tracksList)) {
         const newLikes = [];
         Player.playlist.elements.forEach(({ itemTrack, tabIndex }) => { 
             const { liked: likedPrev, disliked: dislikedPrev } = Player.info.tracks[tabIndex];
