@@ -6,6 +6,7 @@ const ExecutionDelay = class {
     #args;
     #timeoutId;
     #promise;
+    #resolve;
     #fulfilled;
     #isTimeout = false;
 
@@ -24,11 +25,13 @@ const ExecutionDelay = class {
         context = null,
         startNow = false,
         executeNow = false,
-        isThrottle = false
+        isThrottle = false,
+        leading = false
     } = {}, ...args) {
         this.delay = delay;
         this.setContext(context);
         this.isThrottle = isThrottle;
+        this.leading = leading;
 
         if (typeof callback == 'function') {
             this.setFunction(callback, ...args);
@@ -70,7 +73,7 @@ const ExecutionDelay = class {
         };
     }
 
-    setArgumetns =(...args) => {
+    setArgumetns = (...args) => {
         if (args.length == 0) { return false }
         this.#args = args;
         return {
@@ -79,7 +82,7 @@ const ExecutionDelay = class {
         };
     }
 
-    clearArguments = () =>{ this.#args = undefined; }
+    clearArguments = () => { this.#args = undefined; }
 
     getContext = () => { return this.#context; }
     setContext = (context) => {
@@ -93,6 +96,38 @@ const ExecutionDelay = class {
         };
     }
 
+    #createTimeout = () => {
+        clearTimeout(this.#timeoutId);
+        this.#isTimeout = true;
+
+        this.#timeoutId = setTimeout(() => {
+            this.#isTimeout = false;
+            this.#promise = null;
+            this.#fulfilled = null;
+
+            if (typeof this.#resolve !== 'function') return;
+
+            let result;
+            try {
+                result = this.#callback.apply(this.#context, this.#args);
+            } catch (error) {
+                result = error;
+            }
+
+            this.#resolve(result);
+            this.#resolve = null;
+
+            if (this.#isThrottle) this.#createTimeout();
+        }, this.#delay);
+    }
+    #createPromise = (needTimeout = false) => {
+        return this.#promise = new Promise((resolve) => {
+            // this.#fulfilled - function for set promise state to fulfilled with stop().
+            this.#fulfilled = (message) => { resolve({ causeStops: message }); }
+            this.#resolve = resolve;
+            if (needTimeout) this.#createTimeout(resolve);
+        });
+    }
     /**
      * Initiates function execution after the specified delay.
      * @param {...any} args - Optional arguments to be passed to the function.
@@ -100,36 +135,32 @@ const ExecutionDelay = class {
      */
     start = (...args) => {
         if (typeof this.#callback != 'function') { throw new Error('The function is missing.'); }
-        if (this.#isThrottle == true) {
-            if (args.length > 0) { this.#args = args; }
-            if (this.#isTimeout == true) return this.#promise;
+        this.#args = args;
+
+        if (this.#isThrottle === true) {
+            if (this.#isTimeout && this.#promise) return this.#promise;
+            if (!this.#isTimeout && !this.#promise && this.leading) {
+                this.#createTimeout();
+                const result = this.#callback.apply(this.#context, this.#args);
+                return Promise.resolve(result);
+            }
+            if (this.#isTimeout && this.#promise === null) {
+                return this.#createPromise(false);
+            }
         }
 
-        clearTimeout(this.#timeoutId);
-        this.#isTimeout = true;
+        if (this.#isThrottle === false) {
+            if (!this.leading && this.#resolve) {
+                this.#createTimeout(this.#resolve);
+                return this.#promise;
+            } else if (this.leading && !this.#resolve && !this.#isTimeout) {
+                this.#createTimeout();
+                const result = this.#callback.apply(this.#context, this.#args);
+                return Promise.resolve(result);
+            }
+        }
 
-        return this.#promise = new Promise((resolve) => {
-            // this.#fulfilled - function for set promise state to fulfilled with stop().
-            this.#fulfilled = (message) => { resolve({ causeStops: message }); }
-            this.#timeoutId = setTimeout(() => {
-                this.#isTimeout = false;
-                this.#fulfilled = undefined;
-                
-                let result;
-                if (this.#isThrottle) {
-                    result = this.#callback.apply(this.#context, this.#args);
-                } else {
-                    if (args.length > 0) {
-                        result = this.#callback.apply(this.#context, args);
-                    } else {
-                        result = this.#callback.apply(this.#context, this.#args);
-                    }
-                }
-
-                resolve({ result, info: `Function completed with delay ${this.#delay}.` });
-
-            }, this.#delay);
-        });
+        return this.#createPromise(true);
     }
 
     /**
@@ -153,9 +184,12 @@ const ExecutionDelay = class {
     stop = (cause = "Forecd stopp.") => {
         clearTimeout(this.#timeoutId);
         this.#isTimeout = false;
+        this.#promise = null;
+        this.#resolve = null;
+
         if (typeof this.#fulfilled == 'function') {
             this.#fulfilled(cause);
             this.#fulfilled = undefined;
         }
     }
-};
+}
