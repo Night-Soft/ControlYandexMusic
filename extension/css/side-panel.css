@@ -21,3 +21,12 @@
     height: 32px;
     transition: var(--transitionDuration);
 }
+
+.close-notification {
+    position: relative;
+    height: 27px;
+    width: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
