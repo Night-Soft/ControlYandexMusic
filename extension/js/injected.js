@@ -1,5 +1,5 @@
 let YandexMusicControl = {
-    id: "UnknowId",
+    id: undefined,
     port: undefined,
     mediaSession: undefined,
     MediaMetadata: undefined,
@@ -36,7 +36,14 @@ let YandexMusicControl = {
         });
     }
 }
+
 const sendMessage = (type, data) => {
+    if (!YandexMusicControl.id) {
+        if (!YandexMusicControl.earlyMessages) YandexMusicControl.earlyMessages = new Set();
+        YandexMusicControl.earlyMessages.add({ type, data });
+        return;
+    }
+
     if (typeof type === 'object') {
         chrome.runtime.sendMessage(YandexMusicControl.id, type);
         return;
@@ -71,6 +78,8 @@ let getArtists = (list) => {
 }
 
 let setMediaMetaData = () => {
+    if(!YandexMusicControl.MediaMetadata) setActionHandler();
+
     const currentTrack = externalAPI.getCurrentTrack();
     if (!currentTrack) return;
     let { title, cover, album } = currentTrack;
@@ -96,7 +105,7 @@ let setMediaMetaData = () => {
 }
 
 let setActionHandler = () => {
-    if ('mediaSession' in navigator) {
+    if ('mediaSession' in navigator && !YandexMusicControl.MediaMetadata) {
         YandexMusicControl.MediaMetadata = MediaMetadata;
         YandexMusicControl.mediaSession = navigator.mediaSession;
 
@@ -224,6 +233,13 @@ window.addEventListener("message", function (event) {
 
     if (event.data.id) {
         YandexMusicControl.id = event.data.id;
+        if(YandexMusicControl.earlyMessages) {
+            YandexMusicControl.earlyMessages.forEach(({ type, data }) => {
+                sendMessage(type, data);
+            });
+            YandexMusicControl.earlyMessages.clear();
+            Reflect.deleteProperty(YandexMusicControl, "earlyMessages");
+        }
     }
     if (event.data.play >= 0) {
         YandexMusicControl.play(event.data.play);
@@ -349,7 +365,16 @@ externalAPI.on(externalAPI.EVENT_PROGRESS, function () {
 
 });
 
-externalAPI.on(externalAPI.EVENT_READY, () => { 
-    getTracks();
+
+const ready = () => {
     setActionHandler();
-});
+    getTracks();
+}
+
+// if the "trigger" does not exist, it means that the "New Design" is being used.
+if (externalAPI.trigger) {
+    //setTimeout(ready, 1000); // todo
+    ready();
+} else {
+    externalAPI.on(externalAPI.EVENT_READY, ready);
+}
