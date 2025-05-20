@@ -131,8 +131,7 @@ let setTheme = (theme = "default", windowName = "default") => {
                 darkContentMenu.style.color = "";
                 rootCss.style.setProperty("--settingItemBackground", "rgba(255 255 255 / 50%)");
                 listTrack.style.background = "rgb(255 255 255 / 70%)";
-                //rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 40%)');
-                rootCss.style.setProperty("--listTrackBackground", 'rgba(200 200 200 / 25%)');
+                rootCss.style.setProperty("--listTrackBackground", 'rgba(200 200 200 / 35%)');
                 
                 rootCss.style.setProperty('--settingItemHover', 'rgba(0,0,0, 0.2)');
                 btnPopup.style.backgroundImage = "";
@@ -145,10 +144,10 @@ let setTheme = (theme = "default", windowName = "default") => {
                 lightTheme.classList.add("user-theme-selected");
                 break;
             case "popup":
-                rootCss.style.setProperty("--listTrackBackground", 'rgba(200 200 200 / 25%)');
+                rootCss.style.setProperty("--listTrackBackground", 'rgba(200 200 200 / 35%)');
                 break;
             case "side-panel":
-                rootCss.style.setProperty("--listTrackBackground", 'rgba(200 200 200 / 25%)');
+                rootCss.style.setProperty("--listTrackBackground", 'rgba(200 200 200 / 35%)');
                 btnPopup.style.backgroundImage = "";
                 break;
         }
@@ -167,7 +166,7 @@ let setTheme = (theme = "default", windowName = "default") => {
         switch (windowName) {
             case "default":
                 //rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 40%)');
-                rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 25%)');
+                rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 35%)');
                 rootCss.style.setProperty("--settingItemBackground", "rgba(0 0 0 / 50%)");
                 listTrack.style.background = "";
                 darkContentMenu.setStyle({
@@ -183,10 +182,10 @@ let setTheme = (theme = "default", windowName = "default") => {
                 darkTheme.classList.add("user-theme-selected");
                 break;
             case "popup":
-                rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 25%)');
+                rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 35%)');
                 break;
             case "side-panel":
-                rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 25%)');
+                rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 35%)');
                 break;
         }
     }
@@ -324,7 +323,6 @@ let setTheme = (theme = "default", windowName = "default") => {
                 switch (windowName) {
                     case "default":
                         listTrack.style.background = "";
-                       // rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 40%)');
                        rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 25%)'); 
                        rootCss.style.setProperty("--settingItemBackground", "");
                         darkTitle[0].style.background = "";
