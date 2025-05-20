@@ -4,7 +4,7 @@
     "description": "__MSG_appDesc__",
     "short_name": "__MSG_shortName__",
     "default_locale": "en",
-    "version": "4.0.0",
+    "version": "4.0.2",
     "web_accessible_resources": [
         {
             "resources": [
@@ -118,7 +118,6 @@
         "https://music.yandex.ru/*",
         "https://music.yandex.by/*",
         "https://avatars.yandex.net/*",
-        "https://next.music.yandex.ru/*",
-        "https://night-soft.github.io/YmExternalAPI/*"
+        "https://next.music.yandex.ru/*"
     ]
 }

@@ -1,5 +1,9 @@
 {
     "versions": [
+        ["4.0.2", {
+            "messageEn": "• Fixed the work 'my wave'.",
+            "messageRu": "• Исправлена ​​работа 'моей волны'."
+        }],
         ["4.0.0", {
             "messageEn": "• Added support for the 'new design'. <br> • Implemented a button for quickly switching to the current tab with music. <br> • Minor improvements in design and interaction. <br><br> Important: <br> A non-standard API is used to work with the new design, since Yandex has not yet provided official support, as it did in the previous version of the interface. Unfortunately, this means that the application may stop working at any time. If you encounter problems, you can temporarily return to the old design until an update with the appropriate fixes is released. <br> If you have any problems, please contact me at:  <a href='mailto:NightSoftware@outlook.com'>NightSoftware@outlook.com</a>",
             "messageRu": " • Добавлена поддержка 'нового дизайна'. <br> • Реализована кнопка для быстрого перехода к текущей вкладке c музыкой. <br> • Внесены мелкие улучшения в дизайн и взаимодействие. <br><br> Важно: <br> Для работы с новым дизайном используется нестандартный API, так как Яндекс пока не предоставил официальной поддержки, как это было в предыдущей версии интерфейса. К сожалению, это означает, что приложение может перестать работать в любой момент. При возникновении проблем вы можете временно вернуться к старому дизайну до выхода обновления с соответствующими исправлениями. <br> Если у вас возникли проблемы, пожалуйста, свяжитесь со мной по адресу: <a href='mailto:NightSoftware@outlook.com'>NightSoftware@outlook.com</a>"
