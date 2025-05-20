@@ -626,9 +626,9 @@ let showNotification = (text, ms, isMouseEvent) => {
             ms = 3500;
         }
     }
-    if (typeof isMouseEvent === "boolean") notification.toggleMouseEvent(isMouseEvent);
+    if (typeof isMouseEvent === "boolean") notification.enableMouseEvent(isMouseEvent);
 
-    notification.params.toggleMouseEvent = notification.toggleMouseEvent;
+    notification.params.enableMouseEvent = notification.enableMouseEvent;
     notification.params.button &&= undefined;
     notification.params.onfinish = null;
     notification.params.oncancel = null;
@@ -660,17 +660,21 @@ const NotificationControl = class {
             this.closeNotification();
         }
 
-        const thisLink = this;
+        const instance = this;
         Object.defineProperties(this.params, {
             text: {
-                get() { return thisLink.#textNotification.innerText; },
-                set(value) { thisLink.#textNotification.innerText = value; },
+                get() { return instance.#textNotification.innerText; },
+                set(value) { instance.#textNotification.innerText = value; },
+                enumerable: true
+            },
+            isShown: {
+                get() { return instance.isShown },
                 enumerable: true
             }            
         });
 
         if (this.#buttonElement) {
-            let btnParams = new Proxy({ button: thisLink.#buttonElement }, {
+            let btnParams = new Proxy({ button: instance.#buttonElement }, {
                 get(target, property, receiver) {
                     return Reflect.get(target, property, receiver);
                 },
@@ -678,11 +682,11 @@ const NotificationControl = class {
                     let result;
                     if(property === "text") {
                         result = Reflect.set(target, property, newValue, receiver);
-                        thisLink.#buttonElement.innerText = newValue;
+                        instance.#buttonElement.innerText = newValue;
                     }
                     if (property === "onclick") {
                         result = Reflect.set(target, property, newValue, receiver);
-                        thisLink.#buttonElement.onclick = newValue;
+                        instance.#buttonElement.onclick = newValue;
                     }
                     return typeof result === "boolean" ? result : false;
                 }
@@ -695,13 +699,13 @@ const NotificationControl = class {
                         if (value === null || value === undefined) {
                             btnParams.text = value;
                             btnParams.onclick = value;
-                            thisLink.#buttonElement.style.display = "";
+                            instance.#buttonElement.style.display = "";
                             return;
                         }
                         if (typeof value !== "object") throw new TypeError("Button is not an Object");
                         if (value?.text) btnParams.text = value.text;
                         if (typeof value?.onclick === "function") btnParams.onclick = value.onclick;
-                        thisLink.#buttonElement.style.display = "block";
+                        instance.#buttonElement.style.display = "block";
                     },
                     enumerable: true
                 },
@@ -719,7 +723,7 @@ const NotificationControl = class {
         text: undefined,
         button: null,
         onfinish: null,
-        oncancel: null
+        oncancel: null,
     }
 
     #fill(ms) {
@@ -738,20 +742,20 @@ const NotificationControl = class {
 
     #onmouseenter = null;
     #onmouseleave = null;
-    toggleMouseEvent = (toggle = false) => { 
-        if (toggle == true) {
+    enableMouseEvent = (enable = false) => {
+        if (enable == true) {
             this.#notification.onmouseenter = this.#onmouseenter;
             this.#notification.onmouseleave = this.#onmouseleave;
             this.#closeBtn.style.display = "";
             this.#notification.disabled = false;
-        } else {
-            this.#onmouseenter = this.#notification.onmouseenter;
-            this.#onmouseleave = this.#notification.onmouseleave;
-            this.#notification.onmouseenter = null;
-            this.#notification.onmouseleave = null;
-            this.#closeBtn.style.display = "none";
-            this.#notification.disabled = true;
+            return;
         }
+        this.#onmouseenter = this.#notification.onmouseenter;
+        this.#onmouseleave = this.#notification.onmouseleave;
+        this.#notification.onmouseenter = null;
+        this.#notification.onmouseleave = null;
+        this.#closeBtn.style.display = "none";
+        this.#notification.disabled = true;
     }
 
     #addCloseListener = () => {
@@ -829,9 +833,27 @@ const NotificationControl = class {
     }
 }
 
+const updatePlaylistEmptyNotification = (() => {
+    let notification;
+    return (index) => {
+        if (index == -1) {
+            notification = showNotification(translate("playlistEmpty"), 7000);
+            return;
+        }
+        if (notification) {
+            if (notification.text === translate("playlistEmpty") &&
+                notification.isShown === true) {
+
+                notification.onfinish = () => notification.text = "";
+                notification.close();
+            }
+        }
+    }
+})();
+
 /**
  * 
- * @param  {...string | null} params null, undefined, returns all properties.
+ * @param  {...string | null} params null or undefined, returns all properties.
  *  id, pinned, active, status, title, url, ...
  * @returns {object | boolean}
  */
@@ -1021,7 +1043,7 @@ const createPopup = function () {
         (result) => {
             if (result.exists) {
                 const notification = showNotification(result.message, undefined, false);
-                const toggleControl  = notification.toggleMouseEvent.bind(null, true);
+                const toggleControl  = notification.enableMouseEvent.bind(null, true);
                 notification.onfinish = toggleControl;
                 notification.oncancel = toggleControl;
             }

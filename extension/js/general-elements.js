@@ -125,12 +125,9 @@ chrome.runtime.onMessageExternal.addListener( // injected script
     (request, sender, sendResponse) => {
         switch (request.event) {
             case 'currentTrack': 
-                if (request.trackInfo.index == -1) {
-                    showNotification(chrome.i18n.getMessage("playlistEmpty"), 7000);
-                    return;
-                }
-                updateTracksList(request.trackInfo);
+                updatePlaylistEmptyNotification(request.trackInfo.index);
 
+                updateTracksList(request.trackInfo);
                 setMediaData(request.currentTrack.title, getArtists(request.currentTrack, 5), request.currentTrack.cover);
                 toggleLike(request.currentTrack.liked, false);
                 toggleDislike(request.currentTrack.disliked, false, false);
