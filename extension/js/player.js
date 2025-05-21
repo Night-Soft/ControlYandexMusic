@@ -257,7 +257,15 @@ const PlayerInfo = class {
     updateCanUploadTracks() {
         this.canUploadTracks = this.info.tracks.some(track => track === null);
     }
-    updateLikeDislike(newLikes) {
+    updateLikeDislike(tracksList) {
+        const newLikes = [];
+        Player.playlist.elements.forEach(({ itemTrack, tabIndex }) => { 
+            const { liked: likedPrev, disliked: dislikedPrev } = Player.info.tracks[tabIndex];
+            const { liked, disliked } = tracksList[tabIndex];
+            if(likedPrev === liked && dislikedPrev === disliked) return;
+
+            newLikes.push({ itemTrack, liked, disliked });
+        });
         newLikes.forEach(({ itemTrack, liked, disliked }) => {
             toggleListLikes(itemTrack.children[1], liked, disliked);
         });
@@ -267,39 +275,11 @@ const PlayerInfo = class {
 const Player = new PlayerInfo();
 const playlist = Player.playlist;
 
-const compareSource = (next, nextList) => {
-    const prev = Player.info.source;
-
-    if (next.playlistId !== undefined) return next.playlistId === prev.playlistId;
-    if (next.link !== undefined && next.type !== "radio") return next.link === prev.link;
-
-    if (next.type === "radio") {
-        const prevlist = Player.info.tracks;
-
-        if (nextList.length !== prevlist.length) return false;
-
-        for (let i = 0; i < nextList.length; i++) {
-            if (nextList[i].title === prevlist[i].title) continue;
-            return false;
-        }
-        return true;
-    }
-}
-
 let updateTracksList = ({ tracksList, sourceInfo, index: tabIndex }) => {
     Player.track = tracksList[tabIndex];
     Player.disliked = tracksList[tabIndex].disliked;
 
     if (compareSource(sourceInfo, tracksList)) {
-        const newLikes = [];
-        Player.playlist.elements.forEach(({ itemTrack, tabIndex }) => { 
-            const { liked: likedPrev, disliked: dislikedPrev } = Player.info.tracks[tabIndex];
-            const { liked, disliked } = tracksList[tabIndex];
-            if(likedPrev === liked && dislikedPrev === disliked) return;
-
-            newLikes.push({ itemTrack, liked, disliked });
-        });
-
         let indexInList = -1;
         tracksList.forEach((track, tabIndex) => {
             if (typeof track === "object" && track !== null) {
@@ -310,37 +290,16 @@ let updateTracksList = ({ tracksList, sourceInfo, index: tabIndex }) => {
             }
         });
 
+        Player.updateLikeDislike(tracksList);
         Player.info.tracks = tracksList;
         Player.updateCanUploadTracks();
-        Player.updateLikeDislike(newLikes);
 
         if (Player.canAddTracks) {
             Player.canAddTracks = false;
             checkForNewElement.execute();
         }
 
-        const { index } = Player.list.tabTracks.get(tabIndex);
-
-        if (index >= 0 && Player.index != index) {
-            if (!playlist.elements.get(index)) {
-                let quantity = 10;
-                let indexesForCreated;
-
-                if (index < playlist.minIndex) { 
-                    quantity = playlist.minIndex - index + 10;
-                    indexesForCreated = playlist.getIndexes(playlist.minIndex, quantity, "up");
-                } else if (index > playlist.maxIndex) {
-                    quantity = index - playlist.maxIndex + 10;
-                    indexesForCreated = playlist.getIndexes(playlist.maxIndex, quantity, "down");
-                } else {
-                    indexesForCreated = playlist.getIndexes(index, quantity, "center");
-                }
-
-                if (indexesForCreated) addPlaylistElements(indexesForCreated);
-                return;
-            }
-            selectItem(playlist.elements.get(index).itemTrack, index);
-        }
+        addElementsIfNeeded(Player.list.tabTracks.get(tabIndex).index);
         return;
     }
 
@@ -363,20 +322,15 @@ let updateTracksList = ({ tracksList, sourceInfo, index: tabIndex }) => {
             Player.list.tracks.set(index, value);
         }
     });
-    Player.updateCanUploadTracks();
 
+    Player.updateCanUploadTracks();
     updateTitle(Player.info.source);
 
-    const indexes = playlist.getIndexes(Player.list.tabTracks.get(tabIndex).index, 60);
-    addPlaylistElements(indexes, tabIndex);
-}
+    const numberOfElementsCreated = 60;
+    const currentIndex = Player.list.tabTracks.get(tabIndex).index;
+    const indexes = playlist.getIndexes(currentIndex, numberOfElementsCreated);
 
-let updateTitle = (title) => {
-    if (title.title != undefined) {
-        tracksListTitle.innerText = title.title;
-    } else {
-        tracksListTitle.innerText = title.type;
-    }
+    addPlaylistElements(indexes, tabIndex);
 }
 
 let isFirstLoad = true;
@@ -546,6 +500,71 @@ let addPlaylistElements = (indexesForCreated, currentTabIndex) => {
 
 }
 
+const compareTracksTitle = (newTracksList) => {
+    const prevTracksList = Player.info.tracks;
+
+    if (newTracksList.length !== prevTracksList.length) return false;
+
+    for (let i = 0; i < newTracksList.length; i++) {
+        if (newTracksList[i].title && prevTracksList[i].title) {
+            if (newTracksList[i].title !== prevTracksList[i].title) return false;
+        } else {
+            /* true because the playlist can be the same,
+            but one of the lists can contain more information about the tracks */
+            if (i > 0) return true;
+            return false;
+        }
+    }
+
+    return true;
+}
+
+const compareSource = (sourceInfo, newTracksList) => {
+    const prev = Player.info.source;
+
+    if (sourceInfo.playlistId !== undefined) {
+        if (sourceInfo.playlistId !== prev.playlistId) return false;
+        return compareTracksTitle(newTracksList);
+    }
+
+    if (sourceInfo.link !== undefined && sourceInfo.type !== "radio") {
+        return sourceInfo.link === prev.link;
+    }
+
+    if (sourceInfo.type === "radio") return compareTracksTitle(newTracksList);
+}
+
+const addElementsIfNeeded = (index) => {
+    if (index >= 0 && Player.index != index) {
+        if (!playlist.elements.get(index)) {
+            let quantity = 10;
+            let indexesForCreated;
+
+            if (index < playlist.minIndex) {
+                quantity = playlist.minIndex - index + 10;
+                indexesForCreated = playlist.getIndexes(playlist.minIndex, quantity, "up");
+            } else if (index > playlist.maxIndex) {
+                quantity = index - playlist.maxIndex + 10;
+                indexesForCreated = playlist.getIndexes(playlist.maxIndex, quantity, "down");
+            } else {
+                indexesForCreated = playlist.getIndexes(index, quantity, "center");
+            }
+
+            if (indexesForCreated) addPlaylistElements(indexesForCreated);
+            return;
+        }
+        selectItem(playlist.elements.get(index).itemTrack, index);
+    }
+}
+
+let updateTitle = (title) => {
+    if (title.title != undefined) {
+        tracksListTitle.innerText = title.title;
+    } else {
+        tracksListTitle.innerText = title.type;
+    }
+}
+
 let listLikeControl = (likeItem, track, index) => {
     likeItem.onclick = () => {
         if (Player.index == index) {
@@ -568,17 +587,6 @@ let listLikeControl = (likeItem, track, index) => {
         }
 
     }
-}
-
-const equals = (a, b) => {
-    if(a.length !== b.length) return false;
-    let toReturn = true;
-    for (let i = 0; i < a.length; i++) {
-        if (a[i]?.title != b[i]?.title) {
-            return false;
-        }
-    }
-    return toReturn;
 }
 
 let getArtists = (list, numberOf = 3) => {
@@ -622,24 +630,6 @@ let selectItem = (item, index) => {
     };
     if (EventEmitter.getEvent("playlistIsOpen")?.isEmitted) checkTrackPosition.execute();
 }
-
-//
-// const TrackPosition = {
-//     show(position, animate = false, delay = true) {
-//         if (position === "top") {
-//             trackPositionTop.style.display = "block";
-//             trackPositionBottom.style.display = "none";
-//             trackPositionTop.animate({ opacity: [0, 1] }, { duration: 700 });
-//         } else if (position === "bottom") {
-//             trackPositionTop.style.display = "none";
-//             trackPositionBottom.style.display = "block";
-//             trackPositionBottom.animate({ opacity: [0, 1] }, { duration: 700 });
-//         }
-//     },
-//     hide(position, animate = false) { }
-// }
-
-//
 
 let isTrackPosition = false;
 let showTrackPosition = new ExecutionDelay(
