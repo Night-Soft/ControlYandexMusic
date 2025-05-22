@@ -506,7 +506,7 @@ const compareTracksTitle = (newTracksList) => {
     if (newTracksList.length !== prevTracksList.length) return false;
 
     for (let i = 0; i < newTracksList.length; i++) {
-        if (newTracksList[i].title && prevTracksList[i].title) {
+        if (newTracksList[i]?.title && prevTracksList[i]?.title) {
             if (newTracksList[i].title !== prevTracksList[i].title) return false;
         } else {
             /* true because the playlist can be the same,

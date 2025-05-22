@@ -2,9 +2,7 @@ let WhatNew = {
     _isCreated: false,
     get isCreated() { return this._isCreated },
     set isCreated(value) {
-        if (value) return;
         if (typeof value === "boolean") this._isCreated = value;
-        listChangesContent.innerText = "";
     },
     openNews() {
         const animate = () => {
