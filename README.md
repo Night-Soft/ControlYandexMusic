@@ -1,36 +1,43 @@
-# ControlYandexMusic
+
+# Yandex Music control
+
+Extension for chrome based browsers to control Yandex music from any tabs, windows or apps! You can create a pop-up window with the player or open it in the sidebar.
+
 <div>
     <p align="center">
-        <img src="https://github.com/Night-Soft/readme/blob/master/ControlYandexMusic/icon.png" width="100" height="100">
+        <img src="https://res.cloudinary.com/dwdgfdc09/image/upload/v1747943155/icon_h7adgk.png" width="100" height="100">
     </p>
     <p align="center">
-        <img src="https://github.com/Night-Soft/readme/blob/master/ControlYandexMusic/cover.png" width="270" height="180">
-        <img src="https://github.com/Night-Soft/readme/blob/master/ControlYandexMusic/Browser.png" width="270" height="180">
-        <img src="https://github.com/Night-Soft/readme/blob/master/ControlYandexMusic/like.png" width="270" height="180">
-    </p>
-    <br>
-    <span>Extension for chrome based browsers to control Yandex music from any tabs, windows or apps!
-        To start using the extension, open a tab with Yandex music and enable your track.
-        Do not close the tab! Enjoy!
-    </span>
-    <h1>The app allows to:</h1>
-    <ul>
-        <li>Toggle a track.</li>
-        <li>Add or remove a track from your favorites.</li>
-        <li>Use keyboard keys.</li>
-        <li>View and open a cover of any track.</li>
-        <li>You can use buttons of this extension or your keyboard.</li>
-        <li>When you use your keyboard to control, you can see a track's name in notifictions.</li>
-    </ul>
-    <h3>Default keyboard shortcuts:</h3>
-    <ul class="ul">
-        <li>Next track (Ctrl+Shift+9)</li>
-        <li>Pause track (Ctrl+Shift+8)</li>
-        <li>Previous track (Ctrl+Shift+7)</li>
-    </ul>
-    <h2>Installation and launch</h2>
-    <p>
-    To install you need to clone this repo and open your extensions tab, then click "Load unpacked" extension button and choose the folder to which it was downloaded. Or  
-        <a href="https://chrome.google.com/webstore/detail/yandex-music-control/bhcfibiihpkamomgolcmafcblbaonlka">Download</a> the latest stable version from Chrome Web Store.
+        <img src="https://res.cloudinary.com/dwdgfdc09/image/upload/v1747943547/YandexMusicControl_agnqdn.png" width="270" height="180">
+        <img src="https://res.cloudinary.com/dwdgfdc09/image/upload/Popup_hletxe.png" width="270" height="180">
     </p>
 </div>
+
+## Features
+
+- Create a window containing the current playlist and player control buttons.
+- Switch track to the selected one from the track list.
+- Add or remove a track from your favorites.
+- View and open a cover of any track.
+- Use keyboard keys.
+
+
+## Important
+A [non-standard API](https://github.com/Night-Soft/YmExternalAPI)
+is used to work with the new design, since Yandex has not yet provided official support, as it did in the previous version of the interface. Unfortunately, this means that the application may stop working in the new design at any time.
+## Run Locally
+
+Clone the project
+
+```bash
+  https://github.com/Night-Soft/ControlYandexMusic.git
+  cd ControlYandexMusic
+  git submodule update --init --recursive
+```
+Next, go to chrome://extensions/. Enable developer mode. Then click "Load unpacked" and select the folder with the extension files. `ControlYandexMusic/extension/`
+
+## Links
+
+[![chromewebstore](https://res.cloudinary.com/dwdgfdc09/image/upload/v1747948155/Chrome_Web_Store_ahhjsk.svg)](https://chromewebstore.google.com/detail/bhcfibiihpkamomgolcmafcblbaonlka?utm_source=item-share-cb) 
+
+NightSoftware@outlook.com
