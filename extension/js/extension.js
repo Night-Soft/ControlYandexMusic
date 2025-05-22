@@ -1,5 +1,4 @@
 let title = document.getElementsByClassName("title");
-let contactMe = document.getElementById("contactMe");
 let shortCuts = document.getElementById("shortCuts");
 let showNotify = document.getElementById("showNotify");
 let listSettings = document.getElementById("listSettings");
@@ -207,8 +206,8 @@ settings.onmouseenter = () => {
     }
 }
 
-contactMe.onclick = () => {
-    window.open("mailto:nightsoftware@outlook.com");
+document.querySelector("#GitHub").onclick = () => {
+    window.open("https://github.com/Night-Soft/ControlYandexMusic");
 }
 
 whatNew.onclick = () => { 
