@@ -138,20 +138,20 @@ const LivePlaylist = class {
         return null;
     }
 
-    getIndexes = (currentPos, quantity = 10, insertDirection = "center") => { 
+    getIndexes = (fromIdx, quantity = 10, insertDirection = "center") => { 
         let startIndex, endIndex;
         const size = Player.list.tracks.size;
 
         if (quantity > size) quantity = size;
 
         if (insertDirection === "up") {
-            startIndex = currentPos - quantity > 0 ? currentPos - quantity : 0;
+            startIndex = fromIdx - quantity > 0 ? fromIdx - quantity : 0;
             endIndex = startIndex === 0 ? quantity : startIndex + quantity;
         } else if (insertDirection === "down"){
-            startIndex = currentPos;
-            endIndex = currentPos + quantity < size ? currentPos + quantity : size;
+            startIndex = fromIdx;
+            endIndex = fromIdx + quantity < size ? fromIdx + quantity : size;
         } else if (insertDirection === "center") {
-            startIndex = currentPos - quantity / 2 > 0 ? Math.ceil(currentPos - quantity / 2) : 0;
+            startIndex = fromIdx - quantity / 2 > 0 ? Math.ceil(fromIdx - quantity / 2) : 0;
             endIndex = startIndex + quantity > size ? size : startIndex + quantity;    
             if (endIndex - startIndex < quantity) {
                 startIndex -= quantity - (endIndex - startIndex);
@@ -908,6 +908,7 @@ const getPopupWindowId = async function () {
 }
 
 let sendEvent = (event, forceObject = false) => {
+    console.log(event)
     if (typeof(event) != "object") event = { data: event };
     if (forceObject) event = { data: event };
     port.postMessage(event);
