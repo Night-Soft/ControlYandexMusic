@@ -137,6 +137,11 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 Player.isRepeat = request.controls.repeat;
                 Player.isShuffle = request.controls.shuffle;
 
+                if (request.changeTrack) {
+                    Player.stopUpdater();
+                    Player.setProgress({ position: 0, loaded: 0 });
+                    break;
+                }
                 if (request.progress.duration > 0) {
                     Player.setProgress(request.progress);
                 } else {
@@ -177,15 +182,11 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 Player.speed = request.speed;
                 Player.setProgress(request.progress);
                 break;
-            case "PROGRESS":
+            case "PROGRESS":                
                 if (request.progress.duration === 0) {
                     request.progress.duration = Player.duration;
                 }
                 Player.setProgress(request.progress);
-                break;
-            case "change_track":
-                Player.stopUpdater();
-                Player.setProgress({ position: 0, loaded: 0 });
                 break;
             case "play_error":
                 Player.isPlay = request.isPlaying;
@@ -201,7 +202,7 @@ btnYes.onclick = () => openNewTab("btn-yes")
 
 btnNew.onclick = () => openNewTab("btn-new");
 
-previous.onclick = ()=>{
+previous.onclick = () => {
     if (Player.info.source.type === "radio") {
         sendEvent({ play: Player.index > 0 ? Player.index - 1 : 0 }, true);
         return;
@@ -258,14 +259,14 @@ const controlsContainer = document.querySelector(".controls-container");
 
 let isProgressShoved = false;
 const showProgressDelay = new ExecutionDelay((event) => {
-    if (isProgressShoved) return;
-
     if (hideProgressDelay.isStarted) {
         const lastHide = hideProgressDelay.getFunction().arguments[0].timeStamp;
         const lastShow = event.timeStamp;
         if (lastShow < lastHide) return;
         hideProgressDelay.stop();
     }
+   
+    if (isProgressShoved) return;
 
     isProgressShoved = true;
     controlsContainer.style.overflow = "";
@@ -278,15 +279,15 @@ const showProgressDelay = new ExecutionDelay((event) => {
 
 controlsContainer.onmouseenter = showProgressDelay.start;
 
-const hideProgressDelay = new ExecutionDelay((event) => {
-    if (!isProgressShoved) return;
-    
+const hideProgressDelay = new ExecutionDelay((event) => {    
     if (showProgressDelay.isStarted) {
         const lastShow = showProgressDelay.getFunction().arguments[0].timeStamp;
         const lastHide = event.timeStamp;
         if (lastShow > lastHide) return;
         showProgressDelay.stop();
     }
+    
+    if (!isProgressShoved) return;
 
     isProgressShoved = false;
     controlsContainer.style.overflow = "hidden";

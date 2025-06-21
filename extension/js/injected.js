@@ -10,7 +10,7 @@ let YandexMusicControl = {
         }
         if (this.actions.find(value => value === action) === undefined && typeof action !== "number") return;
         
-        changeTrack(action);
+        sendProgress.stop();
         let promise;
         if (typeof action === 'string') {
             if (action.endsWith("key")) {
@@ -204,6 +204,7 @@ window.addEventListener("message", function (event) {
             YandexMusicControl.play("next");
             break;
         case 'setTime':
+            sendProgress.stop();
             externalAPI.setPosition(event.data.time);
             break;
         case 'toggleLike':
@@ -324,19 +325,9 @@ externalAPI.on(externalAPI.EVENT_TRACK, function () {
     setMediaMetaData();
 });
 
-const changeTrack = (index) => {
-    if (index >= 0) {
-        if (externalAPI.getTrackIndex() == index) return;
-    } else {
-        if (externalAPI.getNextTrack() == null || externalAPI.getPrevTrack() == null) return;
-    }
-    sendProgress.stop();
-    sendMessage("change_track");
-}
-
 const sendProgress = new ExecutionDelay(() => {
     sendMessage("PROGRESS", { progress: externalAPI.getProgress(), });
-}, { isThrottle: true });
+}, { delay: 1000, isThrottle: true, leading: true });
 
 externalAPI.on(externalAPI.EVENT_PROGRESS, function () {
     ; ({ position, loaded } = externalAPI.getProgress())
@@ -373,7 +364,6 @@ const ready = () => {
 
 // if the "trigger" does not exist, it means that the "New Design" is being used.
 if (externalAPI.trigger) {
-    //setTimeout(ready, 1000); // todo
     ready();
 } else {
     externalAPI.on(externalAPI.EVENT_READY, ready);
