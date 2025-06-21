@@ -4,7 +4,7 @@
     "description": "__MSG_appDesc__",
     "short_name": "__MSG_shortName__",
     "default_locale": "en",
-    "version": "4.0.3",
+    "version": "4.0.4",
     "web_accessible_resources": [
         {
             "resources": [
@@ -17,8 +17,8 @@
                 "https://music.yandex.ua/*",
                 "https://music.yandex.ru/*",
                 "https://music.yandex.by/*",
-                "https://avatars.yandex.net/*",
-                "https://next.music.yandex.ru/*"
+                "https://music.yandex.kz/*",
+                "https://avatars.yandex.net/*"
             ]
         }
     ],
@@ -34,7 +34,7 @@
                 "https://music.yandex.ua/*",
                 "https://music.yandex.ru/*",
                 "https://music.yandex.by/*",
-                "https://next.music.yandex.ru/*"
+                "https://music.yandex.kz/*"
             ],
             "run_at": "document_start",
             "js": [
@@ -46,7 +46,7 @@
                 "https://music.yandex.ua/*",
                 "https://music.yandex.ru/*",
                 "https://music.yandex.by/*",
-                "https://next.music.yandex.ru/*"
+                "https://music.yandex.kz/*"
             ],
             "run_at": "document_idle",
             "js": [
@@ -97,7 +97,7 @@
             "https://music.yandex.ua/*",
             "https://music.yandex.ru/*",
             "https://music.yandex.by/*",
-            "https://next.music.yandex.ru/*"
+            "https://music.yandex.kz/*"
         ]
     },
     "content_security_policy": {
@@ -117,7 +117,7 @@
         "https://music.yandex.ua/*",
         "https://music.yandex.ru/*",
         "https://music.yandex.by/*",
-        "https://avatars.yandex.net/*",
-        "https://next.music.yandex.ru/*"
+        "https://music.yandex.kz/*",
+        "https://avatars.yandex.net/*"
     ]
 }
