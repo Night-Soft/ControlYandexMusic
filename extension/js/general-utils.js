@@ -908,7 +908,6 @@ const getPopupWindowId = async function () {
 }
 
 let sendEvent = (event, forceObject = false) => {
-    console.log(event)
     if (typeof(event) != "object") event = { data: event };
     if (forceObject) event = { data: event };
     port.postMessage(event);
