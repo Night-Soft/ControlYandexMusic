@@ -144,7 +144,7 @@ let Slider = class {
             this.currentGroove.style.width = this.position + "%";
             this.handle.style.left = `calc(${x}% - ${this.handle.offsetWidth}px / 2)`;
             this.scale = event;
-            this.#onPositionListeners.forEach(callback => callback(this.position));
+            this.#onPositionListeners.forEach(callback => callback(this.position, this.scale));
             return;
         }
 
@@ -155,11 +155,8 @@ let Slider = class {
         } else if (x < 0) { x = 0; }
 
         x = x * 100 / this.groove.offsetWidth;
-        this.position = x;
-        this.currentGroove.style.width = this.position +"%"
-        this.handle.style.left = `calc(${x}% - ${this.handle.offsetWidth}px / 2)`;
-        this.scale = (x * this.groove.offsetWidth / 100) * 100 / this.groove.offsetWidth;
-        this.#onPositionListeners.forEach(callback => callback(this.position));
+        const scale = (x * this.groove.offsetWidth / 100) * 100 / this.groove.offsetWidth;
+        this.setPosition(scale);
     }
     setTooltipPosition(event) {
         if (isFinite(event)) {
@@ -297,7 +294,10 @@ sliderProgress.onwheel = (event) => {
 
 const prog = document.querySelector(".progress");
 if (prog) {
-    sliderProgress.onPosition((position)=>{
+    sliderProgress.onPosition((position, seconds) => {
+        if (Player.isUpdateTimer) {
+            position = (seconds + 1) * 100 / sliderProgress.maxScale;
+        }
         prog.style.width = position + "%";
     });
 }

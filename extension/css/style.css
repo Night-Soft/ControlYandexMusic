@@ -1117,7 +1117,7 @@ span {
     left: 0px;
     width: 100%;
     height: -webkit-fill-available;
-    overflow-y: auto;
+    overflow-y: hidden;
     overflow-x: hidden;
     background-color: var(--listTrackBackground);
     cursor: pointer;
