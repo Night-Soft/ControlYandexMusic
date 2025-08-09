@@ -71,6 +71,12 @@
     "liked": {
         "message": "Added to my favorites!"
     },
+    "alreadyInFavorites": {
+        "message": " - already in favorites"
+    },
+    "againToRemove": {
+        "message": "Click again to remove the track from your favorites"
+    },
     "disliked": {
         "message": "Removed from my favorites!"
     },
@@ -88,9 +94,6 @@
     },
     "selectTheme": {
         "message": "Select color theme:"
-    },
-    "defaultTheme": {
-        "message": "Default"
     },
     "lightTheme": {
         "message": "Light"
@@ -211,5 +214,14 @@
     },
     "openInCurrentTab": {
         "message": "Open in current tab."
+    },
+    "skipLike": {
+        "message": "If a like has already been given, then pressing the hotkey should not remove it"
+    },
+    "repeatClick1Half": {
+        "message": "Another press within"
+    },
+    "repeatClick2Half": {
+        "message": "seconds removes the like"
     }
 }

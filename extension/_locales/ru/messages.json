@@ -71,6 +71,12 @@
     "liked": {
         "message": "Добавлено в избранное!"
     },
+    "alreadyInFavorites": {
+        "message": " - уже в избранном"
+    },
+    "againToRemove": {
+        "message": "Нажмите еще раз чтобы убрать трек из избранного"
+    },
     "disliked": {
         "message": "Удалено из избранного!"
     },
@@ -88,9 +94,6 @@
     },
     "selectTheme": {
         "message": "Выберите цветовую тему:"
-    },
-    "defaultTheme": {
-        "message": "По умолчанию"
     },
     "lightTheme": {
         "message": "Светлая"
@@ -211,5 +214,14 @@
     },
     "openInCurrentTab": {
         "message": "Открыть в текущей вкладке."
+    },
+    "skipLike": {
+        "message": "Если лайк уже поставлен, то при нажатии горячей клавиши он не должен убираться"
+    },
+    "repeatClick1Half": {
+        "message": "Дополнительное нажатие в течении"
+    },
+    "repeatClick2Half": {
+        "message": "секунд убирает лайк"
     }
 }
