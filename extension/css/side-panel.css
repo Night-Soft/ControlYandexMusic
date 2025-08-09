@@ -8,7 +8,7 @@
 }
 
 .title-list {
-    margin: 5px 4px;
+    padding: 4px;
 }
 
 .list-track::-webkit-scrollbar-track {

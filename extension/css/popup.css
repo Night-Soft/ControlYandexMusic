@@ -239,10 +239,6 @@ body {
     font-family: var(--fontFamily);
 }
 
-.selected-item {
-    border-radius: 5px;
-}
-
 .item-name-track {
     font-size: 0.8rem;
 }
@@ -258,7 +254,7 @@ body {
 }
 
 .title-list {
-    margin: 5px 30px 5px 30px;
+    padding: 4px 30px 4px 30px;
 }
 
 .track-position-top {

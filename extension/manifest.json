@@ -4,7 +4,7 @@
     "description": "__MSG_appDesc__",
     "short_name": "__MSG_shortName__",
     "default_locale": "en",
-    "version": "4.0.4",
+    "version": "4.5.0",
     "web_accessible_resources": [
         {
             "resources": [
@@ -29,6 +29,19 @@
         "service_worker": "js/background.js"
     },
     "content_scripts": [
+        {
+            "matches": [
+                "https://music.yandex.ua/*",
+                "https://music.yandex.ru/*",
+                "https://music.yandex.by/*",
+                "https://music.yandex.kz/*"
+            ],
+            "run_at": "document_start",
+            "world": "MAIN",
+            "js": [
+                "js/externalAPI/content-script/replace-webpack.js"
+            ]
+        },
         {
             "matches": [
                 "https://music.yandex.ua/*",
@@ -84,12 +97,16 @@
             }
         },
         "toggleLike-key": {
-            "description": "Set Like",
+            "description": "Set like",
             "global": true,
             "suggested_key": {
                 "default": "Ctrl+Shift+0",
                 "mac": "Command+Shift+0"
             }
+        },
+        "toggleDislike-key": {
+            "description": "Set dislike",
+            "global": true
         }
     },
     "externally_connectable": {
