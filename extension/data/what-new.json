@@ -1,5 +1,9 @@
 {
     "versions": [
+        ["4.5.0", {
+            "messageEn": "• Added the ability to prevent a like from being removed when pressing the corresponding hotkey again if the like has already been set. <br> • Implemented support for a hotkey for setting a dislike.",
+            "messageRu": "• Добавлена возможность предотвращать снятие лайка при повторном нажатии соответствующей горячей клавиши, если лайк уже установлен. <br> • Реализована поддержка горячей клавиши для установки дизлайка. <a href='chrome://extensions/shortcuts'>настроить</a>"
+        }],
         ["4.0.2", {
             "messageEn": "• Fixed the work 'my wave'.",
             "messageRu": "• Исправлена ​​работа 'моей волны'."

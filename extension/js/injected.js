@@ -1,6 +1,7 @@
 let YandexMusicControl = {
     id: undefined,
     port: undefined,
+    isNewDesign: undefined,
     mediaSession: undefined,
     MediaMetadata: undefined,
     actions: ["prev", "next", "previous-key", "next-key"],
@@ -163,7 +164,17 @@ function toggleLike() {
 let toggleDislike = () => {
     externalAPI.toggleDislike();
     sendMessage("toggleDislike", {
-        disliked: { disliked: externalAPI.getCurrentTrack().disliked, notifyMe: true }
+        disliked: externalAPI.getCurrentTrack().disliked
+    });
+}
+
+let toggleDislikeKey = () => {
+    externalAPI.toggleDislike();
+    sendMessage("toggleDislike", {
+        key: true, 
+        dataKey: "toggleDislike-key",
+        disliked: externalAPI.getCurrentTrack().disliked,
+        currentTrack: externalAPI.getCurrentTrack()
     });
 }
 
@@ -186,6 +197,8 @@ let toggleLikeKey = () => {
         currentTrack: externalAPI.getCurrentTrack()
     });
 }
+
+
 
 window.addEventListener("message", function (event) {
     if (event.source != window) { return; }
@@ -230,6 +243,9 @@ window.addEventListener("message", function (event) {
         case 'toggleLike-key':
             toggleLikeKey();
             break;
+        case 'toggleDislike-key':
+            toggleDislikeKey();
+            break;
     }
 
     if (event.data.id) {
@@ -253,13 +269,58 @@ window.addEventListener("message", function (event) {
         sendMessage("PROGRESS", { progress: externalAPI.getProgress() });
     }
     if (event.data.uploadTracksMeta) {
-        externalAPI.uploadTracksMeta(event.data.uploadTracksMeta).finally(() => {
-            setTimeout(() => {
-                sendMessage("uploadTracksMeta");
-            }, 3000);
+        const {
+            fromIndex,
+            after,
+            before
+        } = getUploadData(event.data.uploadTracksMeta);
+
+        if (fromIndex === undefined) return;
+
+        externalAPI.populate(fromIndex, after, before).then(() => {
+            sendMessage("TRACKS_LIST", {
+                tracksList: externalAPI.getTracksList(),
+                sourceInfo: externalAPI.getSourceInfo(),
+                index: externalAPI.getTrackIndex(),
+            });
+        }).finally(() => {
+            setTimeout(() => { sendMessage("uploadTracksMeta"); }, 3000);
         });
     }
 });
+
+const getUploadData = (data) => {
+    if (typeof data === "string") return getDirectionData(data);
+    if (Array.isArray(data)) {
+        return {
+            fromIndex: data[0],
+            after: data[1],
+            before: data[2]
+        }
+    }
+}
+
+const getDirectionData = (direction = "down") => {
+    const trackIndex = externalAPI.getTrackIndex();
+    const trackslist = externalAPI.getTracksList();
+    let fromIndex;
+    if (direction === "up") {
+        for (let i = trackIndex; i >= 0; i--) {
+            if (trackslist[i] !== null) continue;
+            fromIndex = i;
+            break;
+        }
+    } else if (direction === "down") {
+        for (let i = trackIndex; i < trackslist.length; i++) {
+            if (trackslist[i] !== null) continue;
+            fromIndex = i;
+            break;
+        }
+    }
+    const after = direction === "down" ? 30 : 0;
+    const before = direction === "up" ? 30 : 0;
+    return { fromIndex, after, before }
+}
 
 // change track, tracks list
 externalAPI.on(externalAPI.EVENT_TRACKS_LIST, function () {
@@ -364,7 +425,9 @@ const ready = () => {
 
 // if the "trigger" does not exist, it means that the "New Design" is being used.
 if (externalAPI.trigger) {
+    YandexMusicControl.isNewDesign = false;
     ready();
 } else {
+    YandexMusicControl.isNewDesign = true;
     externalAPI.on(externalAPI.EVENT_READY, ready);
 }

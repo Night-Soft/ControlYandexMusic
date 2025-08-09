@@ -54,18 +54,33 @@
                     <div id="listSettings" class="list-settings">
                         <div class="setting-item">
                             <div class="scale-container">
-                                    <span id="StepChange">Set the change step by which the slider should change when scrolling with a roller:</span>
-                                    <div class="content-setting-item">
-                                        <div class="input-step-content setting-item-hover">
-                                            <span id="SecondsPosition">seconds in position:</span>
-                                            <input class="input-step" type="number" id="PositionStep" value="1" min="1" max="100" />
-                                        </div>
-                                        <div class="input-step-content setting-item-hover">
-                                            <span id="InterestVolume">interest in volume:</Span>
-                                            <input class="input-step" type="number" id="VolumeStep" value="1" min="1" max="10" />
-                                        </div>
+                                <span id="StepChange">Set the change step by which the slider should change when
+                                    scrolling with a roller:</span>
+                                <div class="content-setting-item">
+                                    <div class="input-step-content setting-item-hover">
+                                        <span id="SecondsPosition">seconds in position:</span>
+                                        <input class="input-step" type="number" id="PositionStep" value="1" min="1"
+                                            max="100" />
+                                    </div>
+                                    <div class="input-step-content setting-item-hover">
+                                        <span id="InterestVolume">interest in volume:</Span>
+                                        <input class="input-step" type="number" id="VolumeStep" value="1" min="1"
+                                            max="10" />
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <div class="content-label setting-item-hover">
+                                <label id="SkipLike" for="checkboxSkipLike">SkipLike</label>
+                                <input class="switcher" type="checkbox" id="checkboxSkipLike">
+                            </div>
+                            <div class="content-setting-item">
+                                <div class="input-step-content setting-item-hover">
+                                    <span id="RepeatClick">RepeatClick</span>
+                                    <input class="input-step" type="number" id="RepeatClickTime" value="7" min="1" max="10" />
+                                </div>
+                            </div>
                         </div>
                         <div class="setting-item">
                             <div class="content-label setting-item-hover">
@@ -97,7 +112,7 @@
                                 <span class="subtitle" id="SelectColorTheme">Select color theme:</span>
                                 <div class="content-setting-item default-gradient-container">
                                     <div class="gradients prev-themes">
-                                        <div id="DefaultTheme" class="gradient user-theme-selected ">Default</div>
+                                        <!-- <div id="DefaultTheme" class="gradient user-theme-selected ">Default</div> -->
                                         <div id="LightTheme" class="gradient">Light</div>
                                         <div id="DarkTheme" class="gradient">Dark</div>
                                         <div id="OtherTheme" class="gradient">
@@ -130,14 +145,16 @@
                                     <div class="input-step-content setting-item-hover">
                                         <span id="WidthPopup">width:</span>
                                         <div class="input-step-container">
-                                            <input class="input-step" type="number" id="PopupWidth" value="380" min="250" max="800" />
+                                            <input class="input-step" type="number" id="PopupWidth" value="380"
+                                                min="250" max="800" />
                                             <span class="span-px">px</span>
                                         </div>
                                     </div>
                                     <div class="input-step-content setting-item-hover">
                                         <span id="HeightPopup">height:</span>
                                         <div class="input-step-container">
-                                            <input class="input-step" type="number" id="PopupHeight" value="580" min="110" max="800" />
+                                            <input class="input-step" type="number" id="PopupHeight" value="580"
+                                                min="110" max="800" />
                                             <span class="span-px">px</span>
                                         </div>
                                     </div>
@@ -249,7 +266,7 @@
                 </div>
                 <span class="duration">00:00</span>
             </div>
-    
+
             <div class="content content-btn">
                 <div id="Previous" class="control control-popup">
                     <svg class="svg-prev" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">

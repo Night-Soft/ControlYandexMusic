@@ -30,7 +30,7 @@ let Slider = class {
         groove.addEventListener("mouseleave", this.#mouseleave.bind(this));
         groove.addEventListener("mousedown", this.#mousedown.bind(this));
         groove.addEventListener("mouseup", this.#mouseup.bind(this));
-        groove.addEventListener("wheel", this.#wheel.bind(this));
+        groove.addEventListener("wheel", this.#wheel.bind(this), { passive: false });
 
         groove.addEventListener("mouseenter", this.#delayTootip);
     }

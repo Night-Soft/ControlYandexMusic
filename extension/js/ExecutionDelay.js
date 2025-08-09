@@ -3,10 +3,10 @@ const ExecutionDelay = class {
     #delay;
     #isThrottle;
     #context;
-    #args;
     #timeoutId;
     #promise;
     #resolve;
+    #reject;
     #fulfilled;
     #isTimeout = false;
 
@@ -40,6 +40,28 @@ const ExecutionDelay = class {
         }
     }
 
+    #arguments = [];
+    get #args() { return this.#arguments.length > 0 ? this.#arguments : this.#savedArgs; };
+    set #args(value) { this.#arguments = value; };
+
+    #savedArgs = [];
+    saveArguments = (...args) => {
+        this.#savedArgs = args;
+        return { start: this.start, execute: this.execute };
+    }
+
+    nextStart = async (...args) => {
+        if (this.#promise) {
+            return new Promise(async (resolve, reject) => {
+                this.#promise
+                    .then(() => resolve(this.start(...args)))
+                    .catch(reject);
+            });
+        }
+
+        return this.start(...args);
+    }
+
     get delay() { return this.#delay; }
     set delay(value) {
         if (typeof value !== 'number') { throw new TypeError(`The '${value}' is not 'number'`); }
@@ -58,75 +80,79 @@ const ExecutionDelay = class {
     getFunction = () => {
         return {
             function: this.#callback,
-            arguments: this.#args,
-            context: this.#context
+            arguments: this.#arguments,
+            context: this.#context,
+            savedArgs: this.#savedArgs
         }
     }
+
     setFunction = (callback, ...args) => {
         if (typeof callback != 'function') { throw new TypeError(`The '${callback}' is not a function.`); }
         this.#callback = callback;
-        if (args.length > 0) this.#args = args;
-        return {
-            start: this.start,
-            execute: this.execute,
-            setContext: this.setContext
-        };
+        this.#savedArgs = args;
+
+        return { start: this.start, execute: this.execute, setContext: this.setContext }
     }
 
-    setArgumetns = (...args) => {
-        if (args.length == 0) { return false }
-        this.#args = args;
-        return {
-            start: this.start,
-            execute: this.execute
-        };
-    }
-
-    clearArguments = () => { this.#args = undefined; }
+    clearArguments = () => { this.#savedArgs = []; }
 
     getContext = () => { return this.#context; }
     setContext = (context) => {
         if (typeof context != 'object' && context != null) {
             throw new TypeError(`The context is '${typeof context}', must be 'object or null.`);
         }
+
         this.#context = context;
-        return {
-            start: this.start,
-            execute: this.execute
-        };
+
+        return { start: this.start, execute: this.execute }
+    }
+
+    #apply = (args = this.#args) => {
+        let isError = false;
+        let result;
+        try {
+            result = this.#callback.apply(this.#context, args);
+        } catch (error) {
+            isError = true;
+            result = error;
+        }
+
+        isError ? this.#reject?.(result) : this.#resolve?.(result);
+        return result;
+    }
+
+    #timeout = () => {
+        this.#isTimeout = false;
+
+        if (typeof this.#resolve !== 'function') return;
+
+        this.#apply();
+
+        this.#resolve = null;
+        this.#reject = null;
+        this.#fulfilled = null;
+        this.#promise = null;
+
+        if (this.#isThrottle) this.#createTimeout();
     }
 
     #createTimeout = () => {
         clearTimeout(this.#timeoutId);
         this.#isTimeout = true;
 
-        this.#timeoutId = setTimeout(() => {
-            this.#isTimeout = false;
-            this.#promise = null;
-            this.#fulfilled = null;
-
-            if (typeof this.#resolve !== 'function') return;
-
-            let result;
-            try {
-                result = this.#callback.apply(this.#context, this.#args);
-            } catch (error) {
-                result = error;
-            }
-
-            this.#resolve(result);
-            this.#resolve = null;
-
-            if (this.#isThrottle) this.#createTimeout();
-        }, this.#delay);
+        this.#timeoutId = setTimeout(this.#timeout, this.#delay);
     }
+
     #createPromise = (needTimeout = false) => {
-        return this.#promise = new Promise((resolve) => {
+        this.#promise = new Promise((resolve, reject) => {
             // this.#fulfilled - function for set promise state to fulfilled with stop().
             this.#fulfilled = (message) => { resolve({ causeStops: message }); }
             this.#resolve = resolve;
-            if (needTimeout) this.#createTimeout(resolve);
+            this.#reject = reject;
+            if (needTimeout) this.#createTimeout();
         });
+
+        return this.#promise;
     }
     /**
      * Initiates function execution after the specified delay.
@@ -141,8 +167,7 @@ const ExecutionDelay = class {
             if (this.#isTimeout && this.#promise) return this.#promise;
             if (!this.#isTimeout && !this.#promise && this.leading) {
                 this.#createTimeout();
-                const result = this.#callback.apply(this.#context, this.#args);
-                return Promise.resolve(result);
+                return Promise.resolve(this.#apply());
             }
             if (this.#isTimeout && this.#promise === null) {
                 return this.#createPromise(false);
@@ -155,8 +180,7 @@ const ExecutionDelay = class {
                 return this.#promise;
             } else if (this.leading && !this.#resolve && !this.#isTimeout) {
                 this.#createTimeout();
-                const result = this.#callback.apply(this.#context, this.#args);
-                return Promise.resolve(result);
+                return Promise.resolve(this.#apply());
             }
         }
 
@@ -171,10 +195,11 @@ const ExecutionDelay = class {
     execute = (...args) => {
         this.stop("Execute now!");
         if (typeof this.#callback != 'function') { throw new Error('The function is missing.'); }
+
         if (args.length > 0) {
-            return this.#callback.apply(this.#context, args);
+            return this.#apply(args);
         }
-        return this.#callback.apply(this.#context, this.#args);
+        return this.#apply(this.#savedArgs);
     }
 
     /**
@@ -186,8 +211,9 @@ const ExecutionDelay = class {
         this.#isTimeout = false;
         this.#promise = null;
         this.#resolve = null;
+        this.#reject = null;
 
-        if (typeof this.#fulfilled == 'function') {
+        if (typeof this.#fulfilled === 'function') {
             this.#fulfilled(cause);
             this.#fulfilled = undefined;
         }

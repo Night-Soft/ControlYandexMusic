@@ -22,8 +22,6 @@ let listsSortcutKeys = document.getElementsByClassName("list-shortcut-keys")[0];
 let selectedShortcutKey = document.getElementsByClassName("select-shortcut-key")[0];
 let gitBtn = document.querySelector(".github-btn .btn ");
 
-let isMenuListOpen = false;
-
 gitBtn.onclick = () => {
     chrome.tabs.create({
         url: "https://github.com/Night-Soft/ControlYandexMusic"
@@ -260,15 +258,11 @@ hamburgerMenuList.onclick = () => {
     toggleListMenu();
 }
 
-let isFirstScroll = false;
 let firstScroll = () => {
-    if (!isFirstScroll) {
-        if (Player.info.tracks.length > 0) {
-            requestIdleCallback(()=>{
-                EventEmitter.emit("playlistIsOpen");
-            });
-        }
-        isFirstScroll = true;
+    if (!playlist.isInit && Player.info.tracks.length > 0) {
+        requestIdleCallback(() => {
+            EventEmitter.emit("playlistIsOpen");
+        });
     }
 }
 
@@ -282,7 +276,7 @@ let listMenuToggleAnim = new ToggleAnimation(modalListMenu, {
     close: "opacity-reverse",
     display: {
         open: "flex",
-        close: "none"
+        close: ""
     },
     onOpenEnd() { firstScroll() },
     onendRemove: false
@@ -298,13 +292,17 @@ let posBottomToggleAnim = new ToggleAnimation(trackPositionBottom, {
     open: "slide-left-out",
 });
 
-let toggleListMenu = () => {
-    hamburgerMenuList.classList.toggle("change-list");
-    playlistToggleAnim.toggle();
-    listMenuToggleAnim.toggle();
+let toggleListMenu = (toggle = !listMenuToggleAnim.isOpen) => {
+    hamburgerMenuList.classList.remove ("change-list");
+    hamburgerMenuList.classList.toggle("change-list", toggle);
+    
+    const action = toggle ? "open" : "close";
+    playlistToggleAnim[action]();
+    listMenuToggleAnim[action]();
 
-    if (isTrackPosition === "top") posTopToggleAnim.toggle();
-    if (isTrackPosition === "bottom") posBottomToggleAnim.toggle();
+    if (isTrackPosition === "top") posTopToggleAnim[action]();
+    if (isTrackPosition === "bottom") posBottomToggleAnim[action]();
+    return listMenuToggleAnim.isOpen;
 }
 
 let menuToggleAnim = new ToggleAnimation(containerMenu, {

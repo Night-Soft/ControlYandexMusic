@@ -96,77 +96,342 @@ let LongPressElement = class {
     }
 }
 
-const LivePlaylist = class {
-    elements = new Map();
-    clear() {
-        this.elements.forEach(({ itemTrack }) => {
-            itemTrack.remove();
-        });
-        this.elements.clear();
-        this.#minIndex = undefined;
-        this.#maxIndex = undefined;
-        this.#firstElement = undefined;
-        this.#lastElement = undefined;
-    }
-    
+const Playlist = class {
     #minIndex;
     #maxIndex;
     get minIndex() { return this.#minIndex; }
     get maxIndex() { return this.#maxIndex; }
-    
-    #firstElement;
-    #lastElement;
-    get firstElement() { return this.#firstElement; }
-    get lastElement() { return this.#lastElement; }
 
-    updateMinMaxIndex(value) {
-        this.#minIndex = Math.min(...Array.from(this.elements.keys()));
-        this.#maxIndex = Math.max(...Array.from(this.elements.keys()));
-        this.#firstElement = this.elements.get(this.#minIndex);
-        this.#lastElement = this.elements.get(this.#maxIndex);
+    get isFullList() {
+        const { notCreated } = getUnrealizedIndexes(
+            Player.possibleTracks.minIndex,
+            Player.possibleTracks.maxIndex
+        );
+
+        return notCreated.length === 0;
+    }
+
+    #isScrollToCenter = false;
+    get isScrollToCenter() { return this.#isScrollToCenter }
+    set isScrollToCenter(value) {
+        if (value === this.#isScrollToCenter) return
+
+        this.#isScrollToCenter = value;
+        if (value === false) return;
+        this.#isInit && queueMicrotask(this.#scrollToCenter);
+    }
+    #scrollToCenter = () => {
+        this.#isScrollToCenter = false;
+        scrollToCenter();
+    }
+
+    #isInit = false;
+    get isInit() { return this.#isInit; }
+    init() {
+        if (this.#isInit) return;
+
+        if (Extension.windowName === "extension") {
+            updatePlaylistRects.execute({ type: "resize" });
+        }
+
+        EventEmitter.on("playlistIsOpen", () => {
+            const addScroll = () => {
+                listTracks.addEventListener("scroll", listTracksOnScroll);
+                listTracks.removeEventListener("scrollend", addScroll);
+                window.addEventListener("resize", updatePlaylistRects.start);
+                updatePlaylistRects.start({ type: "resize" });
+                clearTimeout(timeoutId);
+                this.#isInit = true;
+            }
+
+            let timeoutId = setTimeout(addScroll, 1500);
+
+            listTracks.addEventListener("scrollend", addScroll);
+            if (this.#isScrollToCenter) {
+                this.#isScrollToCenter = false;
+                scrollToCenter();
+            }
+        }, true);
+    }
+
+    get isOpen() { return listTracksContainer.style.display !== "" }
+    open(withAnim) {
+        if (withAnim) {
+            if (Extension.windowName === "extension") {
+                toggleListMenu(true);
+            } else {
+                togglePlaylist(true);
+            }
+            return;
+        }
+        listTracksContainer.style.display = "flex";
+    }
+    hide(withAnim) {
+        if (withAnim) {
+            if (Extension.windowName === "extension") {
+                toggleListMenu(false);
+            } else {
+                togglePlaylist(false);
+            }
+            return;
+        }
+        listTracksContainer.style.display = "";
+    }
+
+    elements = new BindMap(new Map(), this, {
+        set(key) { // key === index
+            if (Number.isFinite(this.#maxIndex) === false) {
+                this.#maxIndex = key;
+                this.elements.last = this.elements.get(key);
+            }
+            if (Number.isFinite(this.#minIndex) === false) {
+                this.#minIndex = key;
+                this.elements.first = this.elements.get(key);
+            }
+            this.updateMinMaxIndex(key);
+        },
+        delete(key) {
+            this.elements.get(key)?.item.remove();
+            const indexes = Array.from(this.list.keys());
+            const splicedIndexes = indexes.toSpliced(indexes.indexOf(key), 1);
+            if (splicedIndexes.length === 0) {
+                console.warn("delete error");
+                return;
+            }
+            const minIndex = Math.min(...splicedIndexes);
+            const maxIndex = Math.max(...splicedIndexes);
+            this.updateMinMaxIndex(minIndex);
+            this.updateMinMaxIndex(maxIndex);
+        }
+    }, false);
+    #createRectsForPlaylist() {
+        const setRects = function () {
+            list = listTracks.getClientRects()[0];
+            title = tracksListTitle.getClientRects()[0];
+            container = listTracksContainer.getClientRects()[0];
+
+            if (container.height < 100) {
+                container.height = document.body.offsetHeight - container.top;
+                list.height = document.body.offsetHeight - list.top;
+            }
+        }
+
+        let title, list, container;
+
+        const rects = {
+            get title() {
+                if (title === undefined) this.update();
+                return title;
+            },
+            get list() {
+                if (list === undefined) this.update();
+                return list;
+            },
+            get container() {
+                if (container === undefined) this.update();
+                return container;
+            },
+            update() {
+                if (!Player.playlist.isOpen) {
+                    Player.playlist.open();
+
+                    setRects();
+
+                    Player.playlist.hide();
+                    return;
+                }
+                setRects();
+            }
+        }
+
+        return rects;
+    }
+    rects = this.#createRectsForPlaylist();
+    // elements (index) that will be created after updating the track list
+    waitingElements = new Set();
+    clear() {
+        this.elements.forEach(({ item }) => {
+            item.remove();
+        });
+
+        this.elements.clear();
+
+        this.#minIndex = undefined;
+        this.#maxIndex = undefined;
+        this.elements.first = undefined;
+        this.elements.last = undefined;
+    }
+
+    updateMinMaxIndex(index) {
+        if (index > this.#maxIndex) {
+            this.#maxIndex = index;
+            this.elements.last = this.elements.get(this.#maxIndex);
+        }
+        if (index < this.#minIndex) {
+            this.#minIndex = index;
+            this.elements.first = this.elements.get(this.#minIndex);
+        }
     }
 
     // The node before which newNode is inserted.
-    getReferenceElement(currentIndex) { 
+    getReferenceElement(currentIndex) {
         if (currentIndex < this.#maxIndex) {
             for (let i = currentIndex + 1; i <= this.#maxIndex; i++) {
-                if(this.elements.has(i)) return this.elements.get(i).itemTrack;
+                if (this.elements.has(i)) {
+                    return this.elements.get(i).item;
+                }
             }
-            const itemTrack = this.elements.get(this.#minIndex)?.itemTrack;
-            return itemTrack ? itemTrack : null;
+            const item = this.elements.get(this.#minIndex)?.item;
+            return item ? item : null;
         }
         return null;
     }
 
-    getIndexes = (fromIdx, quantity = 10, insertDirection = "center") => { 
-        let startIndex, endIndex;
-        const size = Player.list.tracks.size;
+    constructor() {
+        Object.defineProperties(this.elements, {
+            updateRects: {
+                value() {
+                    if (!playlist.isOpen) {
+                        playlist.open();
+                        this.forEach(value => value.rect = value.item.getClientRects()[0]);
+                        playlist.hide();
+                        return;
+                    }
+                    this.forEach(value => value.rect = value.item.getClientRects()[0]);
+                }
+            },
+            getConsistent: {
+                value(fromIndex, toIndex) {
+                    fromIndex ??= playlist.minIndex;
+                    toIndex ??= playlist.maxIndex;
+                    const minIndex = playlist.minIndex;
+                    const maxIndex = playlist.maxIndex;
 
-        if (quantity > size) quantity = size;
+                    if (toIndex > maxIndex) toIndex = maxIndex;
+                    if (fromIndex < minIndex) fromIndex = minIndex;
 
-        if (insertDirection === "up") {
-            startIndex = fromIdx - quantity > 0 ? fromIdx - quantity : 0;
-            endIndex = startIndex === 0 ? quantity : startIndex + quantity;
-        } else if (insertDirection === "down"){
-            startIndex = fromIdx;
-            endIndex = fromIdx + quantity < size ? fromIdx + quantity : size;
-        } else if (insertDirection === "center") {
-            startIndex = fromIdx - quantity / 2 > 0 ? Math.ceil(fromIdx - quantity / 2) : 0;
-            endIndex = startIndex + quantity > size ? size : startIndex + quantity;    
-            if (endIndex - startIndex < quantity) {
-                startIndex -= quantity - (endIndex - startIndex);
+                    const { notCreated, unloaded } = getUnrealizedIndexes(fromIndex, toIndex);
+
+                    return {
+                        is: notCreated.length === 0 && unloaded.length === 0,
+                        notCreated,
+                        unloaded
+                    }
+                },
+                first: { writable: true, configurable: true },
+                last: { writable: true, configurable: true }
+            }
+        });
+
+        Object.defineProperties(this.waitingElements, {
+            include: {
+                value(...args) {
+                    if (Array.isArray(args[0])) args = args[0];
+                    args.forEach(v => this.add(v));
+                }
+            },
+            exclude: {
+                value(...args) {
+                    if (Array.isArray(args[0])) args = args[0];
+                    args.forEach(v => this.delete(v));
+                }
+            },
+            create: {
+                value() {
+                    const indexesForCreated = [];
+                    this.forEach(index => {
+                        if (
+                            !playlist.elements.has(index) &&
+                            Player.possibleTracks.list.has(index)
+                        ) indexesForCreated.push(index);
+                    });
+
+                    addPlaylistElements(indexesForCreated);
+                    this.exclude(indexesForCreated);
+                }
+            }
+        });
+    }
+}
+
+const BindMap = class {
+    #createProxyElements = (newMap = new Map(), methods, isBefore) => {
+        const set = (target) => {
+            return (key, value) => {
+                let result;
+                if (isBefore) {
+                    if (methods.has("set")) methods.get("set")(key, value);
+                    result = target.set(key, value);
+                } else {
+                    result = target.set(key, value);
+                    if (methods.has("set")) methods.get("set")(key, value);
+                }
+
+                return result;
+            }
+        }
+        const clear = (target) => {
+            return () => {
+                let result;
+                if (isBefore) {
+                    if (methods.has("clear")) methods.get("clear")(target);
+                    result = target.clear();
+                } else {
+                    result = target.clear();
+                    if (methods.has("clear")) methods.get("clear")(target);
+                }
+
+                return target.clear();
+            }
+        }
+        const del = (target) => {
+            return (key) => {
+                let result;
+                if (isBefore) {
+                    if (methods.has("delete")) methods.get("delete")(key, target);
+                    result = target.delete(key);
+                } else {
+                    result = target.delete(key);
+                    if (methods.has("delete")) methods.get("delete")(key, target);
+                }
+                return result;
             }
         }
 
-        const indexesForCreated = [];
-        for (let i = startIndex; i < endIndex; i++) {
-            if (!this.elements.has(i) && Player.list.tracks.has(i)) {
-                indexesForCreated.push(i);
+        const methodCache = new Map();
+        return new Proxy(newMap, {
+            get(target, prop) {
+                if (methodCache.has(prop)) return methodCache.get(prop);
+                if (prop === "size") return target[prop];
+                if (!Map.prototype[prop]) return target[prop];
+
+                switch (prop) {
+                    case "set":
+                        methodCache.set(prop, set(target));
+                        return methodCache.get(prop);
+                    case "clear":
+                        methodCache.set(prop, clear(target));
+                        return methodCache.get(prop);
+                    case "delete":
+                        methodCache.set(prop, del(target));
+                        return methodCache.get(prop);
+                }
+
+                const value = Reflect.get(...arguments);
+                if (typeof value !== 'function') return value;
+
+                methodCache.set(prop, value.bind(target));
+                return methodCache.get(prop);
             }
+        });
+    }
+
+    constructor(map, target, methods, isBefore = true) {
+        const bindedMethods = new Map();
+        for (const key of Object.keys(methods)) {
+            bindedMethods.set(key, methods[key].bind(target));
         }
-        
-        if (indexesForCreated.length === 0) return;
-        return indexesForCreated;
+        return this.#createProxyElements(map, bindedMethods, isBefore);
     }
 }
 
@@ -197,7 +462,7 @@ const Component = class {
         template.forEach((data, index) => {
             if (Array.isArray(data)) this.#getVarsFromTemplate(data);
             if (typeof data === "string") this.#addVars(data);
-            if(typeof data === "object" && index === 1) {
+            if (typeof data === "object" && index === 1) {
                 Object.entries(data).forEach((value) => {
                     if (typeof value[1] === "string") this.#addVars(value[1]);
                 });
@@ -210,8 +475,8 @@ const Component = class {
         if (typeof strKey === 'string') {
             const value = predicate[strKey];
             return value ? value : String(value);
-        } 
-        if(Array.isArray(strKey)) {
+        }
+        if (Array.isArray(strKey)) {
             const value = strKey.reduce((prev, key, i) => i === 0 ? predicate[key] : prev[key], 0);
             return value ? value : String(value);
         }
@@ -262,9 +527,9 @@ const Component = class {
         let element = document.createElement(tag);
         this.#innerAttributes.set(element, arguments[0]);
 
-        if (Array.isArray(tagInside)) { 
+        if (Array.isArray(tagInside)) {
             element.appendChild(this.#createOnlyTag(tagInside));
-        } 
+        }
         otherTag.forEach(tags => element.appendChild(this.#createOnlyTag(tags)));
         return element;
     }
@@ -335,7 +600,7 @@ const Component = class {
             }
         }
 
-        if (element && predicate) { 
+        if (element && predicate) {
             [...element.children].forEach((element) => {
                 this.#createTag(this.#innerAttributes.get(element), predicate, element);
             });
@@ -343,7 +608,7 @@ const Component = class {
         } else {
             element = document.createElement(tag[0]);
             this.#setAttributes(Object.entries(attr), element, predicate);
-            if (Array.isArray(tagInside)) { 
+            if (Array.isArray(tagInside)) {
                 element.appendChild(this.#createTag(tagInside, predicate));
             }
 
@@ -371,7 +636,7 @@ const Component = class {
     }
 
     appendToElement(element, callback) {
-        if(typeof callback === "function") {
+        if (typeof callback === "function") {
             this.nodes.forEach((value, index, array) => {
                 callback(element, index, array);
                 element.appendChild(value);
@@ -395,7 +660,7 @@ const ToggleAnimation = class {
         params: []
     };
     onendRemove = true;
-    #isOpen = false;
+    isOpen = false;
     onOpenEnd;
     onCloseEnd;
 
@@ -440,10 +705,10 @@ const ToggleAnimation = class {
 
     }
     #setClass(cssClass, currentClass) {
-        if(typeof cssClass === "string") {
-            currentClass.name = cssClass;  
-        } else if(typeof cssClass === "object") {
-            currentClass.name = cssClass.name;  
+        if (typeof cssClass === "string") {
+            currentClass.name = cssClass;
+        } else if (typeof cssClass === "object") {
+            currentClass.name = cssClass.name;
             currentClass.params = Object.entries(cssClass).filter(value => value[0] !== "name");
         }
     }
@@ -474,7 +739,7 @@ const ToggleAnimation = class {
         }
         this.element.addEventListener("animationend", this.openAnimationend, { once: true });
 
-        this.#isOpen = true;
+        this.isOpen = true;
     }
     close = () => {
         this.element.classList.remove(this.closeClass.name);
@@ -487,18 +752,18 @@ const ToggleAnimation = class {
 
         this.element.classList.add(this.closeClass.name);
         this.element.addEventListener("animationend", this.closeAnimationend, { once: true });
-        
-        this.#isOpen = false;
+
+        this.isOpen = false;
     }
 
     toggle() {
-        if(this.#isOpen) {
+        if (this.isOpen) {
             this.close();
         } else {
             this.open();
         }
     }
-    
+
 }
 
 const supported = typeof window == 'undefined' ? true : "onscrollend" in window;
@@ -528,15 +793,15 @@ if (!supported) {
         if (!listeners.has(this)) return;
 
         listeners.set(this, listeners.get(this) - 1);
-        if (listeners.get(this) > 0) return; 
+        if (listeners.get(this) > 0) return;
 
         listeners.delete(this);
         this.removeEventListener('scroll', scrollCallback);
     }
 
-    function interceptListeners(proto, method, callback) { 
+    function interceptListeners(proto, method, callback) {
         const listener = proto[method];
-        proto[method] = function () { 
+        proto[method] = function () {
             const args = [...arguments];
             listener.apply(this, args); // add native listener
             if (args[0] !== "scrollend") return;
@@ -606,11 +871,11 @@ let onMessageAddListener = () => {
     });
 }
 
-const windowName = function (pathname = window.location.pathname ) {
+const windowName = function (pathname = window.location.pathname) {
     if (pathname === '/index.html') return "extension";
     return pathname == '/side-panel.html' ? "side-panel" : "popup";
 }
- 
+
 /**
  * 
  * @param {string} text - your text
@@ -622,7 +887,7 @@ let showNotification = (text, ms, isMouseEvent) => {
     if (text != undefined) { notification.params.text = text; }
     if (ms == undefined) {
         ms = text.length * 66 + 1000; // + 1000ms for focus
-        if (ms <= 3500) {  
+        if (ms <= 3500) {
             ms = 3500;
         }
     }
@@ -670,7 +935,7 @@ const NotificationControl = class {
             isShown: {
                 get() { return instance.isShown },
                 enumerable: true
-            }            
+            }
         });
 
         if (this.#buttonElement) {
@@ -680,7 +945,7 @@ const NotificationControl = class {
                 },
                 set(target, property, newValue, receiver) {
                     let result;
-                    if(property === "text") {
+                    if (property === "text") {
                         result = Reflect.set(target, property, newValue, receiver);
                         instance.#buttonElement.innerText = newValue;
                     }
@@ -836,7 +1101,7 @@ const NotificationControl = class {
 const updatePlaylistEmptyNotification = (() => {
     let notification;
     return (index) => {
-        if (index == -1) {
+        if (index === -1) {
             notification = showNotification(translate("playlistEmpty"), 7000);
             return;
         }
@@ -857,7 +1122,7 @@ const updatePlaylistEmptyNotification = (() => {
  *  id, pinned, active, status, title, url, ...
  * @returns {object | boolean}
  */
-let getYandexMusicTab = (...params) => { 
+let getYandexMusicTab = (...params) => {
     return new Promise(function (resolve) {
         chrome.tabs.query({
             windowType: "normal"
@@ -871,7 +1136,7 @@ let getYandexMusicTab = (...params) => {
             });
             const lastTab = tabs[tabs.length - 1];
 
-            if(params[0] === null) {
+            if (params[0] === null) {
                 resolve(lastTab);
                 return;
             }
@@ -908,15 +1173,47 @@ const getPopupWindowId = async function () {
 }
 
 let sendEvent = (event, forceObject = false) => {
-    if (typeof(event) != "object") event = { data: event };
+    if (typeof (event) != "object") event = { data: event };
     if (forceObject) event = { data: event };
     port.postMessage(event);
 }
 
+/**
+* Loads track data into the current playlist starting from a specified index.
+*
+* @param {number|string} fromIndex - The starting point for loading tracks.
+*   - If number: The playlist index from which to start loading tracks (0-based)
+*   - If string: Direction indicator ("up" or "down") for directional loading
+* @param {number} [after] - Optional. The number of tracks to load after the `fromIndex`.
+* @param {number} [before] - Optional. The number of tracks to load before the `fromIndex`.
+*
+* @returns {Promise<true>} A promise that resolves when the data has been loaded.
+*/
+const populate = (fromIndex, after = 0, before = 0) => {
+    if (Player.canUploadTracks === false) return;
+    Player.canUploadTracks = false;
+
+    if (typeof fromIndex === "string") {
+        sendEvent({ uploadTracksMeta: fromIndex }, true);
+        return;
+    }
+    if (typeof fromIndex === "number") {
+        sendEvent({ uploadTracksMeta: [fromIndex, after, before] }, true);
+    }
+}
+
+const getDataForPopulate = (unloaded = []) => {
+    return {
+        minIndex: Math.min(...unloaded),
+        maxIndex: Math.max(...unloaded),
+        quantity: unloaded.length
+    }
+}
+
 let sendEventBackground = (event, callback) => { // event should be as object.
     chrome.runtime.sendMessage(event, response => {
-        if(callback){
-            if(callback.name === "setOptions" ) {
+        if (callback) {
+            if (callback.name === "setOptions") {
                 callback(response.options);
                 return;
             }
@@ -974,7 +1271,7 @@ const CoverAnimation = {
     element: undefined
 }
 
-const openCoverAnimate = function(element, reverse = false) {
+const openCoverAnimate = function (element, reverse = false) {
     function offset(el) {
         let rect = el.getBoundingClientRect(),
             scrollLeft = document.documentElement.scrollLeft,
@@ -1031,7 +1328,7 @@ const toggleListLikes = (item, isLike, isDislike) => {
 
 let toggleDislike = (isDisliked, notifyMe = false, toggleInList = true) => {
     selectedItem.style.filter = isDisliked ? "opacity(0.5)" : "";
-    dislike.style.backgroundImage = `url(img/dislike${isDisliked ? "d" : ""}.svg)`;
+    dislike.style.backgroundImage = `url(img/dislike${isDisliked ? "d" : ""}.png)`;
     notifyMe && showNotification(translate(`${isDisliked ? "addedTo" : "removeFrom"}BlackList`));
     if (toggleInList === false) return;
     Player.likeItem.classList.remove("list-item-liked", "list-item-not-liked", "list-item-disliked");
@@ -1043,7 +1340,7 @@ const createPopup = function () {
         (result) => {
             if (result.exists) {
                 const notification = showNotification(result.message, undefined, false);
-                const toggleControl  = notification.enableMouseEvent.bind(null, true);
+                const toggleControl = notification.enableMouseEvent.bind(null, true);
                 notification.onfinish = toggleControl;
                 notification.oncancel = toggleControl;
             }
@@ -1051,7 +1348,7 @@ const createPopup = function () {
 }
 
 const getCurrentTab = async () => {
-    const tabs = await chrome.tabs.query({active: true, windowType: "normal"});
+    const tabs = await chrome.tabs.query({ active: true, windowType: "normal" });
     const url = `chrome-extension://${chrome.runtime.id}`;
 
     for (const tab of tabs) {
@@ -1071,7 +1368,7 @@ let openNewTab = (btn) => {
     appQuestion.style.display = "none";
     yesNoNew.style.display = "none";
     document.querySelector(".open-in-tab").style.display = "none";
-    
+
     if (btn === "btn-yes") {
         Promise.all([getYandexMusicTab(), getCurrentTab()]).then(([tabIdYm, tabIdCurrent]) => {
             if (typeof tabIdYm === 'number') {
@@ -1101,8 +1398,8 @@ let openNewTab = (btn) => {
 
 let showNoConnected = () => {
     getYandexMusicTab().then((tabId) => {
-        if (port.isConnection) return; 
-        
+        if (port.isConnection) return;
+
         if (tabId) {
             appDetected.innerText = translate("appDetected");
             appQuestion.innerText = translate("appQuestion");
@@ -1145,7 +1442,7 @@ let splitSeconds = (currentSeconds) => {
             time.push(0);
         }
     });
-    
+
     return { hours: time[0], minutes: time[1], seconds: time[2] }
 }
 
@@ -1164,9 +1461,9 @@ let twoDigits = function (...args) {
 }
 
 let getDurationAsString = (duration = 0) => {
-    const {seconds, minutes, hours} = splitSeconds(duration);
+    const { seconds, minutes, hours } = splitSeconds(duration);
     return hours > 0 ? twoDigits(seconds, minutes, hours) : twoDigits(seconds, minutes);
-}    
+}
 
 let setMediaData = (trackTitle, trackArtists, iconTrack) => {
     artistsName[0].innerText = trackArtists;

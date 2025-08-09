@@ -109,6 +109,32 @@ const getTextColor = (colors = []) => {
     return sum >= 382.5 ? "dark" : "light";
 }
 
+const createSelection = function () {
+    if (Extension.windowName === 'extension') {
+        const { color, name, gradient } = Options.theme;
+
+        otherTheme.style.display = "flex";
+        otherTheme.style.background = gradient;
+        otherThemeName.innerText = name;
+
+        if (otherTheme.classList.contains("user-theme-selected") == false) {
+            otherTheme.classList.add("user-theme-selected");
+        }
+        if (color == "dark") {
+            otherThemeName.style.color = Themes.light.color;
+            rootCss.style.setProperty('--sideHoverColor', "#000000");
+            rootCss.style.setProperty('--settingsСolor', "#000000");
+        } else {
+            otherThemeName.style.color = Themes.dark.colors.white;
+            rootCss.style.setProperty('--settingsСolor', "#ffffff");
+            rootCss.style.setProperty('--sideHoverColor', "#ffffff");
+        }
+
+        clearSelection();
+        otherTheme.classList.add("user-theme-selected");
+    }
+}
+
 const clearSelection = function () {
     for (element of prevThemes.children) {
         element.classList.remove("user-theme-selected");
@@ -116,6 +142,14 @@ const clearSelection = function () {
 }
 
 let setTheme = (theme = "default", windowName = "default") => {
+    if(theme === "Old") {
+        theme = "default";
+        OtherTheme.index = 0;
+        OtherTheme.name = "Old";
+        OtherTheme.color = "light";
+        OtherTheme.gradient = "linear-gradient(0deg, rgb(255, 85, 85) 0%, rgb(255, 221, 0) 100%)";
+    }
+    
     const light = () => {
         rootCss.style.setProperty('--slider', '#dcdcdc');
         rootCss.style.setProperty('--handleWhite', '#ffffff');
@@ -198,27 +232,8 @@ let setTheme = (theme = "default", windowName = "default") => {
         OtherTheme.color = color;
         OtherTheme.gradient = gradient;
 
-        if (Extension.windowName == 'extension') {
-            otherTheme.style.display = "flex";
-            otherTheme.style.background = gradient;
-            otherThemeName.innerText = name;
-
-            if (otherTheme.classList.contains("user-theme-selected") == false) {
-                otherTheme.classList.add("user-theme-selected");
-            }
-            if (color == "dark") {
-                otherThemeName.style.color = Themes.light.color;
-                rootCss.style.setProperty('--sideHoverColor', "#000000");
-                rootCss.style.setProperty('--settingsСolor', "#000000");
-            } else {
-                otherThemeName.style.color = Themes.dark.colors.white;
-                rootCss.style.setProperty('--settingsСolor', "#ffffff");
-                rootCss.style.setProperty('--sideHoverColor', "#ffffff");
-            }
-
-            clearSelection();
-            otherTheme.classList.add("user-theme-selected");
-        }
+        createSelection();
+        
         const regex = /rgb\((\d+),\s*(\d+),\s*(\d+)\)/g;
         let [topColor, bottomColor] = [...gradient.matchAll(regex)].filter((value, index, array) => {
             if (index == 0) return true;
@@ -323,8 +338,8 @@ let setTheme = (theme = "default", windowName = "default") => {
                 switch (windowName) {
                     case "default":
                         listTrack.style.background = "";
-                       rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 25%)'); 
-                       rootCss.style.setProperty("--settingItemBackground", "");
+                        rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 25%)'); 
+                        rootCss.style.setProperty("--settingItemBackground", "");
                         darkTitle[0].style.background = "";
                         darkTitle[0].style.color = "";
                         darkContentMenu.style.background = "";
@@ -336,6 +351,7 @@ let setTheme = (theme = "default", windowName = "default") => {
 
                         });
                         clearSelection();
+                        createSelection();
                         defaultTheme.classList.add("user-theme-selected");
                         break;
                     case "popup":
@@ -356,19 +372,6 @@ let setTheme = (theme = "default", windowName = "default") => {
 }
 
 let disableOptions = (element, turnOn = false) => {
-    if (turnOn) {
-        element.setStyle({
-            filter: "",
-            pointerEvents: "",
-            background: "",
-            borderRadius: ""
-        });
-    } else {
-        element.setStyle({
-            filter: "grayscale(1) opacity(0.5)",
-            pointerEvents: "none",
-            background: "gray",
-            borderRadius: "10px"
-        });
-    }
+    element.classList.remove("disable-setting-item");
+    element.classList.toggle("disable-setting-item", !turnOn);
 }

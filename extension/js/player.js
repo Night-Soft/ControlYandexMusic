@@ -26,7 +26,7 @@ const PlayerInfo = class {
 
         Object.defineProperties(this, {
             track: {
-                get() { return this.list.tracks.get(this.index)?.track; }
+                get() { return this.possibleTracks.list.get(this.index)?.track; }
             },
             liked: {
                 get() { return this.track.liked },
@@ -189,43 +189,81 @@ const PlayerInfo = class {
             },
             likeItem: {
                 get() {
-                    return this.playlist.elements.get(this.index)?.itemTrack.childNodes[1];
+                    return this.playlist.elements.get(this.index)?.item.childNodes[1].childNodes[0];
                 }
             }
         });
+
+        this.possibleTracks.list = new BindMap(new Map(), this.possibleTracks, {
+            set(key) { // key === index
+                if (Number.isFinite(this.maxIndex) === false) {
+                    this.maxIndex = key;
+                }
+                if (Number.isFinite(this.minIndex) === false) {
+                    this.minIndex = key;
+                    return;
+                }
+                this.updateMinMaxIndex(key);
+            },
+            delete(key) {
+                const indexes = Array.from(this.list.keys());
+                const splicedIndexes = indexes.toSpliced(indexes.indexOf(key), 1);
+                if (splicedIndexes.length === 0) {
+                    console.warn("delete error");
+                    return;
+                }
+                const minIndex = Math.min(...splicedIndexes);
+                const maxIndex = Math.max(...splicedIndexes);
+                this.updateMinMaxIndex(minIndex);
+                this.updateMinMaxIndex(maxIndex);
+            },
+            clear() {
+                this.maxIndex = undefined;
+                this.minIndex = undefined;
+            }
+        }, false);
     }
     info = {
         source: {},
         tracks: []
     }
-    list = {
-        tabTracks: new Map(),
-        tracks: new Map(),
-        minTabTracksIndex: undefined,
-        maxTabTracksIndex: undefined,
-        maxTracksIndex: undefined,
-        minTracksIndex: undefined,
-        updateMinMaxIndex() {
-            this.minTabTracksIndex = Math.min(...Array.from(this.tabTracks.keys()));
-            this.maxTabTracksIndex = Math.max(...Array.from(this.tabTracks.keys()));
-            this.maxTracksIndex = Math.max(...Array.from(this.tracks.keys()));
-            this.minTracksIndex = Math.min(...Array.from(this.tracks.keys()));
+    possibleTracks = {
+        maxIndex: undefined,
+        minIndex: undefined,
+
+        get isFullList() { 
+            const { unloaded } = getUnrealizedIndexes();
+            return unloaded.length === 0;
+        },
+
+        updateMinMaxIndex(index) {
+            if (index > this.maxIndex) this.maxIndex = index;
+            if (index < this.minIndex) this.minIndex = index;
         },
         update(tracksList) {
-            let index = -1;
-            tracksList.forEach((track, tabIndex) => {
+            tracksList.forEach((track, index) => {
                 if (typeof track === "object" && track !== null) {
-                    index++;
-                    const value = { index, tabIndex, track };
-                    Player.list.tabTracks.set(tabIndex, value);
-                    Player.list.tracks.set(index, value);
+                    Player.possibleTracks.list.set(index, { index, track });
                 }
             });
-            this.updateMinMaxIndex();
-        }
+        },
+        getConsistent(fromIndex = this.minIndex, toIndex = this.maxIndex) {
+            const minIndex = this.minIndex;
+            const maxIndex = this.maxIndex;
+
+            if (toIndex > maxIndex) toIndex = maxIndex;
+            if (fromIndex < minIndex) fromIndex = minIndex;
+
+            const { unloaded } = getUnrealizedIndexes(fromIndex, toIndex);
+
+            return {
+                is: unloaded.length === 0,
+                unloaded
+            }
+        },
     }
-    playlist = new LivePlaylist();
-    index; 
+    playlist = new Playlist();
+    index;
     coverItem;
     isUpdateTimer = false;
     #currentTime = 0;
@@ -268,10 +306,8 @@ const PlayerInfo = class {
         if (loaded >= 0) { this.loaded = loaded; }
         if (position >= 0) { this.position = position; }
     }
-    clearPlaylist(){
-        this.list.tabTracks.clear();
-        this.list.tracks.clear();
-        this.list.updateMinMaxIndex();
+    clearPlaylist() {
+        this.possibleTracks.list.clear();
         this.playlist.clear();
         this.index = -1;
     }
@@ -280,35 +316,38 @@ const PlayerInfo = class {
     }
     updateLikeDislike(tracksList) {
         const newLikes = [];
-        Player.playlist.elements.forEach(({ itemTrack, tabIndex }) => { 
-            const { liked: likedPrev, disliked: dislikedPrev } = Player.info.tracks[tabIndex];
-            const { liked, disliked } = tracksList[tabIndex];
-            if(likedPrev === liked && dislikedPrev === disliked) return;
+        Player.playlist.elements.forEach(({ item, index }) => {
+            const { liked: likedPrev, disliked: dislikedPrev } = Player.info.tracks[index];
+            const { liked, disliked } = tracksList[index];
+            if (likedPrev === liked && dislikedPrev === disliked) return;
 
-            newLikes.push({ itemTrack, liked, disliked });
+            newLikes.push({ item, liked, disliked });
         });
-        newLikes.forEach(({ itemTrack, liked, disliked }) => {
-            toggleListLikes(itemTrack.children[1], liked, disliked);
+        newLikes.forEach(({ item, liked, disliked }) => {
+            toggleListLikes(item.children[1], liked, disliked);
         });
     }
-} 
+}
 
 const Player = new PlayerInfo();
 const playlist = Player.playlist;
 
-let updateTracksList = ({ tracksList, sourceInfo, index: tabIndex }) => {
+let updateTracksList = ({ tracksList, sourceInfo, index }) => {
+    if (index < 0) return;
+
     if (compareSource(sourceInfo, tracksList)) {
-        Player.list.update(tracksList);
+        Player.possibleTracks.update(tracksList);
         Player.updateLikeDislike(tracksList);
         Player.info.tracks = tracksList;
         Player.updateCanUploadTracks();
+        playlist.waitingElements.create();
 
-        const currentIndex = Player.list.tabTracks.get(tabIndex).index;
-        addElementsIfNeeded(currentIndex); // todo add elements to center
+        addElementsIfNeeded(index);
 
-        if (currentIndex >= 0 && Player.index !== currentIndex) {
-            selectItem(playlist.elements.get(currentIndex).itemTrack, currentIndex);
-        }
+        if (Player.index === index) return;
+
+        const selectedItem = playlist.elements.get(index)?.item;
+        if (selectedItem) selectItem(selectedItem, index);
 
         return;
     }
@@ -323,36 +362,37 @@ let updateTracksList = ({ tracksList, sourceInfo, index: tabIndex }) => {
         isTrackPosition = false;
     }
 
-    Player.list.update(tracksList);
+    Player.possibleTracks.update(tracksList);
 
     Player.updateCanUploadTracks();
     updateTitle(Player.info.source);
 
     const numberOfElementsCreated = 60;
-    const currentIndex = Player.list.tabTracks.get(tabIndex).index;
-    const indexes = playlist.getIndexes(currentIndex, numberOfElementsCreated);
+    const indexes = getIndexesForCreated(index, numberOfElementsCreated);
 
-    addPlaylistElements(indexes, tabIndex);
+    addPlaylistElements(indexes, index);
+
+    if (playlist.isInit === false) playlist.init();
 }
 
-let isFirstLoad = true;
 let addPlaylistElements = (indexesForCreated, currentTabIndex) => {
-    let isScrollTocenter = false;
+    if (indexesForCreated === undefined || indexesForCreated.length === 0) return;
+
     let isTimeGreaterThanOneHour = false;
 
-    function predicate({ value: index }, itemTrack) {
-        const likeItem = itemTrack.childNodes[1];
-        const itemCover = itemTrack.childNodes[0].childNodes[0];
-        const contentItemName = itemTrack.childNodes[0].childNodes[1];
-        const { tabIndex, track } = Player.list.tracks.get(index);
-        const coverCick = function() {
+    function predicate({ value: index }, item) {
+        const likeItem = item.childNodes[1].childNodes[0];
+        const itemCover = item.childNodes[0].childNodes[0];
+        const contentItemName = item.childNodes[0].childNodes[1];
+        const { index: tabIndex, track } = Player.possibleTracks.list.get(index);
+        const coverCick = function () {
             Player.coverItem = this;
             openCover(this, track.cover);
         }
         const onmouseenter = (ev) => {
             ev.stopPropagation();
             ev.stopImmediatePropagation();
-            if (ev.target == itemTrack) {
+            if (ev.target == item) {
                 if (!track.liked && !track.disliked && Player.index == index) {
                     likeItem.classList.add("list-item-not-liked");
                     likeItem.style.animation = "show-like 1s normal";
@@ -369,7 +409,7 @@ let addPlaylistElements = (indexesForCreated, currentTabIndex) => {
         const onmouseleave = (ev) => {
             ev.stopPropagation();
             ev.stopImmediatePropagation();
-            if (ev.target == itemTrack) {
+            if (ev.target == item) {
                 if (!track.liked && !track.disliked && Player.index == index) {
                     Player.endShowLikeReverse = (ev) => {
                         likeItem.classList.remove("list-item-not-liked");
@@ -449,63 +489,42 @@ let addPlaylistElements = (indexesForCreated, currentTabIndex) => {
                 ["img", "{{imgAttr}}"],
                 ["div", { class: "content-item-name" },
                     ["div", { class: "item-name-track" }, "{{track.title}}"],
-                    ["div", { class: "item-artists",}, "{{artistsTitle}}"],
+                    ["div", { class: "item-artists", }, "{{artistsTitle}}"],
                 ],
             ],
-            ["div", { class: "{{likeClass}}" }], 
-            ["span", { class: "track-time" }, "{{duration}}"]
+            ["div", { class: "like-time" },
+                ["div", { class: "{{likeClass}}" }],
+                ["span", { class: "track-time" }, "{{duration}}"]
+            ]
         ]
     ];
-    
-    const itemTrack = new Component(template, indexesForCreated, predicate).nodes;
+
+    const item = new Component(template, indexesForCreated, predicate).nodes;
     indexesForCreated.forEach((indexVal, index) => {
-        const { tabIndex, index: indexInList } = Player.list.tracks.get(indexVal); 
+        const indexInList = Player.possibleTracks.list.get(indexVal).index;
         const referenceElement = playlist.getReferenceElement(indexVal);
 
-        listTracks.insertBefore(itemTrack[index], referenceElement); 
-
-        
+        listTracks.insertBefore(item[index], referenceElement);
         playlist.elements.set(indexInList, {
-            itemTrack: itemTrack[index], 
+            item: item[index],
             index: indexInList,
-            tabIndex
         });
-        playlist.updateMinMaxIndex();
 
-        if (currentTabIndex === tabIndex) {
-            selectItem(itemTrack[index], indexInList);
-            isScrollTocenter = true;
+        if (currentTabIndex === indexInList) {
+            selectItem(item[index], indexInList);
+            playlist.isScrollToCenter = true;
         }
     });
 
-    if (isFirstLoad === false) {
-        if(isScrollTocenter) scrollToCenter();
-        return;
-    }
-
-    EventEmitter.on("playlistIsOpen", () => {
-        function addScroll() {
-            listTracks.addEventListener("scroll", checkTrackPosition.start);
-            listTracks.addEventListener("scroll", checkForNewElement.start);
-            listTracks.removeEventListener("scrollend", addScroll);
-            clearTimeout(timeoutId);
-            isFirstLoad = false;
-        }
-
-        let timeoutId = setTimeout(addScroll, 1500);
-
-        listTracks.addEventListener("scrollend", addScroll);
-
-        if (isScrollTocenter) scrollToCenter();
-    }, true);
-
+    updatePlaylistRects.execute();
+    return true;
 }
 
 const compareTracksTitle = (newTracksList) => {
     const prevTracksList = Player.info.tracks;
 
     if (newTracksList.length !== prevTracksList.length) return false;
-    
+
     const newTitlesSet = new Set(newTracksList.filter(track => track !== null).map(track => track.title));
     const prevTitles = prevTracksList.filter(track => track !== null).map(track => track.title);
 
@@ -527,53 +546,122 @@ const compareSource = (sourceInfo, newTracksList) => {
     if (sourceInfo.type === "radio") return compareTracksTitle(newTracksList);
 }
 
-const addElementsIfNeeded = (index) => {
-    const numberOfElementsInView = getNumberOfElementsInView();
-    const maxIndex = playlist.maxIndex;
-    const minIndex = playlist.minIndex;
-    const maxTracksIndex = Player.list.maxTracksIndex;
-    const minTracksIndex = Player.list.minTracksIndex;
+const getIndexesForCreated = (fromIdx, quantity = 10, insertDirection = "center") => {
+    const { maxIndex, minIndex } = Player.possibleTracks;
+    const size = Player.possibleTracks.list.size;
+    quantity = Math.min(quantity, size);
 
-    const needTopElements =
-        (maxIndex < maxTracksIndex) && (index < minIndex + numberOfElementsInView);
-    const needBottomElements = 
-        (minIndex > minTracksIndex) && (index > maxIndex - numberOfElementsInView);
+    let startIndex, endIndex;
 
-    if (!needBottomElements && !needTopElements) return;
+    switch (insertDirection) {
+        case "up":
+            startIndex = Math.max(fromIdx - quantity, minIndex);
+            endIndex = fromIdx;
+            break;
 
-    if (index >= 0 && Player.index != index) {
-        let quantity = numberOfElementsInView + Math.ceil(numberOfElementsInView / 2);
-        let indexesForCreated;
+        case "down":
+            startIndex = fromIdx;
+            endIndex = Math.min(fromIdx + quantity, maxIndex);
+            break;
+        case "center":
+            const half = Math.floor(quantity % 2 === 1 ? (quantity - 1) / 2 : quantity / 2);
 
-        if (needTopElements) {
-            quantity = minIndex - index + quantity;
-            indexesForCreated = playlist.getIndexes(minIndex, quantity, "up");
-        } else if (needBottomElements) {
-            quantity = index - maxIndex + quantity;
-            indexesForCreated = playlist.getIndexes(maxIndex, quantity, "down");
-        }
-        // todo addPlaylistElements to center
+            fromIdx = quantity % 2 === 1 ? fromIdx : fromIdx + 1;
 
-        if (indexesForCreated?.length > 0) addPlaylistElements(indexesForCreated);
+            startIndex = fromIdx - half;
+            const startRest = startIndex >= minIndex ? 0 : minIndex - startIndex;
+
+            endIndex = fromIdx + half + startRest - (quantity % 2 === 1 ? 0 : 1);
+            const endRest = endIndex <= maxIndex ? 0 : endIndex - maxIndex;
+
+            startIndex = (
+                startIndex - endRest <= minIndex ?
+                    minIndex :
+                    startIndex - endRest
+            );
+            endIndex = endIndex <= maxIndex ? endIndex : maxIndex;
+            break;
     }
+
+    return getUnrealizedIndexes(startIndex, endIndex).notCreated;
 }
-const getNumberOfElementsInView = () => {
-    const listTracksRects = listTracks.getClientRects()[0];
-    let listHeight, elementHeight;
 
-    if (listTracksRects === undefined) {
-        listTracksContainer.style.display = "flex";
-        listHeight = listTracks.getClientRects()[0].height;
-        elementHeight = playlist.firstElement.itemTrack.getClientRects()[0].height;
-        listTracksContainer.style.display = "";
+const getUnrealizedIndexes = (fromIdx = 0, toIdx = Player.info.tracks.length - 1) => {
+    if (typeof fromIdx !== "number" || typeof toIdx !== "number") throw new TypeError();
 
-        return Math.ceil(listHeight / elementHeight);
+    if (fromIdx < 0) fromIdx = 0;
+    if (toIdx > Player.info.tracks.length - 1) toIdx = Player.info.tracks.length - 1;
+
+    const notCreated = [], unloaded = [];
+    for (let i = fromIdx; i <= toIdx; i++) {
+        if (playlist.elements.has(i)) continue;
+        if (Player.possibleTracks.list.has(i)) {
+            notCreated.push(i);
+            continue;
+        }
+        unloaded.push(i);
     }
 
-    listHeight = listTracksRects.height;
-    elementHeight = playlist.firstElement.itemTrack.getClientRects()[0].height;
-    
-    return Math.ceil(listHeight / elementHeight);
+    return { notCreated, unloaded };
+}
+
+const checkAddElements = (direction) => {
+    if (Player.playlist.isFullList) return;
+
+    const quantity = Math.ceil(getIndexesInView().size * 1.5);
+    const index = direction === "up" ? playlist.minIndex : playlist.maxIndex;
+
+    const indexes = getIndexesForCreated(index, quantity, direction);
+    return { indexes, is: addPlaylistElements(indexes) };
+}
+
+const needElements = (direction, quantity = 5) => {
+    const index = direction === "up" ? playlist.minIndex : playlist.maxIndex;
+    const indexes = getIndexesForCreated(index, quantity, direction);
+
+    return indexes.length > 0;
+}
+
+const needElementsUpload = (direction = "down") => {
+    const indexesInView = getIndexesInView().indexes;
+    const quantity = Math.ceil(indexesInView.length * 2);
+    const fromIdx = (
+        direction === "up" ?
+            indexesInView[0] :
+            indexesInView[indexesInView.length - 1]
+    );
+
+    let fromIndex, toIndex;
+    switch (direction) {
+        case "up":
+            fromIndex = fromIdx - quantity;
+            toIndex = fromIdx;
+            break;
+
+        case "down":
+            fromIndex = fromIdx;
+            toIndex = fromIdx + quantity;
+            break;
+    }
+
+    const { unloaded } = getUnrealizedIndexes(fromIndex, toIndex);
+
+    return unloaded.length > 0;
+}
+
+const addElementsIfNeeded = (index) => {
+    const viewSize = getIndexesInView().size;
+    const fromIndex = index - viewSize;
+    const toIndex = index + viewSize;
+    const { notCreated, unloaded } = getUnrealizedIndexes(fromIndex, toIndex);
+
+    if (notCreated.length > 0) addPlaylistElements(notCreated, index);
+
+    const fromLoadIndex = Math.min(...unloaded);
+    if (fromLoadIndex === Infinity) return;
+
+    playlist.waitingElements.include(unloaded);
+    populate(fromLoadIndex, Player.waitingElements.size + viewSize);
 }
 
 let updateTitle = (title) => {
@@ -632,14 +720,14 @@ let getArtists = (list, numberOf = 3) => {
 let selectItem = (item, index) => {
     if (selectedItem != undefined) {
         selectedItem.classList.remove("selected-item");
-        selectedItem.childNodes[1].classList.remove("list-item-not-liked");
+        selectedItem.childNodes[1].childNodes[0].classList.remove("list-item-not-liked");
     }
     item.classList.add("selected-item");
 
     selectedItem = item;
     Player.index = index;
-    
-    if (!document.hasFocus() && !isFirstLoad) { 
+
+    if (!document.hasFocus() && playlist.isInit) {
         scrollToCenter();
         return;
     };
@@ -664,12 +752,52 @@ let showTrackPosition = new ExecutionDelay(
     }, { delay: 200 }
 );
 
-const checkTrackPosition = new ExecutionDelay(() => {
-    const rect = selectedItem.getClientRects();
-    if (rect.length === 0) return;
+const listTracksOnScroll = () => {
+    updatePlaylistRects.start();
+    checkTrackPosition.start();
+    checkForNewElement.start();
+}
 
-    let { height, top } = rect[0];
-    let playlistTop = listTracksContainer.getClientRects()[0].top - height;
+const updatePlaylistRects = new ExecutionDelay((event) => {
+    if (event?.type === "resize") Player.playlist.rects.update();
+    Player.playlist.elements.updateRects();
+}, { delay: 200, isThrottle: true });
+
+const getCurrentfromToIndex = () => {
+    const { indexes, size } = getIndexesInView();
+    const fromIndex = indexes[0] - size;
+    const toIndex = indexes[size - 1] + size;
+    return { fromIndex, toIndex }
+}
+
+const getCurrentViewConsistent = () => {
+    const { fromIndex, toIndex } = getCurrentfromToIndex();
+    return playlist.elements.getConsistent(fromIndex, toIndex);
+}
+
+const sort = (a, b) => a - b;
+
+const getIndexesInView = () => {
+    let playlistTop = playlist.rects.container.top;
+    let playlistHeight = playlist.rects.container.height;
+
+    const indexesInView = [];
+    playlist.elements.forEach((el, key) => {
+        if (
+            el.rect.top >= playlistTop - el.rect.height &&
+            el.rect.top <= playlistTop + playlistHeight
+        ) indexesInView.push(key);
+    });
+
+    return { indexes: indexesInView.sort(sort), size: indexesInView.length };
+}
+
+const checkTrackPosition = new ExecutionDelay(() => {
+    const rect = playlist.elements.get(Player.index)?.rect; // selectedItem
+    if (rect === undefined) return;
+
+    let { height, top } = rect;
+    let playlistTop = playlist.rects.container.top - height;
 
     if (playlistTop > top) {
         if (isTrackPosition === "top") return;
@@ -684,7 +812,7 @@ const checkTrackPosition = new ExecutionDelay(() => {
         return;
     }
     // remove track position
-    if (isTrackPosition == false) return; 
+    if (isTrackPosition == false) return;
     isTrackPosition = false;
     showTrackPosition.stop();
 
@@ -701,64 +829,154 @@ const checkTrackPosition = new ExecutionDelay(() => {
     };
 }, { delay: 500, isThrottle: true });
 
+const createWaitingElements = (direction) => {
+    const quantity = Math.ceil(getIndexesInView().size * 1.5);
+    const { minIndex, maxIndex } = playlist;
+    const fromIndex = direction === "up" ? minIndex - quantity : maxIndex;
+    const toIndex = direction === "up" ? minIndex : fromIndex + quantity;
+    const { unloaded } = getUnrealizedIndexes(fromIndex, toIndex);
+
+    playlist.waitingElements.include(unloaded); 
+}
+
 const checkUploadTracks = (direction) => {
-    const listHeight = listTracks.getClientRects()[0].height;
-    const height = playlist.firstElement.itemTrack.getClientRects()[0].height;
-
-    const quantity = Math.floor(listHeight / height) + 5;
-    const index = direction === "up" ? playlist.firstElement.index : playlist.lastElement.index;
-
-    const indexes = playlist.getIndexes(index, quantity, direction); 
-
-    if (indexes) addPlaylistElements(indexes);
+    if (Player.possibleTracks.isFullList) return;
     if (!Player.canUploadTracks) return;
 
     if (direction === "up" && isScrollNotPossible(direction)) {
         const minPlaylistIndex = Player.playlist.minIndex;
-        const minListIndex = Player.list.minTracksIndex;
+        const quantity = Math.max(30, getIndexesInView().size);
+        const { unloaded } = getUnrealizedIndexes(minPlaylistIndex - quantity, minPlaylistIndex);
+        
+        if (unloaded.length === 0) return;
 
-        const canSend = (
-            (minPlaylistIndex === minListIndex) &&
-            (minListIndex > 0)
-        );
-
-        if (!canSend) return;
-
-        Player.canUploadTracks = false;
         Player.canAddTracks = true;
-        sendEvent({ uploadTracksMeta: direction }, true);
+
+        createWaitingElements(direction);
+        populate(unloaded[unloaded.length - 1], 0, quantity);
 
     } else if (direction === "down" && isScrollNotPossible(direction)) {
         const maxPlaylistIndex = Player.playlist.maxIndex;
-        const maxListIndex = Player.list.maxTracksIndex;
+        const quantity = Math.max(30, getIndexesInView().size);
+        const { unloaded } = getUnrealizedIndexes(maxPlaylistIndex, maxPlaylistIndex + quantity);
+        
+        if (unloaded.length === 0) return;
 
-        const canSend = (
-            (maxPlaylistIndex === maxListIndex) &&
-            (maxPlaylistIndex < Player.info.tracks.length - 1)
-        );
-
-        if (!canSend) return;
-
-        Player.canUploadTracks = false;
         Player.canAddTracks = true;
-        sendEvent({ uploadTracksMeta: direction }, true);
+
+        createWaitingElements(direction);
+        populate(unloaded[0], quantity, 0);
     }
 }
 
 const isScrollNotPossible = (direction, numberOfTracks = 5) => {
-    const { top, bottom } = listTracks.getClientRects()[0];
-    const { top: firstElementY, height } = playlist.firstElement.itemTrack.getClientRects()[0];
-    const lastElementY = playlist.lastElement.itemTrack.getClientRects()[0].top;
-    const elementSize = height * numberOfTracks;
+    const indexesInView = getIndexesInView().indexes;
+    const firstIndex = indexesInView[0];
 
-    if (direction === "up" && firstElementY > -elementSize + top) return true; 
-    if (direction === "down" && lastElementY < elementSize + bottom - height) return true;
-    return false;
+    let isNoScroll = true, counter = 0;
+    if (direction === "up") {
+        for (let i = firstIndex; i >= playlist.minIndex; i--) {
+            if (playlist.elements.has(i)) counter++;
+            if (counter >= numberOfTracks) {
+                isNoScroll = false;
+                break;
+            }
+        }
+
+        return isNoScroll;
+    }
+
+    const lastIndex = indexesInView[indexesInView.length - 1];
+    for (let i = lastIndex; i <= playlist.maxIndex; i++) {
+        if (playlist.elements.has(i)) counter++;
+        if (counter >= numberOfTracks) {
+            isNoScroll = false;
+            break;
+        }
+    }
+
+    return isNoScroll;
+}
+
+const addElementsIfScrollPinned = (createdIndexes) => {
+    if (isScrollPinnedTo("top")) {
+        listTracks.scrollTo(0, calcHeight(createdIndexes));
+        playlist.elements.updateRects();
+
+        return;
+    }
+
+    if (isScrollPinnedTo("bottom")) {
+        const indexes = Array.from(playlist.elements.keys()).forEach((value) => {
+            return !createdIndexes.include(value)
+        });
+
+        listTracks.scrollTo(0, calcHeight(indexes));
+        playlist.elements.updateRects();
+
+        return;
+    }
+
+    checkForNewElement.nextStart();
+}
+
+const calcHeight = (indexes) => {
+    return indexes.reduce((height, index) => {
+        return height += playlist.elements.get(index).rect.height;
+    }, 0);
+}
+
+const isScrollPinnedTo = (direction) => {
+    if (playlist.rects.list.height > calcHeight(getIndexesInView().indexes)) return false;
+
+    if (direction === "top") {
+        return playlist.elements.first.rect.top - playlist.rects.title.height === playlist.rects.list.top;
+    }
+
+    if (direction === "bottom") {
+        return playlist.elements.last.rect.bottom === playlist.rects.list.bottom;
+    }
 }
 
 const checkForNewElement = new ExecutionDelay(() => {
-    if (isScrollNotPossible("up")) checkUploadTracks("up");
-    if (isScrollNotPossible("down")) checkUploadTracks("down");
+    if (Player.possibleTracks.isFullList && playlist.isFullList) return;
+
+    // todo pinned scrolll
+
+    let indexes;
+
+    if (isScrollNotPossible("up")) {
+        if (needElements("up")) indexes = checkAddElements("up").indexes;
+        if (needElementsUpload("up")) checkUploadTracks("up");
+    }
+
+    if (isScrollNotPossible("down")) {
+        if (needElements("down")) indexes = checkAddElements("down").indexes;
+        if (needElementsUpload("down")) checkUploadTracks("down");
+    }
+
+    const viewConsistent = getCurrentViewConsistent();
+    if (!viewConsistent.is) {
+        const { notCreated, unloaded } = viewConsistent;
+
+        if (Array.isArray(indexes)) {
+            indexes = [...indexes, notCreated];
+        } else {
+            indexes = notCreated
+        }
+
+        addPlaylistElements(notCreated);
+        playlist.waitingElements.exclude(notCreated);
+
+        if (unloaded.length > 0) {
+            playlist.waitingElements.include(unloaded);
+
+            const { minIndex, quantity: after } = getDataForPopulate(unloaded);
+            populate(minIndex, after, 0);
+        }
+    }
+
+    if (indexes?.length > 0) addElementsIfScrollPinned(indexes);
 
 }, { delay: 200, isThrottle: true });
 
@@ -850,7 +1068,7 @@ toggleShuffle.onclick = () => { sendEvent({ toggleShuffle: true }, true); }
 toggleRepeat.onclick = () => { sendEvent({ toggleRepeat: true }, true); }
 toggleVolume.onclick = () => { sendEvent({ toggleVolume: true }, true); }
 
-toggleVolume.onwheel = (event) => {
+toggleVolume.addEventListener("wheel", (event) => {
     sliderVolume.showTooltip(true);
     if (event.deltaY < 0) {
         if (sliderVolume.scale <= sliderVolume.maxScale) {
@@ -867,7 +1085,7 @@ toggleVolume.onwheel = (event) => {
             sendEvent({ setVolume: sliderVolume.scale / 100 }, true);
         }
     }
-}
+}, { passive: false });
 
 let isVolume = false;
 const showVolumeDelay = new ExecutionDelay(() => {
@@ -891,9 +1109,10 @@ toggleVolume.onmouseenter = () => {
 
 contentGrooveVolume.onmouseenter = () => {
     if (hideVolumeDelay.isStarted) { hideVolumeDelay.stop(); }
- }
+}
+
 contentGrooveVolume.onmouseleave = (event) => {
-    if(event.toElement == null) return;
+    if (event.toElement == null) return;
     if (showVolumeDelay.isStarted) { showVolumeDelay.stop(); }
     if (isVolume) { hideVolumeDelay.start(); }
 }

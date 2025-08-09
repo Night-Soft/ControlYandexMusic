@@ -40,6 +40,7 @@ let Background = {
 
 let Options = {
     defaultPopup: undefined,
+    skipLike: undefined,
     pinTab: undefined,
     positionStep: undefined,
     volumeStep: undefined,
@@ -114,8 +115,8 @@ let PopupWindow = class {
         return {
             height: height(),
             width: width(),
-            left: left(),
-            top: top(),
+            left: Math.round(left()),
+            top: Math.round(top()),
             focused: true,
             type: "popup",
             url: "../popup.html"
@@ -231,23 +232,59 @@ function checkCommand(command) {
         createUpdatePopup();
         return;
     }
+    if (command === "toggleLike-key" && Options?.skipLike?.is && currentTrack.liked) {
+        if (canRemoveLike === false) {
+            skipLikeNotify();
+            return;
+        }
+    }
     sendEvent({ commandKey: command, key: true });
+}
+
+let skipLikeId, canRemoveLike = false;
+function skipLikeNotify() {
+    const time = Number(Options.skipLike.time) * 1000;
+    const notification = {
+        title: `'${currentTrack?.title}'${chrome.i18n.getMessage("alreadyInFavorites")}`,
+        message: chrome.i18n.getMessage("againToRemove"),
+        iconUrl: chrome.runtime.getURL("../img/icon.png"),
+    }
+
+    createNotification(notification);
+
+    clearTimeout(skipLikeId);
+    canRemoveLike = true;
+    skipLikeId = setTimeout(() => {
+        canRemoveLike = false;
+        chrome.notifications.clear("YandexMusicControl");
+    }, time);
 }
 
 chrome.commands.onCommand.addListener(function (command) {
     //'next-key', 'previous-key', 'togglePause-key', 'toggleLike-key'
-    if (Options.reassign == undefined) {
-        getOptions("popupBounds", "reassign").then(() => checkCommand(command));
+    if (Options.reassign === undefined || Options.skipLike === undefined) {
+        getOptions("popupBounds", "reassign", "skipLike").then(() => checkCommand(command));
         return;
     }
 
     checkCommand(command);
 });
 
+let currentTrack = {};
 chrome.runtime.onMessageExternal.addListener(
     function(request) {
         if (request.changeTrack || request.key) {
             showNotification(request);
+        }
+        if (request.event === "currentTrack") {
+            currentTrack = request.currentTrack;
+        }
+        if (request.event === "toggleLike") {
+            currentTrack.liked = request.isLiked;
+        }
+        if (request.event === "CONTROLS") {
+            currentTrack.liked = request.liked;
+            currentTrack.disliked = request.disliked;
         }
     });
 
@@ -459,14 +496,12 @@ let showNotification = async(request) => {
     let nameTrack = request.currentTrack.title;
     let iconTrack = request.currentTrack.cover;
     let isLike = request.currentTrack.liked;
+    let isDislike = request.currentTrack.disliked;
     // get options
     if (Background.isAllReaded == false || Background == undefined) {
         await getOptions("isAllNoifications", "isPlayPauseNotify", "isPrevNextNotify");
     }
-    if (Options.isAllNoifications == true) {
-        setNotifications(nameTrack, nameArtists, iconTrack);
-        return;
-    }
+
     if (Options.isPlayPauseNotify == true) {
         switch (request.dataKey) {
             case 'togglePause-key':
@@ -474,6 +509,7 @@ let showNotification = async(request) => {
                 break;
         }
     }
+
     if (Options.isPrevNextNotify == true) {
         switch (request.dataKey) {
             case 'next-key':
@@ -484,21 +520,37 @@ let showNotification = async(request) => {
                 break;
         }
     }
+
     switch (request.dataKey) {
         case 'toggleLike-key':
             let liked = chrome.i18n.getMessage("liked");
             let disliked = chrome.i18n.getMessage("disliked");
-            if (isLike) { 
-                iconTrack = "../img/like.png";
+            if (isLike) {
+                iconTrack = "../img/liked.png";
                 nameArtists = liked;
             } else {
-                iconTrack = "../img/no-like.png";
+                iconTrack = "../img/not-liked.png";
                 nameArtists = disliked;
             }
             setNotifications(nameTrack, nameArtists, iconTrack)
-            break;
+            return;
+
+        case 'toggleDislike-key':
+            if (isDislike) { 
+                iconTrack = "../img/disliked.png";
+                nameArtists =  chrome.i18n.getMessage("addedToBlackList");
+            } else {
+                iconTrack = "../img/dislike.png";
+                nameArtists = chrome.i18n.getMessage("removeFromBlackList");
+            }
+            setNotifications(nameTrack, nameArtists, iconTrack)
+            return;
     }
 
+    if (Options.isAllNoifications == true) {
+        setNotifications(nameTrack, nameArtists, iconTrack);
+        return;
+    }
 }
 
 let lastUrl, lastBase64Url;
@@ -523,19 +575,31 @@ let setNotifications = async(trackTitle, trackArtists, iconTrack) => {
     if (iconTrack == undefined) {
         iconTrack = chrome.runtime.getURL("../img/icon.png");
     }
+
+    createNotification({
+        title: trackTitle,
+        message: trackArtists,
+        iconUrl: iconTrack,
+        eventTime: Date.now()
+    });
+}
+
+let lastEventTime = 0;
+const createNotification = (notification) => {
     chrome.notifications.getAll((notifications) => {
-        const notification = {
-            title: trackTitle,
-            message: trackArtists,
-            iconUrl: iconTrack,
-            eventTime: Date.now() + 7000
+        const now = Date.now();
+        const isNotification = Object.keys(notifications).length === 0;
+        const isTimeOut = now - lastEventTime > 10_000;
+       
+        lastEventTime = now;
+
+        if (!isNotification || isTimeOut) {
+            chrome.notifications.clear("YandexMusicControl");
+            chrome.notifications.create("YandexMusicControl", { type: "basic", ...notification });
+        } else {
+            chrome.notifications.update("YandexMusicControl", notification);
         }
         
-        if (notifications.YandexMusicControl) {
-            chrome.notifications.update("YandexMusicControl", notification);
-        } else {
-            chrome.notifications.create("YandexMusicControl", { type: "basic", ...notification });
-        }
     });
 }
 

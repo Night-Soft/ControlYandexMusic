@@ -177,10 +177,14 @@ let togglePlaylist = (show) => {
         list.style.display = "flex";
         let anim = list.animate(keyframe, options);
         popupWindow.isPlaylistOpen = true;
-        anim.onfinish = () => {
+        const onOpenFinish = () => {
+            clearTimeout(timeoutId);
             list.style.overflowY = "auto";
+            list.offsetHeight;
             EventEmitter.emit("playlistIsOpen");
         }
+        anim.onfinish = onOpenFinish
+        let timeoutId = setTimeout(onOpenFinish, 800);
         // playlist open
     } else {
         keyframe = {
@@ -193,7 +197,7 @@ let togglePlaylist = (show) => {
         let anim = list.animate(keyframe, options);
         popupWindow.isPlaylistOpen = false;
         anim.onfinish = () => {
-            list.style.display = "none";
+            list.style.display = ""; // set none
             popupWindow.resizeTo(popupWindow.width, popupWindow.height);
             if (popupWindow.x != screenLeft) {
                 window.moveTo(screenLeft, screenTop);
@@ -204,6 +208,8 @@ let togglePlaylist = (show) => {
         }
         // playlist close
     }
+    
+    return popupWindow.isPlaylistOpen; 
 }
 
 if (typeof hamburgerMenuList != "undefined") {
@@ -219,7 +225,7 @@ if (typeof hamburgerMenuList != "undefined") {
 }
 
 let Options = {
-    theme: {},
+    theme: { name:"default"},
     positionStep: undefined,
     volumeStep: undefined,
     popupBounds: undefined,
@@ -243,7 +249,16 @@ let setOptions = (options, isWrite) => {
     }
     if (options.theme != undefined) {
         Options.theme = options.theme;
+        if (options.theme.name === "default") {
+            writeOptions({ theme: { name: "Old" } });
+            return;
+        }
         setTheme(options.theme.name, Extension.windowName);
+    } else if(options.theme === undefined && Options.theme.name === "default") {
+        const name = window.matchMedia('(prefers-color-scheme: dark)').matches ? "dark": "light";
+        setTheme(name, Extension.windowName);
+        writeOptions({ theme: { name} });
+        Options.theme.name = name;
     }
 
     if (options.isDislikeButton != undefined) {

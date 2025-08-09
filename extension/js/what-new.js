@@ -30,17 +30,33 @@ let WhatNew = {
             let listChangesContent = document.getElementsByClassName("list-changes-coontent")[0];
 
             const messageLng = locale === "RU" ? "messageRu": "messageEn"
-            const predicate = function ({ value }) {
+            const predicate = function ({ value }, element) {
                 const [version, messages] = value;
                 const message = messages[messageLng];
                 return { message, version }
             }
-            new Component([
-                ["div", { class: "version-changes" },
-                    ["h2", {  id: "Version" }, "{{ version }}"],
-                    ["h2", { "$innerHTML": true, class: "versions" }, "{{ message }}"]
-                ]
-            ], versions, predicate).appendToElement(listChangesContent);
+            
+            const components = new Component(
+                [
+                    ["div", { class: "version-changes" },
+                        ["h2", { id: "Version" }, "{{ version }}"],
+                        ["h2", { "$innerHTML": true, class: "versions" }, "{{ message }}"]
+                    ]
+                ],
+                versions, predicate);
+
+            components.nodes.forEach(element => {
+                if (element.lastChild.lastChild?.tagName === "A") {
+                    element.lastChild.lastChild.onclick = (event) => {
+                        event.preventDefault();
+                        chrome.tabs.create({
+                            url: element.lastChild.lastChild.href
+                        });
+                    }
+                }
+            });
+
+            components.appendToElement(listChangesContent);
             this.isCreated = true;
             
             animate();

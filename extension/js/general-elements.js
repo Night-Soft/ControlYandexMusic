@@ -126,6 +126,8 @@ chrome.runtime.onMessageExternal.addListener( // injected script
         switch (request.event) {
             case 'currentTrack': 
                 updatePlaylistEmptyNotification(request.trackInfo.index);
+                
+                if (request.trackInfo.index === -1) return;
 
                 updateTracksList(request.trackInfo);
                 setMediaData(request.currentTrack.title, getArtists(request.currentTrack, 5), request.currentTrack.cover);
@@ -160,7 +162,7 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 Player.liked = request.isLiked;
                 break;
             case 'toggleDislike':
-                Player.disliked = request.disliked.disliked;
+                Player.disliked = request.disliked;
                 break;
             case "TRACKS_LIST":
                 updateTracksList(request);

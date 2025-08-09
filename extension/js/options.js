@@ -7,6 +7,9 @@ let checkBoxReassign = document.getElementById("n7");
 let pinTab = document.getElementById("checkboxPinTab");
 let pxOrPercent = document.getElementById("PxOrPercentCheckbox");
 let savePopupSize = document.getElementById("SavePopupSize");
+let skipLike = document.getElementById("checkboxSkipLike");
+let repeatClick = document.getElementById("RepeatClick"); 
+let repeatClickTime = document.getElementById("RepeatClickTime");
 
 let defaultTheme = document.getElementById("DefaultTheme");
 let lightTheme = document.getElementById("LightTheme");
@@ -14,7 +17,6 @@ let darkTheme = document.getElementById("DarkTheme");
 
 let grooveBox = document.querySelector(".groove-box");
 let contentReassign = document.getElementsByClassName("content-reassign")[0];
-let contentLabel = document.getElementsByClassName("content-label");
 
 let positionStep = document.getElementById("PositionStep");
 let volumeStep = document.getElementById("VolumeStep");
@@ -34,6 +36,7 @@ let prevThemeSelected;
 
 let Options = {
     theme: { name:"default"},
+    skipLike: {},
     pinTab: undefined,
     positionStep: undefined,
     volumeStep: undefined,
@@ -86,6 +89,7 @@ showMore.onclick = async () => {
     try {
         result = await (await fetch("https://api.npoint.io/7584522679dbcdf3c2ef")).json();
         result = Object.entries(result);
+        result.unshift(["Old", "linear-gradient(0deg, rgb(255, 85, 85) 0%, rgb(255, 221, 0) 100%)"]);
     } catch (error) {
         ThemesListState.isCreated = false;
         showMore.innerText = "Error!";
@@ -124,7 +128,7 @@ showMore.onclick = async () => {
             return [value[1], value[2], value[3]].map(value => Number(value));
         });
 
-        const textColor = getTextColor(topColor);
+        const textColor = name === "Old" ? "light" : getTextColor(topColor);
         const styleGradient = { background: gradientStr };
         let style = { color: "" };
         if (textColor == "dark") {
@@ -150,7 +154,6 @@ showMore.onclick = async () => {
             "ev:click": function () { window.open(this.href) }
         }, "cssgradient.io"]
     ]).nodes[0];
-
 
     gradients.appendChild(cssGradientIO);
 
@@ -282,6 +285,8 @@ const onWheel = function (event) {
             if (Number(this.value) < Number(this.min)) this.value = this.min;
         }
     }
+
+    if (this === repeatClickTime) repeatClickTime.oninput();
 }
 
 const onfocusout = function (input) {
@@ -329,7 +334,7 @@ const onfocusout = function (input) {
         Object.entries(options).forEach(([key])=> {
             if(options[key] !== Options[key]) send = true;
         });
-        send && sendSliderStepDelay.setArgumetns(options).start();
+        send && sendSliderStepDelay.saveArguments(options).start();
     }
 }
 
@@ -344,6 +349,37 @@ positionStep.addEventListener("focusout", onfocusout.bind(positionStep, "positio
 
 volumeStep.addEventListener("focus", () => { volumeStep.onwheel = onWheel });
 volumeStep.addEventListener("focusout", onfocusout.bind(volumeStep, "volume"));
+
+repeatClickTime.addEventListener("focus", () => { repeatClickTime.onwheel = onWheel });
+repeatClickTime.addEventListener("focusout", onfocusout.bind(repeatClickTime, "clickTime"));
+
+const repeatClick1Half = translate("repeatClick1Half");
+const repeatClick2Half = translate("repeatClick2Half");
+const translateRepeatClickTime = (value) => {
+    repeatClick.innerText = `${repeatClick1Half} ${value} ${repeatClick2Half}`;
+}
+translateRepeatClickTime(repeatClickTime.value);
+disableOptions(repeatClick.parentElement, false);
+
+repeatClickTime.oninput = function () {
+    if (Number(this.value) > Number(this.max)) this.value = this.max;
+    if (Number(this.value) < Number(this.min)) this.value = this.min;
+    
+    translateRepeatClickTime(this.value);
+    saveSkipLike();
+}
+
+const saveSkipLike = new ExecutionDelay(() => {
+    Options.skipLike.time = repeatClickTime.value;
+    Options.skipLike.is = skipLike.checked;
+
+    writeOptions({ skipLike: Options.skipLike }, false);
+}).start;
+
+skipLike.onclick = () => {
+    disableOptions(repeatClick.parentElement, skipLike.checked);
+    saveSkipLike();
+}
 
 const toggleSetCurrentSizeBtn = function () {
     getPopupWindowId().then((windowId) => {
@@ -361,10 +397,6 @@ playPauseNotify.onclick = () => {
 
 prevNextNotify.onclick = () => {
     writeOptions({ isPrevNextNotify: prevNextNotify.checked });
-}
-
-defaultTheme.onclick = () => {
-    writeOptions({ theme: { name: "default" } });
 }
 
 lightTheme.onclick = () => {
@@ -440,7 +472,17 @@ let setOptions = (options) => {
             pxOrPercent.checked = true;
         }
         updatePopupSize();
+    }
+    if (options.skipLike !== undefined) {
+        const { is, time } = options.skipLike;
+        skipLike.checked = is ? true : false;
+        repeatClickTime.value = time ? time : 5; 
+        Options.skipLike.is = skipLike.checked;
+        Options.skipLike.time = repeatClickTime.value;
+        translateRepeatClickTime(repeatClickTime.value);
+        disableOptions(repeatClick.parentElement, skipLike.checked);
     } 
+
     if (options.pinTab !== undefined) {
         pinTab.checked = options.pinTab ? true : false;
         Options.pinTab  = options.pinTab ? true : false;
@@ -448,7 +490,7 @@ let setOptions = (options) => {
     if (options.isAllNoifications != undefined) {
         checkboxAllNotifications.checked = options.isAllNoifications;
         Options.isAllNoifications = options.isAllNoifications;
-        disableOptions(contentLabel[3], !checkboxAllNotifications.checked);
+        disableOptions(prevNextNotify.parentElement, !checkboxAllNotifications.checked);
     }
     if (options.isPlayPauseNotify != undefined) {
         playPauseNotify.checked = options.isPlayPauseNotify;
@@ -462,10 +504,21 @@ let setOptions = (options) => {
         if (typeof options.theme == "string") { //todo: remove on next update
             Options.theme.name = options.theme;
             setTheme(options.theme);
+            
         } else {
             Options.theme = options.theme;
+            if(options.theme.name === "default") {
+                writeOptions({ theme: { name: "Old" } });
+                return;
+            }
             setTheme(options.theme.name);
         }
+
+    } else if(options.theme === undefined && Options.theme.name === "default") {
+        const name = window.matchMedia('(prefers-color-scheme: dark)').matches ? "dark": "light";
+        setTheme(name);
+        writeOptions({ theme: { name} });
+        Options.theme.name = name;
     }
     if (options.isNewFeaturesShown != undefined) {
         Options.isNewFeaturesShown = options.isNewFeaturesShown;
