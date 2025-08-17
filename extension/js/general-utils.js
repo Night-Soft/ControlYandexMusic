@@ -1329,15 +1329,15 @@ let toggleLike = (isLike, toggleInList = true) => {
 }
 
 const toggleListLikes = (item, isLike, isDislike) => {
-    const likeItem = item.children[1].children[0];
+    const likeImg = item.children[1].children[0];
 
-    likeItem.classList.remove("list-item-liked", "list-item-not-liked", "list-item-disliked");
-    isLike && likeItem.classList.add("list-item-liked");
+    likeImg.classList.remove("list-item-liked", "list-item-not-liked", "list-item-disliked");
+    isLike && likeImg.classList.add("list-item-liked");
     if (isDislike) {
-        likeItem.classList.add("list-item-disliked");
-        item.parentElement.style.filter = "opacity(0.5)";
+        likeImg.classList.add("list-item-disliked");
+        item.style.filter = "opacity(0.5)";
     } else {
-        item.parentElement.style.filter = "";
+        item.style.filter = "";
     }
 }
 
