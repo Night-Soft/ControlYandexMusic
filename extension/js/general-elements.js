@@ -132,7 +132,7 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 updateTracksList(request.trackInfo);
                 setMediaData(request.currentTrack.title, getArtists(request.currentTrack, 5), request.currentTrack.cover);
                 toggleLike(request.currentTrack.liked, false);
-                toggleDislike(request.currentTrack.disliked, false, false);
+                toggleDislike(request.currentTrack.disliked, false);
 
                 Player.isPlay = request.isPlaying;
                 Player.volume = request.volume;
