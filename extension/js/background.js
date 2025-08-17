@@ -232,25 +232,31 @@ function checkCommand(command) {
         createUpdatePopup();
         return;
     }
-    if (command === "toggleLike-key" && Options?.skipLike?.is && currentTrack.liked) {
+    
+    if (command === "toggleLike-key" && Options.skipLike?.is && currentTrack.liked) {
+        if (Options.skipLike.isRepeat === false) return;
+
         if (canRemoveLike === false) {
             skipLikeNotify();
             return;
-        }
+        }    
     }
+
     sendEvent({ commandKey: command, key: true });
 }
 
 let skipLikeId, canRemoveLike = false;
-function skipLikeNotify() {
+function skipLikeNotify(isOnlyNotification) {
     const time = Number(Options.skipLike.time) * 1000;
     const notification = {
         title: `'${currentTrack?.title}'${chrome.i18n.getMessage("alreadyInFavorites")}`,
-        message: chrome.i18n.getMessage("againToRemove"),
+        message: isOnlyNotification ? "" : chrome.i18n.getMessage("againToRemove"),
         iconUrl: chrome.runtime.getURL("../img/icon.png"),
     }
 
     createNotification(notification);
+    
+    if (isOnlyNotification) return;
 
     clearTimeout(skipLikeId);
     canRemoveLike = true;
@@ -588,7 +594,7 @@ let lastEventTime = 0;
 const createNotification = (notification) => {
     chrome.notifications.getAll((notifications) => {
         const now = Date.now();
-        const isNotification = Object.keys(notifications).length === 0;
+        const isNotification = Object.keys(notifications).length > 0;
         const isTimeOut = now - lastEventTime > 10_000;
        
         lastEventTime = now;

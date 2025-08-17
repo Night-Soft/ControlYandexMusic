@@ -10,6 +10,7 @@ let savePopupSize = document.getElementById("SavePopupSize");
 let skipLike = document.getElementById("checkboxSkipLike");
 let repeatClick = document.getElementById("RepeatClick"); 
 let repeatClickTime = document.getElementById("RepeatClickTime");
+let checkboxRepeatClick = document.getElementById("checkboxRepeatClick");
 
 let defaultTheme = document.getElementById("DefaultTheme");
 let lightTheme = document.getElementById("LightTheme");
@@ -372,6 +373,7 @@ repeatClickTime.oninput = function () {
 const saveSkipLike = new ExecutionDelay(() => {
     Options.skipLike.time = repeatClickTime.value;
     Options.skipLike.is = skipLike.checked;
+    Options.skipLike.isRepeat = checkboxRepeatClick.checked;
 
     writeOptions({ skipLike: Options.skipLike }, false);
 }).start;
@@ -380,6 +382,8 @@ skipLike.onclick = () => {
     disableOptions(repeatClick.parentElement, skipLike.checked);
     saveSkipLike();
 }
+
+checkboxRepeatClick.onclick = saveSkipLike;
 
 const toggleSetCurrentSizeBtn = function () {
     getPopupWindowId().then((windowId) => {
@@ -474,11 +478,15 @@ let setOptions = (options) => {
         updatePopupSize();
     }
     if (options.skipLike !== undefined) {
-        const { is, time } = options.skipLike;
-        skipLike.checked = is ? true : false;
+        const { is, time, isRepeat } = options.skipLike;
+        skipLike.checked = Boolean(is);
         repeatClickTime.value = time ? time : 5; 
+        checkboxRepeatClick.checked = Boolean(isRepeat);
+
         Options.skipLike.is = skipLike.checked;
         Options.skipLike.time = repeatClickTime.value;
+        Options.skipLike.isRepeat = checkboxRepeatClick.checked;
+
         translateRepeatClickTime(repeatClickTime.value);
         disableOptions(repeatClick.parentElement, skipLike.checked);
     } 
