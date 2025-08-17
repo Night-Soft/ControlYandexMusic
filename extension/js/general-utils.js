@@ -439,7 +439,9 @@ const Component = class {
     #regex = /\{\{\s*(\w+(?:\.\w+)*)\s*\}\}/;
     #varList = new Map();
     #innerAttributes = new Map();
+    refs = new Map();
     nodes = [];
+
 
     constructor(template, array, predicate) {
         if (!Array.isArray(template)) return;
@@ -486,14 +488,14 @@ const Component = class {
     #createElements(template, array, predicate) {
         if (Array.isArray(array)) {
             if (typeof predicate === "function") {
-                if (predicate.length === 2) {  // predicate function has 'element' parameter
+                if (predicate.length > 1) {  // predicate function has 'element' parameter
                     this.#getVarsFromTemplate(template);
                     array.forEach((value, index, array) => {
                         template.forEach(template => {
-                            this.nodes.push(this.#createOnlyTag(template));
+                            this.nodes.push(this.#createOnlyTag(template, true));
                             this.#createTag(
                                 this.#innerAttributes.get(this.nodes[index]),
-                                predicate({ value, index, array }, this.nodes[index]),
+                                predicate({ value, index, array }, this.nodes[index], this.refs.get(this.nodes[index])),
                                 this.nodes[index]
                             );
                         });
@@ -522,15 +524,23 @@ const Component = class {
             this.nodes.push(this.#createTag(element));
         });
     }
-
-    #createOnlyTag([tag, attr, tagInside, ...otherTag]) {
+    #lastMain;
+    #createOnlyTag([tag, attr, tagInside, ...otherTag], saveMainRef) {
         let element = document.createElement(tag);
         this.#innerAttributes.set(element, arguments[0]);
+
+        if (saveMainRef) {
+            this.#lastMain = element;
+            this.refs.set(element, {});
+        }
 
         if (Array.isArray(tagInside)) {
             element.appendChild(this.#createOnlyTag(tagInside));
         }
         otherTag.forEach(tags => element.appendChild(this.#createOnlyTag(tags)));
+        
+        if (attr.$ref) this.refs.get(this.#lastMain)[attr.$ref] = element;
+
         return element;
     }
 
@@ -560,7 +570,10 @@ const Component = class {
             }
 
             if (value[0].startsWith("$")) {
-                if (value[0] === "$innerHTML") {
+                if (value[0] === "$innerHTML") { return; }
+                if (value[0] === "$ref") { return; }
+                if (value[0]=== "$attrs") {
+                    this.#setAttributes(Object.entries(value[1]), element, predicate);
                     return;
                 }
             }
@@ -1316,23 +1329,23 @@ let toggleLike = (isLike, toggleInList = true) => {
 }
 
 const toggleListLikes = (item, isLike, isDislike) => {
-    item.classList.remove("list-item-liked", "list-item-not-liked", "list-item-disliked");
-    isLike && item.classList.add("list-item-liked");
+    const likeItem = item.children[1].children[0];
+
+    likeItem.classList.remove("list-item-liked", "list-item-not-liked", "list-item-disliked");
+    isLike && likeItem.classList.add("list-item-liked");
     if (isDislike) {
-        item.classList.add("list-item-disliked");
+        likeItem.classList.add("list-item-disliked");
         item.parentElement.style.filter = "opacity(0.5)";
     } else {
         item.parentElement.style.filter = "";
     }
 }
 
-let toggleDislike = (isDisliked, notifyMe = false, toggleInList = true) => {
+let toggleDislike = (isDisliked, notifyMe = false) => {
     selectedItem.style.filter = isDisliked ? "opacity(0.5)" : "";
     dislike.style.backgroundImage = `url(img/dislike${isDisliked ? "d" : ""}.png)`;
     notifyMe && showNotification(translate(`${isDisliked ? "addedTo" : "removeFrom"}BlackList`));
-    if (toggleInList === false) return;
-    Player.likeItem.classList.remove("list-item-liked", "list-item-not-liked", "list-item-disliked");
-    isDisliked && Player.likeItem.classList.add("list-item-disliked");
+    toggleListLikes(selectedItem, Player.liked, isDisliked);
 }
 
 const createPopup = function () {

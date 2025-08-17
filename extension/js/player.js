@@ -324,7 +324,7 @@ const PlayerInfo = class {
             newLikes.push({ item, liked, disliked });
         });
         newLikes.forEach(({ item, liked, disliked }) => {
-            toggleListLikes(item.children[1], liked, disliked);
+            toggleListLikes(item, liked, disliked);
         });
     }
 }
@@ -380,15 +380,15 @@ let addPlaylistElements = (indexesForCreated, currentTabIndex) => {
 
     let isTimeGreaterThanOneHour = false;
 
-    function predicate({ value: index }, item) {
-        const likeItem = item.childNodes[1].childNodes[0];
-        const itemCover = item.childNodes[0].childNodes[0];
-        const contentItemName = item.childNodes[0].childNodes[1];
+    function predicate({ value: index }, item, refs) {
+        const { likeItem, itemCover, contentItemName } = refs;
         const { index: tabIndex, track } = Player.possibleTracks.list.get(index);
+       
         const coverCick = function () {
             Player.coverItem = this;
             openCover(this, track.cover);
         }
+        
         const onmouseenter = (ev) => {
             ev.stopPropagation();
             ev.stopImmediatePropagation();
@@ -486,14 +486,14 @@ let addPlaylistElements = (indexesForCreated, currentTabIndex) => {
     const template = [
         ["div", "{{itemTrackAttr}}",
             ["div", { class: "item-track-content" },
-                ["img", "{{imgAttr}}"],
-                ["div", { class: "content-item-name" },
+                ["img", { $attrs: "{{imgAttr}}", $ref: "itemCover" }],
+                ["div", { class: "content-item-name", $ref: "contentItemName" },
                     ["div", { class: "item-name-track" }, "{{track.title}}"],
                     ["div", { class: "item-artists", }, "{{artistsTitle}}"],
                 ],
             ],
             ["div", { class: "like-time" },
-                ["div", { class: "{{likeClass}}" }],
+                ["div", { class: "{{likeClass}}", $ref: "likeItem" }],
                 ["span", { class: "track-time" }, "{{duration}}"]
             ]
         ]
