@@ -4,7 +4,7 @@
     "description": "__MSG_appDesc__",
     "short_name": "__MSG_shortName__",
     "default_locale": "en",
-    "version": "4.6.0",
+    "version": "4.6.1",
     "web_accessible_resources": [
         {
             "resources": [
