@@ -55,6 +55,13 @@ let Translate = {
         document.getElementById("InterestVolume").innerText = chrome.i18n.getMessage("interestVolume");
         document.getElementById("WidthPopup").textContent = chrome.i18n.getMessage("width");
         document.getElementById("HeightPopup").textContent = chrome.i18n.getMessage("height");
+        
+        document.querySelector("#labelTrackInfo").textContent = chrome.i18n.getMessage("labelTrackInfo");
+        document.querySelector("#labelTrackArtists").textContent = chrome.i18n.getMessage("labelTrackArtists");
+        document.querySelector("#labelCurrentTime").textContent = chrome.i18n.getMessage("labelCurrentTime");
+        document.querySelector("#labelSaveImg").textContent = chrome.i18n.getMessage("labelSaveImg");
+        document.querySelector("#AdditionalInfo").textContent = chrome.i18n.getMessage("additionalInfo");
+
     }
 }
 

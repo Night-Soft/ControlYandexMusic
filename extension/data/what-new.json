@@ -1,5 +1,9 @@
 {
     "versions": [
+        ["4.7.0", {
+            "messageEn": "• You can now save information about the current track to a file, such as the track title and artist, current playing time, and cover art.",
+            "messageRu": "• Теперь вы можете сохранять информацию о текущем треке в файл, такую ​​как название трека и исполнителя, текущее время воспроизведения и обложку."
+        }],
         ["4.6.0", {
             "messageEn": "• Restored standard behavior when setting a dislike (automatically switch to the next track). <br> • Added a switch to disable the extra press, which removes the like when the corresponding hotkey is pressed again.",
             "messageRu": "• Восстановлено стандартное поведение при установке дизлайка (автоматическое переключение на следующий трек). <br> • Добавлен переключатель для отключения дополнительного нажатия, который убирает лайк при повторном нажатии соответствующей горячей клавиши."

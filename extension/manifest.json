@@ -4,7 +4,7 @@
     "description": "__MSG_appDesc__",
     "short_name": "__MSG_shortName__",
     "default_locale": "en",
-    "version": "4.6.1",
+    "version": "4.7.0",
     "web_accessible_resources": [
         {
             "resources": [
@@ -128,7 +128,9 @@
         "notifications",
         "storage",
         "system.display",
-        "sidePanel"
+        "sidePanel",
+        "downloads",
+        "downloads.ui"
     ],
     "host_permissions": [
         "https://music.yandex.ua/*",

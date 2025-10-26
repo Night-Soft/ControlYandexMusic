@@ -79,10 +79,79 @@
                                 <div class="input-step-content setting-item-hover">
                                     <input class="switcher" type="checkbox" id="checkboxRepeatClick">
                                     <label id="RepeatClick" for="checkboxRepeatClick">RepeatClick</label>
-                                    <input class="input-step" type="number" id="RepeatClickTime" value="7" min="1" max="10" />
+                                    <input class="input-step" type="number" id="RepeatClickTime" value="7" min="1"
+                                        max="10" />
                                 </div>
                             </div>
                         </div>
+                        <div class="setting-item">
+                            <div class="is-saveInfo">
+                                <div class="content-label setting-item-hover">
+                                    <label id="labelTrackInfo" for="checkboxTrackInfo">Save current track info to
+                                        .txt</label>
+                                    <input class="switcher" type="checkbox" id="checkboxTrackInfo">
+                                </div>
+                                <div class="save-info-container">
+                                    <div class="dropdown">
+                                        <button class="save-info-btn">!</button>
+                                        <div id="DropdownInfoContent" class="dropbtn dropdown-content info-content">
+                                            <span id="AdditionalInfo">Info</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="content-setting-item">
+                                <div class="input-step-content setting-item-hover">
+                                    <!-- <input class="switcher" type="checkbox" id="checkboxNameOfFile"> -->
+                                    <div class="content-input-text">
+                                        <input class="input-step input-track-info" type="text" id="inputNameTxt" />
+                                        <span id="labelNameTxt">.txt</span>
+                                    </div>
+                                </div>
+                                <div class="input-step-content setting-item-hover">
+                                    <input class="switcher" type="checkbox" id="checkboxTrackArtists">
+                                    <div class="content-input-text">
+                                        <label id="labelTrackArtists" for="checkboxTrackArtists">Track and
+                                            artists</label>
+                                    </div>
+                                </div>
+                                <div class="input-step-content setting-item-hover">
+                                    <input class="switcher" type="checkbox" id="checkboxCurrentTime">
+                                    <div class="content-input-text">
+                                        <label id="labelCurrentTime" for="checkboxCurrentTime">current time</label>
+                                    </div>
+                                </div>
+                                <div class="content-setting-item">
+                                    <div class="content-label setting-item-hover">
+                                        <label id="labelSaveImg" for="checkboxSaveImg">Save cover as .jpg</label>
+                                        <input class="switcher" type="checkbox" id="checkboxSaveImg">
+                                    </div>
+                                    <div class="content-setting-item">
+                                        <div class="content-label setting-item-hover">
+                                            <div class="content-input-text">
+                                                <input class="input-step input-track-info" type="text"
+                                                    id="inputNameJpg" />
+                                                <span id="labelNameJpg">.jpg</span>
+                                            </div>
+                                        </div>
+                                        <div class="input-step-content setting-item-hover">
+                                            <div class="content-input-text">
+                                                <div class="dropdown">
+                                                    <button id="CoverSizeBtn" class="dropbtn">size:</button>
+                                                    <div id="CoverSizeContent" class="dropdown-content">
+                                                        <span>50x50</span>
+                                                        <span>100x100</span>
+                                                        <span>200x200</span>
+                                                        <span>400x400</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="setting-item">
                             <div class="content-label setting-item-hover">
                                 <label id="PinTab" for="checkboxPinTab">Auto-pin</label>

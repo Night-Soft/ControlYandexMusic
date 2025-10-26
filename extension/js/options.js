@@ -59,6 +59,7 @@ let Options = {
         maxWidth: window.screen.availWidth,
         maxHeight: window.screen.availHeight
     },
+    saveInfo: undefined,
     popupBounds: undefined,
     selectedShortcutKey: undefined,
     isOpenInCurrentTab: undefined
@@ -558,6 +559,20 @@ let setOptions = (options) => {
             spanPopupSize.innerText = translate("defaultPopupSize");
         }
     }
+    if (options.saveInfo != undefined) {
+        Options.saveInfo = options.saveInfo;
+        saveInfo = options.saveInfo;
+        disableOptions(saveInfoContainer, saveInfo.isSave);
+        disableOptions(saveImgContainer, saveInfo.isSaveCover);
+
+        checkboxTrackInfo.checked = saveInfo.isSave;
+        checkboxTrackArtists.checked = saveInfo.isTrackArtist;
+        checkboxCurrentTime.checked = saveInfo.isCurrnetTime;
+        checkboxSaveImg.checked = saveInfo.isSaveCover;
+        coverSizeBtn.innerText = saveInfo.coverSize;
+        inputNameTxt.value = saveInfo.nameTxt;
+        inputNameJpg.value = saveInfo.nameJpg;
+    }
     if (options.popupBounds != undefined) {
         Options.popupBounds = options.popupBounds;
         if (Options.isSaveSizePopup) {
@@ -592,9 +607,125 @@ getOptions((response) => {
     }
 });
 
+const coverSizeBtn = document.querySelector("#CoverSizeBtn");
+
+document.querySelector(".settings").addEventListener("click", (event) => {
+    if (event.target === coverSizeBtn || event.target === infoBtn) return;
+    
+    document.getElementById("CoverSizeContent").classList.toggle("show", false);
+    document.querySelector("#DropdownInfoContent").classList.toggle("show", false);
+});
+
+coverSizeBtn.onclick = () => {
+    document.getElementById("CoverSizeContent").classList.toggle("show");
+}
+
+function onSizeClick() {
+    coverSizeBtn.innerText = this.innerText;
+    saveInfo.coverSize = this.innerText;
+    coverSizeBtn.onclick();
+    delaySaveInfo.start();
+}
+
+document.querySelectorAll(".dropdown-content span").forEach((element) => {
+    element.addEventListener("click", onSizeClick);
+});
+
+//
+let saveInfo = {
+    isSave: false,
+    isTrackArtist: false,
+    isCurrnetTime: false,
+    isSaveCover: false,
+    coverSize: "50x50",
+    nameTxt: "track-info",
+    nameJpg: "cover"
+}
+
+Options.saveInfo = saveInfo;
+
+const delaySaveInfo = new ExecutionDelay(() => {
+    writeOptions({ saveInfo });
+}, { delay: 1000, isThrottle: false });
+
+const labelTrackInfo = document.querySelector("#labelTrackInfo");
+const checkboxTrackInfo = document.querySelector("#checkboxTrackInfo");
+
+const labelTrackArtists = document.querySelector("#labelTrackArtists");
+const checkboxTrackArtists = document.querySelector("#checkboxTrackArtists");
+
+const checkboxCurrentTime = document.querySelector("#checkboxCurrentTime");
+const labelCurrentTime = document.querySelector("#labelCurrentTime");
+
+const version = navigator.userAgentData.brands.filter((value) => {
+    if (value.brand === "Chromium") return false
+})[0]?.version;
+
+if (Number(version) < 105) {
+    checkboxCurrentTime.parentElement.style.display = "none"
+}
+
+const labelSaveImg = document.querySelector("#labelSaveImg");
+const checkboxSaveImg = document.querySelector("#checkboxSaveImg");
+
+const inputNameTxt = document.querySelector("#inputNameTxt");
+const inputNameJpg = document.querySelector("#inputNameJpg");
+
+coverSizeBtn.innerText = saveInfo.coverSize;
+inputNameTxt.value = saveInfo.nameTxt;
+inputNameJpg.value = saveInfo.nameJpg;
+
+const saveInfoContainer = checkboxTrackArtists.parentElement.parentElement;
+const saveImgContainer = inputNameJpg.parentElement.parentElement.parentElement;
+disableOptions(saveInfoContainer, false);
+
+const infoBtn = document.querySelector(".save-info-btn");
+infoBtn.onclick = () => {
+    document.querySelector("#DropdownInfoContent").classList.toggle("show");
+}
+
+checkboxTrackInfo.onclick = function () {
+    disableOptions(saveInfoContainer, this.checked);
+    saveInfo.isSave = this.checked;
+    delaySaveInfo.start();
+}
+checkboxTrackArtists.onclick = function () {
+    saveInfo.isTrackArtist = this.checked;
+    delaySaveInfo.start();
+}
+checkboxCurrentTime.onclick = function () {
+    saveInfo.isCurrnetTime = this.checked;
+    delaySaveInfo.start();
+}
+checkboxSaveImg.onclick = function () {
+    disableOptions(saveImgContainer, this.checked);
+    saveInfo.isSaveCover = this.checked;
+    delaySaveInfo.start();
+}
+
+inputNameTxt.oninput = function () {
+    if (this.value.trim().length === 0) this.value
+    saveInfo.nameTxt = this.value;
+    delaySaveInfo.start();
+}
+inputNameJpg.oninput = function () {
+    if (this.value.trim().length === 0) this.value
+    saveInfo.nameJpg = this.value;
+    delaySaveInfo.start();
+}
+
+inputNameTxt.addEventListener("focusout", function () {
+    if (this.value.trim().length === 0) this.value = "track-info";
+    saveInfo.nameTxt = this.value;
+    delaySaveInfo.execute();
+});
+
+inputNameJpg.addEventListener("focusout", function () {
+    if (this.value.trim().length === 0) this.value = "cover";
+    saveInfo.nameJpg = this.value;
+    delaySaveInfo.execute();
+});
+
 EventEmitter.on("Extension", () => { Extension.onload() });
 EventEmitter.on("Translate", () => { Translate.onload() });
 EventEmitter.emit('Options');
-
-
-

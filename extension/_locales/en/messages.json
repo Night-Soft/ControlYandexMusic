@@ -177,7 +177,7 @@
         "message": "Show more"
     },
     "hide": {
-       "message": "Hide"
+        "message": "Hide"
     },
     "pinTab": {
         "message": "Auto-pin Yandex.Music tab"
@@ -223,5 +223,20 @@
     },
     "repeatClick2Half": {
         "message": "seconds removes the like"
+    },
+    "labelTrackInfo": {
+        "message": "Save current track information to .txt"
+    },
+    "labelTrackArtists": {
+        "message": "track title and artists"
+    },
+    "labelCurrentTime": {
+        "message": "current playback time"
+    },
+    "labelSaveImg": {
+        "message": "Save cover art as .jpg"
+    },
+    "additionalInfo": {
+        "message": "The file name field may contain a path relative to the 'Downloads' directory where the uploaded file is located, possibly including subdirectories. Absolute paths, empty paths, and paths containing backticks (..) will result in an error."
     }
 }

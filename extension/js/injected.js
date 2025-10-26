@@ -78,61 +78,6 @@ let getArtists = (list) => {
     }
 }
 
-let setMediaMetaData = () => {
-    if(!YandexMusicControl.MediaMetadata) setActionHandler();
-
-    const currentTrack = externalAPI.getCurrentTrack();
-    if (!currentTrack) return;
-    let { title, cover, album } = currentTrack;
-
-    if (cover == undefined) {
-        cover = 'img/icon.png'
-    } else {
-        cover = cover.slice(0, -2);
-        cover = 'https://' + cover; // + "400x400"
-    }
-
-    const newMetaData = {
-        title: title,
-        album: album.title,
-        artist: getArtists(externalAPI.getCurrentTrack()),
-        artwork: [30, 50, 80, 100, 200, 300, 400].map(size => {
-            size = size + "x" + size;
-            return { src: cover + size, sizes: size, type: "image/jpg" }
-        })
-    }
-
-    YandexMusicControl.mediaSession.metadata = new YandexMusicControl.MediaMetadata(newMetaData);
-}
-
-let setActionHandler = () => {
-    if ('mediaSession' in navigator && !YandexMusicControl.MediaMetadata) {
-        YandexMusicControl.MediaMetadata = MediaMetadata;
-        YandexMusicControl.mediaSession = navigator.mediaSession;
-
-        MediaMetadata = class { constructor({ }) { } };
-        Object.defineProperty(navigator, 'mediaSession', {
-            value: {
-                setActionHandler() { },
-                setPositionState() { }
-            }
-        });
-        const prevKey = YandexMusicControl.play.bind(YandexMusicControl, 'previous-key');
-        const nextKey = YandexMusicControl.play.bind(YandexMusicControl, 'next-key');
-        YandexMusicControl.mediaSession.setActionHandler('play', togglePauseKey);
-        YandexMusicControl.mediaSession.setActionHandler('pause', togglePauseKey);
-        YandexMusicControl.mediaSession.setActionHandler('previoustrack', prevKey);
-        YandexMusicControl.mediaSession.setActionHandler('nexttrack', nextKey);
-        YandexMusicControl.mediaSession.setActionHandler('seekbackward', function () {
-            externalAPI.setPosition(externalAPI.getProgress().position - 10)
-        });
-        YandexMusicControl.mediaSession.setActionHandler('seekforward', function () {
-            externalAPI.setPosition(externalAPI.getProgress().position + 10)
-        });
-    }
-
-}
-
 function getTracks(changeTrack = false) {
     let trackInfo = {
         tracksList: externalAPI.getTracksList(),
@@ -197,8 +142,6 @@ let toggleLikeKey = () => {
         currentTrack: externalAPI.getCurrentTrack()
     });
 }
-
-
 
 window.addEventListener("message", function (event) {
     if (event.source != window) { return; }
@@ -289,6 +232,18 @@ window.addEventListener("message", function (event) {
     }
 });
 
+const sendCurrentTime = () => {
+    let time = 0;
+    const intervalCallback = () => {
+        let now = Date.now();
+        if (now - time >= 1000) {
+            time = now;
+            sendProgress();
+        }
+    }
+    const timeId = setInterval(intervalCallback, 500);
+};
+
 const getUploadData = (data) => {
     if (typeof data === "string") return getDirectionData(data);
     if (Array.isArray(data)) {
@@ -346,11 +301,6 @@ externalAPI.on(externalAPI.EVENT_STATE, function () {
     };
 
     sendMessage("STATE", { isPlaying, progress });
-    if (isPlaying) {
-        YandexMusicControl.mediaSession.playbackState = "playing";
-    } else {
-        YandexMusicControl.mediaSession.playbackState = "paused";
-    }
 });
 
 externalAPI.on(externalAPI.EVENT_VOLUME, function () {
@@ -383,51 +333,27 @@ let prevPosition = 0,
 externalAPI.on(externalAPI.EVENT_TRACK, function () {
     prevPosition = 0;
     getTracks(true);
-    setMediaMetaData();
 });
 
 const sendProgress = new ExecutionDelay(() => {
     sendMessage("PROGRESS", { progress: externalAPI.getProgress(), });
+    prevPosition = position;
+    prevLoaded = loaded;
 }, { delay: 1000, isThrottle: true, leading: true });
 
 externalAPI.on(externalAPI.EVENT_PROGRESS, function () {
     ; ({ position, loaded } = externalAPI.getProgress())
 
-    if (prevPosition + 1 < position || prevPosition - 1 > position) {
-        sendPositon = true;
-    }
-    prevPosition = position;
-
-    if (loaded > prevLoaded) {
-        sendPositon = false;
-        sendLoaded = true;
-    }
-    prevLoaded = loaded;
-
-    if (sendPositon) {
-        sendProgress.execute();
-        sendPositon = false;
-        return;
-    }
-
-    if (sendLoaded) {
+    if (position - prevPosition >= 1 || loaded - prevLoaded >= 1) {
         sendProgress.start();
-        sendLoaded = false;
     }
-
 });
-
-
-const ready = () => {
-    setActionHandler();
-    getTracks();
-}
 
 // if the "trigger" does not exist, it means that the "New Design" is being used.
 if (externalAPI.trigger) {
     YandexMusicControl.isNewDesign = false;
-    ready();
+    getTracks();
 } else {
     YandexMusicControl.isNewDesign = true;
-    externalAPI.on(externalAPI.EVENT_READY, ready);
+    externalAPI.on(externalAPI.EVENT_READY, getTracks);
 }

@@ -53,9 +53,11 @@ let Options = {
     theme: undefined,
     isDislikeButton: undefined,
     isSaveSizePopup: true,
+    saveInfo: undefined,
     popupBounds: undefined,
     reassign: undefined,
     isOpenInCurrentTab: undefined,
+    lastDownload: undefined,
 }
 
 let PopupWindow = class {
@@ -276,6 +278,123 @@ chrome.commands.onCommand.addListener(function (command) {
     checkCommand(command);
 });
 
+const getCover = (url) => {
+    if (url === undefined) return chrome.runtime.getURL("../img/icon.png");
+    
+    url = "https://" + url
+    url = url.slice(0, -2);
+    url += Options.saveInfo.coverSize;
+
+    return url;
+}
+
+let lastDownload = {
+    txt: {
+        time: null,
+        id: null
+    },
+    jpg: {
+        time: null,
+        id: null
+    }
+};
+
+const downloadTrackInfo = async (url, type) => {
+    try {
+        let filename;
+        switch (type) {
+            case ".jpg":
+                filename = Options.saveInfo.nameJpg + type;
+                const img = (await (await fetch(url)).blob());
+                const imgBase64 = await getImgBase64(img);
+
+                if (imgBase64.includes("image/png")) {
+                    const jpgBlob = await convertPngToJpg(img);
+                    url = await getImgBase64(jpgBlob);
+                } else {
+                    url = imgBase64;
+                }
+                break;
+            case ".txt":
+                filename = Options.saveInfo.nameTxt + type;
+                break;
+            default:
+                throw new Error(`Incorrect file type: ${type}`);
+        }
+
+        const lastD = lastDownload[type.substring(1)];
+        const id = await chrome.downloads.download({
+            url, filename, conflictAction: "overwrite"
+        });
+        if (lastD.id != null) await chrome.downloads.erase({ id: lastD.id });
+        lastD.id = id;
+        lastD.time = Date.now();
+
+    } catch (error) {
+        console.warn(error);
+    }
+}
+
+let isSaveInfoReaded = false;
+let prevCoverUrl = null;
+const checkSaveInfo = async (progress) => {
+    if(Object.keys(currentTrack).length === 0) return;
+    
+    if (isSaveInfoReaded === false) {
+        isSaveInfoReaded = true;
+
+        chrome.downloads.setUiOptions({ enabled: false });
+
+        const result = await getOptions("saveInfo", "lastDownload");
+        const { txt, jpg } = result;
+        if (typeof txt?.id === "number") {
+            const [dItem] = await chrome.downloads.search({ id: txt.id });
+            if (dItem) lastDownload.txt.id = id;
+
+        }
+        if (typeof jpg?.id === "number") {
+            const [dItem] = await chrome.downloads.search({ id: jpg.id });
+            if (dItem) lastDownload.jpg.id = id;
+        }
+    }
+
+    if (Options.saveInfo?.isSave) {
+        let info = [];
+        if (Options.saveInfo.isTrackArtist) {
+            let trackArtist = currentTrack.title + " " + getArtists(currentTrack);
+            info.push(trackArtist);
+        }
+        if (Options.saveInfo.isCurrnetTime && progress) {
+            let position = getDurationAsString(progress.position);
+            let duration = getDurationAsString(progress.duration);
+            info.push(`${position} ${duration}`);
+        }
+
+        if (Options.saveInfo.isSaveCover) {
+            const url = getCover(currentTrack.cover);
+            if (prevCoverUrl != url) {
+                prevCoverUrl = url;
+                downloadTrackInfo(url, ".jpg");
+            }
+        }
+
+        if (info.length > 0) {
+            const url = 'data:attachment/text,' + encodeURI(info.join("\n"));
+            downloadTrackInfo(url, ".txt");
+        }
+    }
+}
+
+chrome.downloads.onErased.addListener((id) => {
+    if (id === lastDownload.txt.id) lastDownload.txt.id = null;
+    if (id === lastDownload.jpg.id) lastDownload.jpg.id = null;
+});
+
+chrome.runtime.onSuspend.addListener(() => {
+    writeOptions({ lastDownload });
+});
+
+let lastSaveProgress = 0;
 let currentTrack = {};
 chrome.runtime.onMessageExternal.addListener(
     function(request) {
@@ -284,6 +403,7 @@ chrome.runtime.onMessageExternal.addListener(
         }
         if (request.event === "currentTrack") {
             currentTrack = request.currentTrack;
+            if (currentTrack?.changeTrack) checkSaveInfo();
         }
         if (request.event === "toggleLike") {
             currentTrack.liked = request.isLiked;
@@ -291,6 +411,13 @@ chrome.runtime.onMessageExternal.addListener(
         if (request.event === "CONTROLS") {
             currentTrack.liked = request.liked;
             currentTrack.disliked = request.disliked;
+        }
+        if (request.event === "PROGRESS") {
+            const now = Date.now();
+            if (now - lastSaveProgress >= 1000) {
+                lastSaveProgress = now;
+                checkSaveInfo(request.progress);
+            }
         }
     });
 
@@ -439,7 +566,29 @@ let getArtists = (list, amount = 3) => {
         return "";
     }
 }
-let roundedImage = async(imageUrl) => {
+
+const getImgBase64 = async (imgBlob) => {
+    return new Promise((resolve,reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => { resolve(reader.result) };
+        reader.onerror = reject;
+        reader.onabort = reject;
+        reader.readAsDataURL(imgBlob);
+    });
+}
+
+const convertPngToJpg = async (imgBlob) => {
+    const size = Number(Options.saveInfo.coverSize.split("x")[0]);
+
+    let canvas = new OffscreenCanvas(size, size);
+    const ctx = canvas.getContext('2d');
+    const img = await createImageBitmap(imgBlob);
+
+    ctx.drawImage(img, 0, 0);
+    return await canvas.convertToBlob({ type: 'image/jpeg', quality: 1 }); 
+}
+
+let roundedImage = async (imageUrl) => {
     let size = 80;
     if (imageUrl == undefined) {
         imageUrl = "../img/icon.png"
@@ -464,6 +613,7 @@ let roundedImage = async(imageUrl) => {
         ctx.quadraticCurveTo(x, y, x + radius, y);
         ctx.closePath();
     }
+    
     canvas.height = size;
     canvas.width = size;
 
@@ -477,24 +627,11 @@ let roundedImage = async(imageUrl) => {
     ctx.clip();
     ctx.drawImage(img, 0, 0, size, size);
     ctx.restore();
-    let blobImg;
-    await canvas.convertToBlob().then((blob) => {
-        blobImg = blob;
-    });
-    return new Promise((resolve, reject) => {
-        let dataUrl;
-        let reader = new FileReader();
-        reader.onloadend = function() {
-            dataUrl = reader.result;
-            resolve({ base64Url: dataUrl, isBase64: true });
-        }
-        if (blobImg) {
-            dataUrl = reader.readAsDataURL(blobImg);
-        } else {
-            dataUrl = "../img/icon.png";
-            resolve({ base64Url: dataUrl, isBase64: false });
-        }
-    })
+    const blobImg = await canvas.convertToBlob().catch(() => null);
+
+    if (blobImg) return { url: await getImgBase64(blobImg), isBase64: true }
+
+    return { url: "../img/icon.png", isBase64: false } 
 }
 
 let showNotification = async(request) => {
@@ -568,8 +705,8 @@ let setNotifications = async(trackTitle, trackArtists, iconTrack) => {
             if (lastUrl != iconTrack) {
                 lastUrl = iconTrack;
                 await roundedImage(iconTrack).then((result) => {
-                    iconTrack = result.base64Url;
-                    lastBase64Url = result.base64Url;
+                    iconTrack = result.url;
+                    lastBase64Url = result.url;
                 });
             } else {
                 if (typeof(lastBase64Url) != "undefined") {
@@ -684,6 +821,44 @@ let writeOptions = (option) => {
             chrome.storage.local.set({ [key]: option[key] });
         }
     });
+}
+
+let splitSeconds = (currentSeconds) => {
+    const timeUnits = [3600, 60, 0]; // hours, minutes, seconds
+    const time = [];
+    timeUnits.forEach((value) => {
+        if (value == 0) {
+            time.push(Math.floor(currentSeconds));
+            return;
+        }
+        if (currentSeconds / value >= 1) {
+            time.push(Math.floor(currentSeconds / value));
+            currentSeconds = currentSeconds - (time[time.length - 1] * value);
+        } else {
+            time.push(0);
+        }
+    });
+
+    return { hours: time[0], minutes: time[1], seconds: time[2] }
+}
+
+/** 
+* @param {...number} time - seconds, minutes, hours.
+* Time units must be number.
+*/
+let twoDigits = function (...args) {
+    const formatedTime = args.map((value, index) => {
+        if (index === 0 && value === 0) return "00";
+        return value < 10 ? "0" + value : value;
+    });
+    if (formatedTime.length == 1) { formatedTime.push("00") }
+    if (formatedTime.length == 0) return "00:00";
+    return formatedTime.reverse().join(":");
+}
+
+let getDurationAsString = (duration = 0) => {
+    const { seconds, minutes, hours } = splitSeconds(duration);
+    return hours > 0 ? twoDigits(seconds, minutes, hours) : twoDigits(seconds, minutes);
 }
 
 const checkNewVersion = async () => {

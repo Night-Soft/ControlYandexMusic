@@ -101,7 +101,7 @@ let writeReassignOptions = () => {
     });
 }
 
-settings.onclick = (event) => {
+settings.addEventListener("click", (event) => {
     const span = document.getElementById("settings");
     if (event.target != settings && event.target !== span) return;
     const listSettingsToggleAnim = new ToggleAnimation(listSettings, {
@@ -188,7 +188,7 @@ settings.onclick = (event) => {
             }
         });
     }
-}
+});
 
 let timeToClose;
 settings.onmouseleave = () => {
