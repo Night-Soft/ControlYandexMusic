@@ -60,7 +60,7 @@ let Translate = {
         document.querySelector("#labelTrackArtists").textContent = chrome.i18n.getMessage("labelTrackArtists");
         document.querySelector("#labelCurrentTime").textContent = chrome.i18n.getMessage("labelCurrentTime");
         document.querySelector("#labelSaveImg").textContent = chrome.i18n.getMessage("labelSaveImg");
-        document.querySelector("#AdditionalInfo").textContent = chrome.i18n.getMessage("additionalInfo");
+        document.querySelector("#AdditionalInfo").textContent = chrome.i18n.getMessage("additionalInfo").replace("(..)", '".."');
 
     }
 }

@@ -633,6 +633,7 @@ document.querySelectorAll(".dropdown-content span").forEach((element) => {
 
 //
 let saveInfo = {
+    isPermission: false,
     isSave: false,
     isTrackArtist: false,
     isCurrnetTime: false,
@@ -678,17 +679,28 @@ inputNameJpg.value = saveInfo.nameJpg;
 const saveInfoContainer = checkboxTrackArtists.parentElement.parentElement;
 const saveImgContainer = inputNameJpg.parentElement.parentElement.parentElement;
 disableOptions(saveInfoContainer, false);
+disableOptions(saveImgContainer, false);
 
 const infoBtn = document.querySelector(".save-info-btn");
 infoBtn.onclick = () => {
     document.querySelector("#DropdownInfoContent").classList.toggle("show");
 }
 
-checkboxTrackInfo.onclick = function () {
+checkboxTrackInfo.onclick = async function () {
+    if (!saveInfo.isPermission) {
+        const isGranted = await chrome.permissions.request({ permissions: ["downloads", "downloads.ui"] });
+        saveInfo.isPermission = isGranted;
+        if (isGranted === false) {
+            this.checked = false;
+            return;
+        }
+    }
+
     disableOptions(saveInfoContainer, this.checked);
     saveInfo.isSave = this.checked;
     delaySaveInfo.start();
 }
+
 checkboxTrackArtists.onclick = function () {
     saveInfo.isTrackArtist = this.checked;
     delaySaveInfo.start();

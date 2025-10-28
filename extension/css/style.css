@@ -645,7 +645,7 @@ span {
 
 .handle-volume {
     height: var(--volume-handle-height);
-    margin-top: calc(-1*((var(--volume-height)) / 2 + (var(--volume-handle-height)) / 2));
+    margin-top: calc(-1*(var(--volume-handle-height)) / 2);
 }
 
 .progress {
@@ -669,7 +669,7 @@ span {
 .progress-handle {
     width: var(--progress-handle-size);
     height: var(--progress-handle-size);
-    margin-top: calc(-1*((var(--progress-handle-size)) / 2 + (var(--progress-height)) / 2));
+    margin-top: calc(-1*(var(--progress-handle-size)) / 2);
 }
 
 .slider-toltip {

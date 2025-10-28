@@ -17,13 +17,7 @@ let YandexMusicControl = {
             if (action.endsWith("key")) {
                 const key = action.match("prev") !== null ? "prev" : "next";
                 promise = externalAPI[key]();
-                promise.then(() => {
-                    sendMessage({
-                        key: true,
-                        dataKey: action,
-                        currentTrack: externalAPI.getCurrentTrack()
-                    });
-                });
+                promise.then(() => onPlayAction(action));
             } else { promise = externalAPI[action](); }
         } else if (isFinite(action)) {
             promise = externalAPI.play(action);
@@ -78,6 +72,52 @@ let getArtists = (list) => {
     }
 }
 
+const overrideActionHandler = () => {
+    if (!'mediaSession' in navigator) return;
+
+    let playAction = null;
+    externalAPI.on(externalAPI.EVENT_TRACK, () => {
+        if (!playAction) return;
+
+        onPlayAction(playAction)
+        playAction = null;
+    });
+
+    const overriddenCallbacks = {
+        play: (e) => {
+            originCallbacks.get("play")(e);
+            onTogglePauseKey();
+        },
+        pause: (e) => {
+            originCallbacks.get("pause")(e);
+            onTogglePauseKey();
+        },
+        previoustrack: (e) => {
+            originCallbacks.get("previoustrack")(e);
+            playAction = "previous-key";
+        },
+        nexttrack: (e) => {
+            originCallbacks.get("nexttrack")(e);
+            playAction = "next-key";
+        }
+    }
+
+    const originCallbacks = new Map();
+    const actions = ["play", "pause", "previoustrack", "nexttrack"];
+
+    const setActionHandler = navigator.mediaSession.setActionHandler;
+
+    navigator.mediaSession.setActionHandler = function (action, callback) {
+        if (!actions.includes(action)) {
+            setActionHandler.call(this, action, callback);
+            return;
+        }
+
+        originCallbacks.set(action, callback);
+        setActionHandler.call(this, action, overriddenCallbacks[action]);
+    }
+}
+
 function getTracks(changeTrack = false) {
     let trackInfo = {
         tracksList: externalAPI.getTracksList(),
@@ -123,8 +163,7 @@ let toggleDislikeKey = () => {
     });
 }
 
-let togglePauseKey = () => {
-    externalAPI.togglePause();
+const onTogglePauseKey = () => {
     sendMessage({
         key: true,
         dataKey: "togglePause-key",
@@ -132,6 +171,20 @@ let togglePauseKey = () => {
     });
     getTracks();
 }
+
+const onPlayAction = (action) => {
+    sendMessage({
+        key: true,
+        dataKey: action,
+        currentTrack: externalAPI.getCurrentTrack()
+    });
+}
+
+let togglePauseKey = () => {
+    externalAPI.togglePause();
+    onTogglePauseKey();
+}
+
 
 let toggleLikeKey = () => {
     externalAPI.toggleLike();
@@ -355,5 +408,6 @@ if (externalAPI.trigger) {
     getTracks();
 } else {
     YandexMusicControl.isNewDesign = true;
+    overrideActionHandler();
     externalAPI.on(externalAPI.EVENT_READY, getTracks);
 }

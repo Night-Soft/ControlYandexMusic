@@ -237,6 +237,6 @@
         "message": "Save cover art as .jpg"
     },
     "additionalInfo": {
-        "message": "The file name field may contain a path relative to the 'Downloads' directory where the uploaded file is located, possibly including subdirectories. Absolute paths, empty paths, and paths containing backticks (..) will result in an error."
+        "message": "The file name field may contain a path relative to the 'Downloads' directory where the uploaded file is located, possibly including subdirectories. Absolute paths, empty paths, and paths containing back-references (..) will cause an error."
     }
 }
