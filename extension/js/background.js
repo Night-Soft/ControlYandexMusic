@@ -28,6 +28,7 @@ let Background = {
         onPortAddListener() {
             this.port.onDisconnect.addListener(() => {
                 this.isConnected = false;
+                writeLastDownload();
             });
         }
     },
@@ -59,6 +60,45 @@ let Options = {
     isOpenInCurrentTab: undefined,
     lastDownload: undefined,
 }
+
+const OptionsEvents = class {
+    events = new Map();
+    constructor(onEventName = "on", emitName = "emit", offName = "off") {
+        this[onEventName] = this.#on;
+        this[emitName] = this.#emit;
+        this[offName] = this.#off;
+    }
+
+    #on = (option, callback, once = false) => {
+        if (!this.events.has(option)) {
+            this.events.set(option, new Map());
+        }
+        this.events.get(option).set(callback, once);
+    }
+
+    #emit = (result) => {
+        if (this.events.size === 0) return;
+        Object.keys(result).forEach(option => {
+            const callbacks = this.events.get(option);
+            const onceCallbacks = [];
+            if (callbacks) {
+                callbacks.forEach((once, callback) => {
+                    if (once === true) onceCallbacks.push(callback);
+                    callback(result[option], callback);
+                });
+                onceCallbacks.forEach(value => callbacks.delete(value));
+                if (callbacks.size === 0) this.events.delete(option);
+            }
+        });
+    }
+
+    #off = (option, callback) => {
+        if (!this.events.has(option) || !this.events.get(option).has(callback)) return;
+        return this.events.get(option).delete(callback);
+    }
+}
+
+const optionsEvents = new OptionsEvents();
 
 let PopupWindow = class {
     constructor () {
@@ -299,6 +339,19 @@ let lastDownload = {
     }
 };
 
+const writeLastDownload = () => {
+    if (
+        Options.saveInfo?.isSave &&
+        (
+            Options.saveInfo.isTrackArtist ||
+            Options.saveInfo.isCurrnetTime ||
+            Options.saveInfo.isSaveCover
+        )
+    ) {
+        writeOptions({ lastDownload });
+    }
+}
+
 const downloadTrackInfo = async (url, type) => {
     try {
         let filename;
@@ -335,67 +388,73 @@ const downloadTrackInfo = async (url, type) => {
     }
 }
 
-let isSaveInfoReaded = false;
 let prevCoverUrl = null;
 const checkSaveInfo = async (progress) => {
-    if(Object.keys(currentTrack).length === 0) return;
-    
-    if (isSaveInfoReaded === false) {
-        isSaveInfoReaded = true;
+    if (Object.keys(currentTrack).length === 0) return;
 
-        chrome.downloads.setUiOptions({ enabled: false });
+    let info = [];
+    if (Options.saveInfo.isTrackArtist) {
+        let trackArtist = currentTrack.title + " " + getArtists(currentTrack);
+        info.push(trackArtist);
+    }
+    if (Options.saveInfo.isCurrnetTime && progress) {
+        let position = getDurationAsString(progress.position);
+        let duration = getDurationAsString(progress.duration);
+        info.push(`${position} ${duration}`);
+    }
 
-        const result = await getOptions("saveInfo", "lastDownload");
-        const { txt, jpg } = result;
-        if (typeof txt?.id === "number") {
-            const [dItem] = await chrome.downloads.search({ id: txt.id });
-            if (dItem) lastDownload.txt.id = id;
-
-        }
-        if (typeof jpg?.id === "number") {
-            const [dItem] = await chrome.downloads.search({ id: jpg.id });
-            if (dItem) lastDownload.jpg.id = id;
+    if (Options.saveInfo.isSaveCover) {
+        const url = getCover(currentTrack.cover);
+        if (prevCoverUrl != url) {
+            prevCoverUrl = url;
+            downloadTrackInfo(url, ".jpg");
         }
     }
 
-    if (Options.saveInfo?.isSave) {
-        let info = [];
-        if (Options.saveInfo.isTrackArtist) {
-            let trackArtist = currentTrack.title + " " + getArtists(currentTrack);
-            info.push(trackArtist);
-        }
-        if (Options.saveInfo.isCurrnetTime && progress) {
-            let position = getDurationAsString(progress.position);
-            let duration = getDurationAsString(progress.duration);
-            info.push(`${position} ${duration}`);
-        }
-
-        if (Options.saveInfo.isSaveCover) {
-            const url = getCover(currentTrack.cover);
-            if (prevCoverUrl != url) {
-                prevCoverUrl = url;
-                downloadTrackInfo(url, ".jpg");
-            }
-        }
-
-        if (info.length > 0) {
-            const url = 'data:attachment/text,' + encodeURI(info.join("\n"));
-            downloadTrackInfo(url, ".txt");
-        }
+    if (info.length > 0) {
+        const url = 'data:attachment/text,' + encodeURI(info.join("\n"));
+        downloadTrackInfo(url, ".txt");
     }
 }
 
-chrome.downloads.onErased.addListener((id) => {
-    if (id === lastDownload.txt.id) lastDownload.txt.id = null;
-    if (id === lastDownload.jpg.id) lastDownload.jpg.id = null;
+optionsEvents.on("saveInfo", (saveInfo, currentFn) => {
+    if (!saveInfo?.isPermission) return;
+
+    chrome.downloads.onErased.addListener((id) => {
+        if (id === lastDownload.txt.id) lastDownload.txt.id = null;
+        if (id === lastDownload.jpg.id) lastDownload.jpg.id = null;
+    });
+
+    chrome.downloads.setUiOptions({ enabled: false });
+
+    optionsEvents.off("saveInfo", currentFn);
 });
 
-chrome.runtime.onSuspend.addListener(() => {
-    writeOptions({ lastDownload });
+let canSaveInfo = false, canSaveCurrentTime = false;
+optionsEvents.on("saveInfo", (saveInfo) => {
+    if (!saveInfo) return;
+    
+    canSaveInfo = saveInfo.isSave;
+    canSaveCurrentTime = saveInfo.isCurrnetTime;
+    if (saveInfo) checkSaveInfo();
 });
 
-let lastSaveProgress = 0;
-let currentTrack = {};
+optionsEvents.on("lastDownload", async (lastDownload) => {
+    if (!lastDownload) return;
+
+    const { txt, jpg } = lastDownload;
+    if (typeof txt?.id === "number") {
+        const [dItem] = await chrome.downloads.search({ id: txt.id });
+        if (dItem) lastDownload.txt = txt;
+
+    }
+    if (typeof jpg?.id === "number") {
+        const [dItem] = await chrome.downloads.search({ id: jpg.id });
+        if (dItem) lastDownload.jpg = jpg;
+    }
+}, true);
+
+let lastSaveProgress = 0, currentTrack = {};
 chrome.runtime.onMessageExternal.addListener(
     function(request) {
         if (request.changeTrack || request.key) {
@@ -403,7 +462,7 @@ chrome.runtime.onMessageExternal.addListener(
         }
         if (request.event === "currentTrack") {
             currentTrack = request.currentTrack;
-            if (currentTrack?.changeTrack) checkSaveInfo();
+            if (canSaveInfo && currentTrack?.changeTrack) checkSaveInfo();
         }
         if (request.event === "toggleLike") {
             currentTrack.liked = request.isLiked;
@@ -412,7 +471,7 @@ chrome.runtime.onMessageExternal.addListener(
             currentTrack.liked = request.liked;
             currentTrack.disliked = request.disliked;
         }
-        if (request.event === "PROGRESS") {
+        if (canSaveInfo && canSaveCurrentTime && request.event === "PROGRESS") {
             const now = Date.now();
             if (now - lastSaveProgress >= 1000) {
                 lastSaveProgress = now;
@@ -464,12 +523,14 @@ chrome.runtime.onMessage.addListener( // content, extension, script
         return true;  
     });
 
-chrome.windows.onRemoved.addListener((ev) => {
-    if (ev == PopupWindow.instance.bounds.id) {
+chrome.windows.onRemoved.addListener((id) => {
+    if (id == PopupWindow.instance.bounds.id) {
         // write popupBounds when popup window removed
         writePopupBounds(Object.assign({}, PopupWindow.instance.bounds), true);
     }
 });
+
+chrome.runtime.onSuspend.addListener(writeLastDownload);
 
 let sendMessage = (event, callback) => {
     chrome.runtime.sendMessage(event, callback);
@@ -821,6 +882,7 @@ let writeOptions = (option) => {
             chrome.storage.local.set({ [key]: option[key] });
         }
     });
+    optionsEvents.emit(option);
 }
 
 let splitSeconds = (currentSeconds) => {
@@ -897,6 +959,7 @@ let getOptions = async (...option) => {
                 sendMessage({ options: Options });
             }
             resolve(result);
+            optionsEvents.emit(result);
         }, (rejected) => {
             reject(rejected);
             console.log("Read settings error.", rejected);
@@ -904,6 +967,8 @@ let getOptions = async (...option) => {
     });
 }
 
+
 let popupWindow = new PopupWindow();
 Background.connection.create();
 checkNewVersion();
+getOptions("saveInfo", "lastDownload");
