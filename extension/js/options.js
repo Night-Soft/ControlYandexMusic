@@ -2,6 +2,7 @@ let checkboxAllNotifications = document.getElementById('checkboxAllNotifications
 let playPauseNotify = document.getElementById('n1');
 let prevNextNotify = document.getElementById('n2');
 let checkBoxDislikeButton = document.getElementById("n5");
+let checkboxShowAlbum = document.getElementById("checkboxShowAlbum");
 let checkboxSavePopupSize = document.getElementById("n6");
 let checkBoxReassign = document.getElementById("n7");
 let pinTab = document.getElementById("checkboxPinTab");
@@ -32,7 +33,6 @@ let otherThemeName = document.getElementById("OtherThemeName");
 let spanPopupSize = document.getElementById("CurrnetPopupSize");
 let setupPopupSize = document.getElementById("SetupPopupSize");
 
-
 let prevThemeSelected;
 
 let Options = {
@@ -62,7 +62,8 @@ let Options = {
     saveInfo: undefined,
     popupBounds: undefined,
     selectedShortcutKey: undefined,
-    isOpenInCurrentTab: undefined
+    isOpenInCurrentTab: undefined,
+    showAlbumCover: undefined,
 };
 
 const ThemesListState = {
@@ -114,6 +115,7 @@ showMore.onclick = async () => {
         Options.theme.color = textColor;
         writeOptions({ theme: Options.theme });
     }
+
     const regex = /rgb\((\d+),\s*(\d+),\s*(\d+)\)/g;
 
     const template = [
@@ -172,6 +174,30 @@ showMore.onclick = async () => {
 
     ThemesListState.isCreated = true;
     ThemesListState.isOpen = true;
+}
+
+EventEmitter.on("onTrack",()=>{
+    // console.log("onTrack");
+    const {average, accent} = Player.track.derivedColors;
+    const gradient = `linear-gradient(${accent}, ${average})`;
+    const textColor = getTextColor(average);
+
+    coverThemeEl.style.background = gradient;
+    coverThemeEl.style.color = textColor === "dark"? "#000" : "#fff";
+
+});
+
+const coverThemeEl = document.querySelector("#CoverTheme");
+
+coverThemeEl.onclick = function () {
+    if (prevThemeSelected) {
+        prevThemeSelected.classList.remove("user-theme-selected");
+    }
+    prevThemeSelected = this;
+    
+    Options.theme = { name: "CoverTheme" }
+
+    writeOptions({ theme: Options.theme });
 }
 
 pinTab.onclick = async () => {
@@ -432,6 +458,10 @@ checkBoxDislikeButton.onclick = function () {
     writeOptions({ isDislikeButton: checkBoxDislikeButton.checked });
 }
 
+checkboxShowAlbum.onclick = function () {
+    writeOptions({ showAlbumCover: checkboxShowAlbum.checked });
+}
+
 checkBoxReassign.onclick = function () {
     const reassign = {
         isReassign: checkBoxReassign.checked,
@@ -589,6 +619,12 @@ let setOptions = (options) => {
         Options.isOpenInCurrentTab = options.isOpenInCurrentTab;
         document.querySelector("#checkboxOpenCurTab").checked = options.isOpenInCurrentTab;
      }
+
+    if (options.showAlbumCover != undefined) {
+        Options.showAlbumCover = options.showAlbumCover;
+        checkboxShowAlbum.checked = options.showAlbumCover;
+        toggleAlbumCover(); 
+    }
 }
 
 getOptions((response) => {

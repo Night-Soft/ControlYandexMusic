@@ -1302,7 +1302,7 @@ const openCoverAnimate = function (element, reverse = false) {
 
     const borderRadiusStart = getComputedStyle(element).borderRadius;
     const borderRadiusEnd = getComputedStyle(modalCover[0]).borderRadius;
-
+    
     keyframe.width = [width + 'px', 100 + '%'];
     keyframe.height = [height + 'px', 100 + '%'];
     keyframe.transform = ['translate(' + left + 'px, ' + top + 'px)', 'translate(0px, 0px)'];
@@ -1321,8 +1321,54 @@ let openCover = (item, url) => {
     });
 }
 
+const toggleCover = (function () {
+    const tempImage = new Image();
+
+    let imageUrl = "", prevImgIndex = -1, imgIndex = -1;
+    tempImage.addEventListener('load', () => {
+        prevCover.style.backgroundImage = cover.style.backgroundImage;
+        cover.style.backgroundImage = `url(${imageUrl})`;
+
+        if (prevImgIndex === -1) {
+            prevImgIndex = imgIndex;
+            return;
+        }
+
+        if (imgIndex >= prevImgIndex) { // prev
+            prevCover.classList.remove("next-color");
+            prevCover.classList.add("prev-color");
+        } else { // next
+            prevCover.classList.remove("prev-color");
+            prevCover.classList.add("next-color");
+        }
+
+        prevImgIndex = imgIndex;
+    });
+
+    tempImage.addEventListener('error', (err) => {
+        console.error('Failed to load the background image', err);
+    });
+
+    return function (url, index) {
+        if (index === -1) {
+            imgIndex = -1;
+            return;
+        }
+
+        const imgSize = Extension.windowName === "extension" ? 200 : 50;
+        const tempUrl = getUrl(url, imgSize);
+
+        if (tempUrl === imageUrl) return;
+
+        imageUrl = tempUrl;
+        imgIndex = index;
+
+        tempImage.src = imageUrl; // trigger tempImage load
+    }
+})();
+
 let toggleLike = (isLike, toggleInList = true) => {
-    like[0].style.backgroundImage = `url(img/${isLike ? "liked" : "not-liked"}.png)`;
+    like[0].children[0].classList[`${isLike ? "add" : "remove"}`]("btn-liked");
     if (toggleInList === false) return;
     Player.likeItem.classList.remove("list-item-liked", "list-item-not-liked", "list-item-disliked");
     isLike && Player.likeItem.classList.add("list-item-liked"); // : list-item-not-liked
@@ -1343,7 +1389,9 @@ const toggleListLikes = (item, isLike, isDislike) => {
 
 let toggleDislike = (isDisliked, notifyMe = false) => {
     selectedItem.style.filter = isDisliked ? "opacity(0.5)" : "";
-    dislike.style.backgroundImage = `url(img/dislike${isDisliked ? "d" : ""}.png)`;
+    isDisliked && dislike.children[0].classList.add("btn-dislike");
+    !isDisliked && dislike.children[0].classList.remove("btn-disliked");
+
     notifyMe && showNotification(translate(`${isDisliked ? "addedTo" : "removeFrom"}BlackList`));
     toggleListLikes(selectedItem, Player.liked, isDisliked);
 }
@@ -1369,10 +1417,10 @@ const getCurrentTab = async () => {
     }
 }
 
-const writeOptions = (options, isSetOptionsNow = true) => {
+const writeOptions = (options, canSetOptionsNow = true) => {
     if (typeof options != "object") { throw new TypeError("The 'options' is not an 'object!'"); }
     sendEventBackground({ writeOptions: true, options });
-    if (isSetOptionsNow) setOptions(options);
+    if (canSetOptionsNow) setOptions(options);
 }
 
 let openNewTab = (btn) => {
@@ -1478,45 +1526,65 @@ let getDurationAsString = (duration = 0) => {
     return hours > 0 ? twoDigits(seconds, minutes, hours) : twoDigits(seconds, minutes);
 }
 
-let setMediaData = (trackTitle, trackArtists, iconTrack) => {
-    artistsName[0].innerText = trackArtists;
-    trackName[0].innerText = trackTitle;
+let setMediaData = (request) => {
+    const { title, cover } = request.currentTrack;
+    const artists = getArtists(request.currentTrack, 5);
+
+    artistsName[0].innerText = artists;
+    trackName[0].innerText = title;
     artistsName[0].style.fontSize = "";
     trackName[0].style.fontSize = "";
+
     if (Extension.windowName == "extension") {
-        urlCover = getUrl(iconTrack, 200);
+        urlCover = getUrl(cover, 200);
         setFontSize();
     } else {
-        urlCover = getUrl(iconTrack, 50);
+        urlCover = getUrl(cover, 50);
     }
-    trackImage[0].style.backgroundImage = "url(" + urlCover + ")";
+
+    toggleCover(cover, request.trackInfo.index);
 }
 
 let setPlaybackStateStyle = (isPlaying) => {
     if (isPlaying == false) {
-        PauseIcon.style.display = "none";
-        PlayIcon.style.display = "block";
         progress.style.transitionDuration = "250ms";
-        if (Options.isReduce) {
-            if (Extension.windowName == "extension") {
-                pause.style.backgroundPosition = "16px center";
-            } else {
-                pause.style.backgroundPosition = "2px center";
-            }
-            return;
-        }
-        if (Extension.windowName == "extension") {
-            pause.style.backgroundPosition = "20px center";
-        } else {
-            pause.style.backgroundPosition = "2px center";
-        }
+        pause.children[0].classList.add("btn-play");
     } else {
-        PauseIcon.style.display = "block";
-        PlayIcon.style.display = "none";
+        pause.children[0].classList.remove("btn-play");
         progress.style.transitionDuration = "";
-        pause.style.backgroundPosition = "";
-        pause.style.backgroundSize = "";
     }
+}
+
+const UpdateBtnControls = function () {
+    const getCurrentControls = () => {
+        const size = Player.info.tracks.length - 1;
+        const btns = { next: false, prev: false };
+
+        if (Player.index === size) btns.next = true;
+        if (Player.index === 0) btns.prev = true;
+
+        return btns;
+    }
+
+    const controlsButtons = { next: next, prev: previous }
+
+    let state = getCurrentControls();
+
+    const updateControls = () => {
+        const btns = getCurrentControls();
+        Object.keys(btns).forEach(key => {
+            if (btns[key] === state[key]) return;
+
+            controlsButtons[key].classList.toggle("btn-control-disabled", btns[key]);
+        });
+
+        const needChange = Object.keys(btns).some(key => btns[key] !== state[key]);
+
+        if(!needChange) return;
+        state = btns;
+    }
+
+    return updateControls;
 }
 
 /**

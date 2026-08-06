@@ -3,10 +3,6 @@
     margin-right: 45px;
 }
 
-.popup-gotab-container {
-    padding-right: 6px;
-}
-
 .title-list {
     padding: 4px;
 }
@@ -17,8 +13,8 @@
 
 .popup-btn {
     cursor: pointer;
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: 24px;
     transition: var(--transitionDuration);
 }
 

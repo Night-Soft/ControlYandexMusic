@@ -216,7 +216,7 @@ let handleVol = document.getElementsByClassName("slider-handle")[0];
 let tooltipVol = document.getElementsByClassName("slider-toltip")[0];
 let sliderVolumeContent = document.getElementsByClassName("slider-content")[0];
 
-let sliderVolume = new Slider(sliderVolumeContent, currentGrooveVol, handleVol, tooltipVol, 100);
+let sliderVolume = new Slider(sliderVolumeElement, currentGrooveVol, handleVol, tooltipVol, 100);
 sliderVolume.wheelStep = Options.volumeStep;
 if (typeof volumeStep != "undefined") {
     volumeStep.value = sliderVolume.wheelStep;

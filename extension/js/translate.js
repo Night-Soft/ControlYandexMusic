@@ -61,6 +61,7 @@ let Translate = {
         document.querySelector("#labelCurrentTime").textContent = chrome.i18n.getMessage("labelCurrentTime");
         document.querySelector("#labelSaveImg").textContent = chrome.i18n.getMessage("labelSaveImg");
         document.querySelector("#AdditionalInfo").textContent = chrome.i18n.getMessage("additionalInfo").replace("(..)", '".."');
+        document.querySelector("#labelShowAlbumInput").textContent = chrome.i18n.getMessage("showAlbumCover");
 
     }
 }

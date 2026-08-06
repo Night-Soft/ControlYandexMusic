@@ -1,9 +1,5 @@
 if (Extension.windowName == "side-panel") {
-    document.getElementsByClassName("popup-btn")[0].onclick = createPopup;
-    document.getElementsByClassName("go-tab")[0].onclick = async () => {
-        const id = await getYandexMusicTab();
-        chrome.tabs.update(id, { active: true });
-    }
+    document.getElementsByClassName("btn-popup")[0].onclick = createPopup;
     sendEventBackground({ sidePanel: true });
 }
 
@@ -30,12 +26,6 @@ if (Extension.windowName == "popup") {
 
     const popupClosed = sendEventBackground.bind(null, { popupClosed: true });
     window.addEventListener("beforeunload", popupClosed);
-    
-    document.getElementsByClassName("go-tab")[0].onclick = async () => {
-        const result = await getYandexMusicTab(null);
-        chrome.windows.update(result.windowId, { focused: true });
-        chrome.tabs.update(result.id, { active: true });
-    }
 }
 
 let PopupWindow = class {
@@ -274,6 +264,11 @@ let setOptions = (options, isWrite) => {
         Options.isOpenInCurrentTab = options.isOpenInCurrentTab;
         document.querySelector("#checkboxOpenCurTab").checked = options.isOpenInCurrentTab;
      }
+
+    if (options.showAlbumCover != undefined) {
+        Options.showAlbumCover = options.showAlbumCover;
+        toggleAlbumCover();
+    }
 
     if (isWrite) return;
 

@@ -225,7 +225,7 @@
         "message": "seconds removes the like"
     },
     "labelTrackInfo": {
-        "message": "Save current track information to .txt"
+        "message": "Save current track information to file"
     },
     "labelTrackArtists": {
         "message": "track title and artists"
@@ -238,5 +238,8 @@
     },
     "additionalInfo": {
         "message": "The file name field may contain a path relative to the 'Downloads' directory where the uploaded file is located, possibly including subdirectories. Absolute paths, empty paths, and paths containing back-references (..) will cause an error."
+    },
+    "showAlbumCover": {
+        "message": "Display album art next to playlist title?"
     }
 }

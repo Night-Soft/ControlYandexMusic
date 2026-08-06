@@ -22,6 +22,7 @@ let contentListMenu = document.getElementsByClassName("content-list-menu")[0];
 let modalListMenu = document.getElementsByClassName("modal-list-menu")[0];
 let PlayIcon = document.getElementsByClassName("svg-play")[0];
 let PauseIcon = document.getElementsByClassName("svg-pause")[0];
+let goTabBtn = document.getElementsByClassName("btn-go-tab")[0];
 
 const rewind = rewindHolding();
 
@@ -130,9 +131,16 @@ chrome.runtime.onMessageExternal.addListener( // injected script
                 if (request.trackInfo.index === -1) return;
 
                 updateTracksList(request.trackInfo);
-                setMediaData(request.currentTrack.title, getArtists(request.currentTrack, 5), request.currentTrack.cover);
+                setMediaData(request);
                 toggleLike(request.currentTrack.liked, false);
                 toggleDislike(request.currentTrack.disliked, false);
+
+                if (Options.theme.name === "CoverTheme") {
+                    setTheme("CoverTheme", Extension.windowName);
+                    toggleBackground(request.trackInfo.index);
+                }
+                
+                EventEmitter.emit("onTrack");
 
                 Player.isPlay = request.isPlaying;
                 Player.volume = request.volume;
@@ -200,6 +208,16 @@ chrome.runtime.onMessageExternal.addListener( // injected script
         }
     });
 
+
+    goTabBtn.onclick = async () => {
+    // const id = await getYandexMusicTab();
+    // chrome.tabs.update(id, { active: true });
+
+    const result = await getYandexMusicTab(null);
+    chrome.windows.update(result.windowId, { focused: true });
+    chrome.tabs.update(result.id, { active: true });
+}
+
 btnYes.onclick = () => openNewTab("btn-yes")
 
 btnNew.onclick = () => openNewTab("btn-new");
@@ -257,7 +275,7 @@ document.querySelector("#checkboxOpenCurTab").onclick = function () {
 const progress = document.querySelector(".progress");
 const progressContent = document.querySelector(".progress-content");
 const content = document.querySelector(".content");
-const controlsContainer = document.querySelector(".controls-container");
+const controlsContainer = document.querySelector(".container-player-bar");
 
 let isProgressShoved = false;
 const showProgressDelay = new ExecutionDelay((event) => {

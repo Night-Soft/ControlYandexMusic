@@ -8,6 +8,7 @@ let contentGrooveVolume = document.getElementsByClassName("content-groove-volume
 let trackPositionTop = document.querySelector(".track-position-top");
 let trackPositionBottom = document.querySelector(".track-position-bottom");
 let tracksListTitle = document.querySelector(".title-list");
+let coverTitle = document.querySelector(".title-cover");
 let selectedItem;
 let likeItem;
 
@@ -670,6 +671,48 @@ let updateTitle = (title) => {
     } else {
         tracksListTitle.innerText = title.type;
     }
+    
+    toggleAlbumCover();
+}
+
+const toggleAlbumCover = function () {
+    if (Player.info.source.type === "radio") {
+        coverTitle.classList.remove("cover-album", "cover-vibe");
+        coverTitle.classList.add("cover-vibe");
+        return;
+    }
+
+    coverTitle.classList.remove("cover-album", "cover-vibe");
+    if (Player.info.source.type === "playlist" && Options.showAlbumCover) {
+        setAlbumCoverUrl();
+        coverTitle.classList.add("cover-album");
+    }
+}
+
+const getPlaylistCoverUrl = () => {
+    const { coverWithoutText, cover } = Player.info.source;
+
+    const imgUrl = coverWithoutText ? coverWithoutText : cover;
+
+    return imgUrl ? imgUrl : null;
+}
+
+const setAlbumCoverUrl = function() { // title
+    if (Player.info.source.type !== "playlist") return;
+
+    const imgUrl = getPlaylistCoverUrl();
+    if (imgUrl === null) return;
+
+    coverTitle.style.setProperty("--urlAlbum", `url(${getUrl(imgUrl)})`);
+}
+
+coverTitle.onclick = function () {
+    if (Player.info.source.type !== "playlist") return;
+    
+    const imgUrl = getPlaylistCoverUrl();
+    if (imgUrl === null) return;
+
+    openCover(this, imgUrl);
 }
 
 let listLikeControl = (likeItem, index) => {
@@ -717,6 +760,8 @@ let getArtists = (list, numberOf = 3) => {
     }
 }
 
+const updateBtnControls = UpdateBtnControls()
+
 let selectItem = (item, index) => {
     if (selectedItem != undefined) {
         selectedItem.classList.remove("selected-item");
@@ -726,6 +771,7 @@ let selectItem = (item, index) => {
 
     selectedItem = item;
     Player.index = index;
+    updateBtnControls?.();
 
     if (!document.hasFocus() && playlist.isInit) {
         scrollToCenter();

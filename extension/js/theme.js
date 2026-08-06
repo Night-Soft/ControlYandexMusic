@@ -3,8 +3,45 @@ let darkContentMenu = document.querySelectorAll(".content-menu")[0];
 let control = document.querySelectorAll(".control");
 let listTrack = document.querySelectorAll(".list-track")[0];
 let listContent = document.getElementById("listTrack");
-let btnPopup = document.getElementsByClassName("popup-btn")[0];
+//let btnPopup = document.getElementsByClassName("popup-btn")[0];
 let rootCss = document.querySelector(':root');
+
+let curColEl = document.querySelector('.color1');
+let animBackEl = document.querySelector('.color2');
+
+let prevCover = document.querySelector('.prev-cover');
+let cover = document.querySelector('.cover');
+
+function setNextColor() {
+    document.body.style.setProperty("--prevGradient", OtherTheme.prevGradient);
+    animBackEl.classList.remove("prev-color");
+    animBackEl.classList.add("next-color");
+}
+
+function setPrevColor() {
+    document.body.style.setProperty("--prevGradient", OtherTheme.prevGradient);
+    animBackEl.classList.remove("next-color");
+    animBackEl.classList.add("prev-color");
+}
+
+animBackEl.addEventListener("animationend", () => {
+    animBackEl.classList.remove("prev-color", "next-color");
+});
+
+prevCover.addEventListener("animationend", () => {
+    prevCover.classList.remove("prev-color", "next-color");
+});
+
+let prevIndex = -1;
+function toggleBackground(index) {
+    if (index === -1) {
+        prevIndex = -1;
+        return;
+    }
+
+    index >= prevIndex ? setPrevColor() : setNextColor();
+    prevIndex = index;
+}
 
 let Themes = {
     default: {
@@ -32,6 +69,7 @@ let Themes = {
 const OtherTheme = {
     index: undefined,
     gradient: undefined,
+    prevGradient: undefined,
     color: undefined,
     name: undefined
 }
@@ -104,13 +142,34 @@ const rgbToHsl = (color) => {
     }
 }
 
-const getTextColor = (colors = []) => {
+const hexToRgb = (hex) => {
+  const cleanHex = hex.replace('#', '');
+  
+  const r = parseInt(cleanHex.substring(0, 2), 16);
+  const g = parseInt(cleanHex.substring(2, 4), 16);
+  const b = parseInt(cleanHex.substring(4, 6), 16);
+  
+  return [ r, g, b ]; 
+};
+
+const getTextColor = (color = []) => {
+    let colors = color;
+    if(typeof colors === "string") {
+        colors = hexToRgb(color);
+    }
+
     const sum = colors.reduce((sum, value) => { return sum += Number(value) }, 0);
     return sum >= 382.5 ? "dark" : "light";
 }
 
 const createSelection = function () {
     if (Extension.windowName === 'extension') {
+        if(Options.theme.name === "CoverTheme") { // coverTheme
+            clearSelection();
+            coverThemeEl.classList.toggle("user-theme-selected", true);
+            return;
+        }
+
         const { color, name, gradient } = Options.theme;
 
         otherTheme.style.display = "flex";
@@ -139,6 +198,26 @@ const clearSelection = function () {
     for (element of prevThemes.children) {
         element.classList.remove("user-theme-selected");
     }
+    if(Options.theme.name !== "CoverTheme") {
+        coverThemeEl.classList.remove("user-theme-selected");
+    }
+}
+
+const getCoverTheme = () => { // todo double set theme
+    if (!Player.track) return { name: "dark" }; // dark theme if colors is empty
+
+    const colors = Player.track.derivedColors;
+    const rgb1 = hexToRgb(colors.average);
+    const rgb2 = hexToRgb(colors.accent);
+    const gradient = `linear-gradient(rgb(${rgb2.join()}), rgb(${rgb1.join()}))`;
+    const color = getTextColor(colors.average);
+
+    return {
+        index: -1,
+        name: "CoverTheme",
+        color,
+        gradient,
+    }
 }
 
 let setTheme = (theme = "default", windowName = "default") => {
@@ -155,35 +234,29 @@ let setTheme = (theme = "default", windowName = "default") => {
         rootCss.style.setProperty('--handleWhite', '#ffffff');
         rootCss.style.setProperty('--backgroundControl', 'rgba(252, 252, 255, 0.17)');
         rootCss.style.setProperty('--toggleHover', '#ffffff');
-        rootCss.style.setProperty('--toggleActive', Themes.light.color);
+        rootCss.style.setProperty("--progress-overlay-color", "rgb(200 200 200 / 45%)");
 
         document.body.style.setProperty("--color", "#000000"); // Themes.light.color
 
-        switch (windowName) {
-            case "default":
-                darkContentMenu.style.background = "";
-                darkContentMenu.style.color = "";
-                rootCss.style.setProperty("--settingItemBackground", "rgba(255 255 255 / 50%)");
-                listTrack.style.background = "rgb(255 255 255 / 70%)";
-                rootCss.style.setProperty("--listTrackBackground", 'rgba(200 200 200 / 35%)');
-                
-                rootCss.style.setProperty('--settingItemHover', 'rgba(0,0,0, 0.2)');
-                btnPopup.style.backgroundImage = "";
-                control.forEach((element) => {
-                    element.style.borderStyle = "unset";
-                    element.style.filter = "";
-                });
-                if (theme !== "light") return; 
-                clearSelection();
-                lightTheme.classList.add("user-theme-selected");
-                break;
-            case "popup":
-                rootCss.style.setProperty("--listTrackBackground", 'rgba(200 200 200 / 35%)');
-                break;
-            case "side-panel":
-                rootCss.style.setProperty("--listTrackBackground", 'rgba(200 200 200 / 35%)');
-                btnPopup.style.backgroundImage = "";
-                break;
+        rootCss.style.setProperty("--listTrackBackground", 
+            theme === "light" ? "rgba(127 127 127 / 35%)" : "rgba(200 200 200 / 35%)"
+        );
+
+        if (windowName === "default") {
+            darkContentMenu.style.background = "";
+            darkContentMenu.style.color = "";
+            rootCss.style.setProperty("--settingItemBackground", "rgba(255 255 255 / 50%)");
+            listTrack.style.background = "rgb(255 255 255 / 70%)";
+
+            rootCss.style.setProperty('--settingItemHover', 'rgba(0,0,0, 0.2)');
+            //  btnPopup.style.backgroundImage = "";
+            control.forEach((element) => {
+                element.style.borderStyle = "unset";
+                element.style.filter = "";
+            });
+            if (theme !== "light") return;
+            clearSelection();
+            lightTheme.classList.add("user-theme-selected");
         }
     }
 
@@ -192,8 +265,8 @@ let setTheme = (theme = "default", windowName = "default") => {
         rootCss.style.setProperty('--handleWhite', '#EEEEEE');
         rootCss.style.setProperty('--backgroundControl', 'rgba(252, 252, 255, 0.1)');
         rootCss.style.setProperty('--toggleHover', 'rgba(32 48 71 / 30%)');
-        rootCss.style.setProperty('--toggleActive', '#ffffff');
         rootCss.style.setProperty('--settingItemHover', 'rgba(255, 255, 255, 0.2)');
+        rootCss.style.setProperty("--progress-overlay-color", "rgb(53 53 53 / 45%)");
 
         document.body.style.setProperty("--color", "#ffffff"); // Themes.dark.colors.white
 
@@ -225,15 +298,28 @@ let setTheme = (theme = "default", windowName = "default") => {
     }
 
     const other = () => {
-        const { color, name, gradient, index } = Options.theme;
+        const themeProp = theme === "CoverTheme" ? getCoverTheme() : Options.theme;
+        if(themeProp.name === "dark" && theme === "CoverTheme") {
+            setTheme("dark", Extension.windowName);
+            return;
+        }
+
+        const { color, name, gradient, index } = themeProp;
 
         OtherTheme.index = index;
         OtherTheme.name = name;
         OtherTheme.color = color;
+
+        if (OtherTheme.prevGradient === undefined) {
+            OtherTheme.prevGradient = gradient;
+        } else {
+            OtherTheme.prevGradient = OtherTheme.gradient;
+        }
+
         OtherTheme.gradient = gradient;
 
         createSelection();
-        
+
         const regex = /rgb\((\d+),\s*(\d+),\s*(\d+)\)/g;
         let [topColor, bottomColor] = [...gradient.matchAll(regex)].filter((value, index, array) => {
             if (index == 0) return true;
@@ -317,8 +403,6 @@ let setTheme = (theme = "default", windowName = "default") => {
                 rootCss.style.setProperty('--handleWhite', '');
                 rootCss.style.setProperty('--backgroundControl', '');
                 rootCss.style.setProperty('--toggleHover', '');
-                rootCss.style.setProperty('--toggleActive', '');
-                rootCss.style.setProperty('--toggleActive', '');
                 rootCss.style.setProperty('--settingsСolor', "");
                 rootCss.style.setProperty('--sideHoverColor', "#ffffff");
                 rootCss.style.setProperty('--settingItemHover', '');
@@ -344,7 +428,7 @@ let setTheme = (theme = "default", windowName = "default") => {
                         darkTitle[0].style.color = "";
                         darkContentMenu.style.background = "";
                         darkContentMenu.style.color = "";
-                        btnPopup.style.backgroundImage = "";
+                       // btnPopup.style.backgroundImage = "";
                         control.forEach((element) => {
                             element.style.borderStyle = "";
                             element.style.filter = "unset";
@@ -359,7 +443,7 @@ let setTheme = (theme = "default", windowName = "default") => {
                         break;
                     case "side-panel":
                         rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 25%)');
-                        btnPopup.style.backgroundImage = "";
+                     //   btnPopup.style.backgroundImage = "";
                         break;
                 }
                 break;
@@ -368,7 +452,7 @@ let setTheme = (theme = "default", windowName = "default") => {
                 break;
         }
         return;
-    } catch (error) {}
+    } catch (error) {console.warn(error)}
 }
 
 let disableOptions = (element, turnOn = false) => {

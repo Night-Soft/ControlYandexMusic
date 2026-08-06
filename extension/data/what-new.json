@@ -1,5 +1,13 @@
 {
     "versions": [
+        ["4.7.4", {
+            "messageEn": "• Added a dynamic color theme that adapts to the cover of the current track. <br> • Added the ability to display album cover next to the playlist name (enabled in settings). <br> • Improved interface.",
+            "messageRu": "• Добавлена динамическая цветовая тема, адаптирующаяся к обложке текущего трека. <br> • Добавлена возможность отображать обложку альбома рядом с названием плейлиста (включается в настройках). <br> • Улучшен интерфейс."
+        }],
+        ["4.7.3", {
+            "messageEn": "• The extension is working again! After the Yandex Music update on July 23, 2026, it has been adapted to API changes.",
+            "messageRu": "• Расширение снова работает! После обновления Яндекс Музыки от 23.07.2026, адаптировано под изменения API."
+        }],
         ["4.7.0", {
             "messageEn": "• You can now save information about the current track to a file, such as the track title and artist, current playing time, and cover art.",
             "messageRu": "• Теперь вы можете сохранять информацию о текущем треке в файл, такую ​​как название трека и исполнителя, текущее время воспроизведения и обложку."
