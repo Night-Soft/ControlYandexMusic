@@ -59,6 +59,7 @@ let Options = {
     reassign: undefined,
     isOpenInCurrentTab: undefined,
     lastDownload: undefined,
+    showAlbumCover: undefined
 }
 
 const OptionsEvents = class {
@@ -361,8 +362,8 @@ const downloadTrackInfo = async (url, type) => {
                 const img = (await (await fetch(url)).blob());
                 const imgBase64 = await getImgBase64(img);
 
-                if (imgBase64.includes("image/png")) {
-                    const jpgBlob = await convertPngToJpg(img);
+                if (imgBase64.includes("image/png") || imgBase64.includes("image/webp")) {
+                    const jpgBlob = await convertToJpg(img);
                     url = await getImgBase64(jpgBlob);
                 } else {
                     url = imgBase64;
@@ -436,7 +437,7 @@ optionsEvents.on("saveInfo", (saveInfo) => {
     
     canSaveInfo = saveInfo.isSave;
     canSaveCurrentTime = saveInfo.isCurrnetTime;
-    if (saveInfo) checkSaveInfo();
+    if (canSaveInfo) checkSaveInfo();
 });
 
 optionsEvents.on("lastDownload", async (lastDownload) => {
@@ -462,7 +463,7 @@ chrome.runtime.onMessageExternal.addListener(
         }
         if (request.event === "currentTrack") {
             currentTrack = request.currentTrack;
-            if (canSaveInfo && currentTrack?.changeTrack) checkSaveInfo();
+            if (canSaveInfo && request?.changeTrack) checkSaveInfo();
         }
         if (request.event === "toggleLike") {
             currentTrack.liked = request.isLiked;
@@ -617,7 +618,7 @@ let getArtists = (list, amount = 3) => {
         artists = artists.slice(0, -2);
         return artists;
     }
-    if (list.artists.length > 0) {
+    if (list.artists?.length > 0) {
         return getArtistsTitle(list.artists);
     } else {
         // get from podcast
@@ -638,7 +639,7 @@ const getImgBase64 = async (imgBlob) => {
     });
 }
 
-const convertPngToJpg = async (imgBlob) => {
+const convertToJpg = async (imgBlob) => {
     const size = Number(Options.saveInfo.coverSize.split("x")[0]);
 
     let canvas = new OffscreenCanvas(size, size);
@@ -730,10 +731,10 @@ let showNotification = async(request) => {
             let liked = chrome.i18n.getMessage("liked");
             let disliked = chrome.i18n.getMessage("disliked");
             if (isLike) {
-                iconTrack = "../img/liked.png";
+                iconTrack = "../img/liked.svg";
                 nameArtists = liked;
             } else {
-                iconTrack = "../img/not-liked.png";
+                iconTrack = "../img/not-liked.svg";
                 nameArtists = disliked;
             }
             setNotifications(nameTrack, nameArtists, iconTrack)
@@ -741,10 +742,10 @@ let showNotification = async(request) => {
 
         case 'toggleDislike-key':
             if (isDislike) { 
-                iconTrack = "../img/disliked.png";
+                iconTrack = "../img/disliked.svg";
                 nameArtists =  chrome.i18n.getMessage("addedToBlackList");
             } else {
-                iconTrack = "../img/dislike.png";
+                iconTrack = "../img/dislike.svg";
                 nameArtists = chrome.i18n.getMessage("removeFromBlackList");
             }
             setNotifications(nameTrack, nameArtists, iconTrack)
