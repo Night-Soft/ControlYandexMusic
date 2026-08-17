@@ -605,26 +605,30 @@ const equalsObj = (a, b) => {
     return true;
 };
 
-let getArtists = (list, amount = 3) => {
-    let getArtistsTitle = (listArtists) => {
-        let artists = "";
-        for (let i = 0; i < amount; i++) {
-            if (listArtists[i] == undefined && i != 0) {
-                artists = artists.slice(0, -2);
-                return artists;
-            }
-            artists += listArtists[i].title + "," + " ";
-        }
-        artists = artists.slice(0, -2);
-        return artists;
+let getArtistsTitle = (listArtists, amount) => {
+    let artists = "";
+    for (let i = 0; i < amount; i++) {
+        if (listArtists[i] == undefined) break;
+        artists += listArtists[i].title + "," + " ";
     }
+
+    return artists.slice(0, -2);
+}
+
+let getArtists = (list, amount = 3) => {
+    if (!list) {
+        console.warn("Artists list is emty!");
+        return "";
+    }
+
     if (list.artists?.length > 0) {
-        return getArtistsTitle(list.artists);
+        return getArtistsTitle(list.artists, amount);
     } else {
         // get from podcast
         if (list.album.hasOwnProperty("title")) {
             return list.album.title;
         }
+
         return "";
     }
 }
@@ -927,7 +931,7 @@ let getDurationAsString = (duration = 0) => {
 const checkNewVersion = async () => {
     const manifestVersion = chrome.runtime.getManifest().version; // this
     if (Options.version === undefined && Background.isAllReaded === false) {
-        await getOptions("version");
+        await getOptions("version", "oldVersionDescription");
     }
     if (manifestVersion != Options.version) {
         const result = await getWhatNew();

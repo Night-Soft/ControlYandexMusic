@@ -244,6 +244,12 @@ const PlayerInfo = class {
         update(tracksList) {
             tracksList.forEach((track, index) => {
                 if (typeof track === "object" && track !== null) {
+                    const prevTrackItem = Player.possibleTracks.list.get(index);
+                    if(prevTrackItem) {
+                        Object.assign(prevTrackItem.track, track);
+                        return;
+                    }
+
                     Player.possibleTracks.list.set(index, { index, track });
                 }
             });
@@ -356,6 +362,9 @@ let updateTracksList = ({ tracksList, sourceInfo, index }) => {
     Player.info.tracks = tracksList;
     Player.info.source = sourceInfo;
     Player.clearPlaylist();
+    
+    coverAnim.setPrevIndex(0);
+    backgroundAnim.setPrevIndex(0);
 
     if (isTrackPosition) {
         trackPositionBottom.style.display = "none";
@@ -736,21 +745,24 @@ let listLikeControl = (likeItem, index) => {
     }
 }
 
-let getArtists = (list, numberOf = 3) => {
-    let getArtistsTitle = (listArtists) => {
-        let artists = "";
-        for (let i = 0; i < numberOf; i++) {
-            if (listArtists[i] == undefined && i != 0) {
-                artists = artists.slice(0, -2);
-                return artists;
-            }
-            artists += listArtists[i].title + "," + " ";
-        }
-        artists = artists.slice(0, -2);
-        return artists;
+let getArtistsTitle = (listArtists, amount) => {
+    let artists = "";
+    for (let i = 0; i < amount; i++) {
+        if (listArtists[i] == undefined) break;
+        artists += listArtists[i].title + "," + " ";
     }
-    if (list.artists.length > 0) {
-        return getArtistsTitle(list.artists);
+
+   return artists.slice(0, -2);
+}
+
+let getArtists = (list, numberOf = 3) => {
+    if(!list) {
+        console.warn("Artists list is emty!");
+        return "";
+    }
+
+    if (list.artists?.length > 0) {
+        return getArtistsTitle(list.artists, numberOf);
     } else {
         // get from posdcast
         if (list.album.hasOwnProperty("title")) {

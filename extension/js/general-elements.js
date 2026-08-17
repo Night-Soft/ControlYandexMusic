@@ -105,11 +105,7 @@ chrome.runtime.onMessage.addListener( // background, content-script
             });
         }
         if (request.options) {
-            if (request.writeOptions) {
-                setOptions(request.options, true);
-            } else {
-                setOptions(request.options);
-            }
+            setOptions(request.options, request.writeOptions);
         }
         if (request.savePopupBounds && Extension.windowName === "extension") {
             setOptions({ popupBounds: request.savePopupBounds });
@@ -137,7 +133,7 @@ chrome.runtime.onMessageExternal.addListener( // injected script
 
                 if (Options.theme.name === "CoverTheme") {
                     setTheme("CoverTheme", Extension.windowName);
-                    toggleBackground(request.trackInfo.index);
+                    backgroundAnim.toggle(request.trackInfo.index);
                 }
                 
                 EventEmitter.emit("onTrack");

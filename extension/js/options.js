@@ -36,7 +36,7 @@ let setupPopupSize = document.getElementById("SetupPopupSize");
 let prevThemeSelected;
 
 let Options = {
-    theme: { name:"default"},
+    theme: { name: "default"},
     skipLike: {},
     pinTab: undefined,
     positionStep: undefined,
@@ -540,31 +540,14 @@ let setOptions = (options) => {
         Options.isPrevNextNotify = options.isPrevNextNotify;
     }
     if (options.theme != undefined) {
-        if (typeof options.theme == "string") { //todo: remove on next update
-            Options.theme.name = options.theme;
-            setTheme(options.theme);
-            
-        } else {
-            Options.theme = options.theme;
-            if(options.theme.name === "default") {
-                writeOptions({ theme: { name: "Old" } });
-                return;
-            }
-            setTheme(options.theme.name);
-        }
-
-    } else if(options.theme === undefined && Options.theme.name === "default") {
-        const name = window.matchMedia('(prefers-color-scheme: dark)').matches ? "dark": "light";
-        setTheme(name);
-        writeOptions({ theme: { name} });
-        Options.theme.name = name;
+        Options.theme = options.theme;
+        setTheme(options.theme.name);
     }
     if (options.isNewFeaturesShown != undefined) {
         Options.isNewFeaturesShown = options.isNewFeaturesShown;
     }
     if (options.version != undefined) {
         Options.version = options.version;
-        rootCss.style.setProperty('--transitionDuration', '0.7s');
     }
     if (options.oldVersionDescription != undefined) {
         Options.oldVersionDescription = options.oldVersionDescription;
@@ -593,7 +576,8 @@ let setOptions = (options) => {
         Options.saveInfo = options.saveInfo;
         saveInfo = options.saveInfo;
         disableOptions(saveInfoContainer, saveInfo.isSave);
-        disableOptions(saveImgContainer, saveInfo.isSaveCover);
+        disableOptions(saveImgContainer, saveInfo.isSave);
+        disableOptions(saveImgContent, saveInfo.isSaveCover);
 
         checkboxTrackInfo.checked = saveInfo.isSave;
         checkboxTrackArtists.checked = saveInfo.isTrackArtist;
@@ -627,20 +611,22 @@ let setOptions = (options) => {
     }
 }
 
+
 getOptions((response) => {
-    if (response.options) {
-        EventEmitter.on("Options", () => {
-            if (typeof Extension == 'object') {
-                setOptions(response.options); // options.js
-                checkNew();
-            } else {
-                EventEmitter.on("Extension", () => {
-                    setOptions(response.options); // options.js
-                    checkNew();
-                });
-            }
-        });
-    }
+    EventEmitter.on("Options", () => {
+        EventEmitter.on("Extension", () => {
+            setOptions(response.options); // options.js
+            checkNew();
+        }, true);
+    }, true);
+
+    if (!response.options?.theme) setTheme();
+
+    enableTransition(rootCss, 0.7);
+
+    coverAnim.onFirstLoad((cover) => {
+        enableTransition(cover, 0.7);
+    });
 });
 
 const coverSizeBtn = document.querySelector("#CoverSizeBtn");
@@ -656,7 +642,7 @@ coverSizeBtn.onclick = () => {
     document.getElementById("CoverSizeContent").classList.toggle("show");
 }
 
-function onSizeClick() {
+function onSizeClick() { 
     coverSizeBtn.innerText = this.innerText;
     saveInfo.coverSize = this.innerText;
     coverSizeBtn.onclick();
@@ -664,6 +650,7 @@ function onSizeClick() {
 }
 
 document.querySelectorAll(".dropdown-content span").forEach((element) => {
+    if(element === document.querySelector("#AdditionalInfo")) return;
     element.addEventListener("click", onSizeClick);
 });
 
@@ -713,9 +700,11 @@ inputNameTxt.value = saveInfo.nameTxt;
 inputNameJpg.value = saveInfo.nameJpg;
 
 const saveInfoContainer = checkboxTrackArtists.parentElement.parentElement;
-const saveImgContainer = inputNameJpg.parentElement.parentElement.parentElement;
+const saveImgContainer = inputNameJpg.parentElement.parentElement.parentElement.parentElement;
+const saveImgContent = inputNameJpg.parentElement.parentElement.parentElement;
 disableOptions(saveInfoContainer, false);
 disableOptions(saveImgContainer, false);
+disableOptions(saveImgContent, false);
 
 const infoBtn = document.querySelector(".save-info-btn");
 infoBtn.onclick = () => {
@@ -733,6 +722,8 @@ checkboxTrackInfo.onclick = async function () {
     }
 
     disableOptions(saveInfoContainer, this.checked);
+    disableOptions(saveImgContainer, this.checked);
+
     saveInfo.isSave = this.checked;
     delaySaveInfo.start();
 }
@@ -746,7 +737,7 @@ checkboxCurrentTime.onclick = function () {
     delaySaveInfo.start();
 }
 checkboxSaveImg.onclick = function () {
-    disableOptions(saveImgContainer, this.checked);
+    disableOptions(saveImgContent, this.checked);
     saveInfo.isSaveCover = this.checked;
     delaySaveInfo.start();
 }

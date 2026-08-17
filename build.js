@@ -45,6 +45,18 @@ const selectVersion = async function (version) {
   }
 }
 
+const readFile = async (path) => {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path, "utf8", (err, data) => {
+      if (err) {
+        console.log("File read failed:", err);
+        reject(err);
+      }
+      resolve(data);
+    });
+  });
+}
+
 const readJson = async (path) => {
   return new Promise((resolve, reject) => {
     fs.readFile(path, "utf8", (err, jsonString) => {
@@ -229,6 +241,16 @@ const createWhatNew = async function (browserName) {
     whatNew.versions[version] = newWhatNew[index];
   });
   return whatNew;
+}
+
+const replaceFromList = async (browserName) => {
+  const listToReplace = await readJson("./build.json");
+  console.log(listToReplace);
+  listToReplace.forEach(file =>{
+    readFile(file).then(data => {
+
+    });
+  });
 }
 
 enter();

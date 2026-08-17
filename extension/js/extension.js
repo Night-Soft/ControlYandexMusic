@@ -283,13 +283,13 @@ let listMenuToggleAnim = new ToggleAnimation(modalListMenu, {
 });
 
 let posTopToggleAnim = new ToggleAnimation(trackPositionTop, {
-    close: "slide-left",
-    open: "slide-left-out",
+    open: "slide-left",
+    close: "slide-left-out-pos-list",
 });
 
 let posBottomToggleAnim = new ToggleAnimation(trackPositionBottom, {
-    close: "slide-left",
-    open: "slide-left-out",
+    open: "slide-left",
+    close: "slide-left-out-pos-list",
 });
 
 let toggleListMenu = (toggle = !listMenuToggleAnim.isOpen) => {

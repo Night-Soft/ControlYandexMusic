@@ -237,18 +237,10 @@ let setOptions = (options, isWrite) => {
             sliderVolume.wheelStep = options.volumeStep;
         }
     }
+
     if (options.theme != undefined) {
         Options.theme = options.theme;
-        if (options.theme.name === "default") {
-            writeOptions({ theme: { name: "Old" } });
-            return;
-        }
-        setTheme(options.theme.name, Extension.windowName);
-    } else if(options.theme === undefined && Options.theme.name === "default") {
-        const name = window.matchMedia('(prefers-color-scheme: dark)').matches ? "dark": "light";
-        setTheme(name, Extension.windowName);
-        writeOptions({ theme: { name} });
-        Options.theme.name = name;
+        setTheme(options.theme.name);
     }
 
     if (options.isDislikeButton != undefined) {
@@ -277,7 +269,6 @@ let setOptions = (options, isWrite) => {
         popupWindow.playlistHeight = window.innerHeight;
         popupWindow.width = window.innerWidth;
         popupWindow.height = window.innerHeight;
-        rootCss.style.setProperty('--transitionDuration', '0.7s');
 
         if (options.popupBounds != undefined) {
             Options.popupBounds = options.popupBounds;
@@ -296,5 +287,15 @@ let setOptions = (options, isWrite) => {
     }
 }
 
-getOptions(setOptions);
+getOptions((response) => {
+    setOptions(response.options);
+    if (!response.options?.theme) setTheme();
+
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            rootCss.style.setProperty("--transition-duration", "0.7s");
+        });
+    });
+});
+
 Extension.onload();

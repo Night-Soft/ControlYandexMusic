@@ -11,13 +11,6 @@
     margin-bottom: 14px;
 }
 
-.popup-btn {
-    cursor: pointer;
-    width: 24px;
-    height: 24px;
-    transition: var(--transitionDuration);
-}
-
 .close-notification {
     position: relative;
     height: 27px;

@@ -3,59 +3,55 @@ let darkContentMenu = document.querySelectorAll(".content-menu")[0];
 let control = document.querySelectorAll(".control");
 let listTrack = document.querySelectorAll(".list-track")[0];
 let listContent = document.getElementById("listTrack");
-//let btnPopup = document.getElementsByClassName("popup-btn")[0];
 let rootCss = document.querySelector(':root');
 
-let curColEl = document.querySelector('.color1');
-let animBackEl = document.querySelector('.color2');
+const backgroundAnim = (function () {
+    let curColEl = document.querySelector('.color1');
+    let animBackEl = document.querySelector('.color2');
+    let prevIndex = -1;
 
-let prevCover = document.querySelector('.prev-cover');
-let cover = document.querySelector('.cover');
+    animBackEl.addEventListener("animationend", () => {
+        animBackEl.classList.remove("prev-color", "next-color");
+    });
 
-function setNextColor() {
-    document.body.style.setProperty("--prevGradient", OtherTheme.prevGradient);
-    animBackEl.classList.remove("prev-color");
-    animBackEl.classList.add("next-color");
-}
-
-function setPrevColor() {
-    document.body.style.setProperty("--prevGradient", OtherTheme.prevGradient);
-    animBackEl.classList.remove("next-color");
-    animBackEl.classList.add("prev-color");
-}
-
-animBackEl.addEventListener("animationend", () => {
-    animBackEl.classList.remove("prev-color", "next-color");
-});
-
-prevCover.addEventListener("animationend", () => {
-    prevCover.classList.remove("prev-color", "next-color");
-});
-
-let prevIndex = -1;
-function toggleBackground(index) {
-    if (index === -1) {
-        prevIndex = -1;
-        return;
+    function toggleColor(isNext) {
+        document.body.style.setProperty("--prevGradient", ColorTheme.prevGradient);
+        animBackEl.classList.remove(!isNext ? "next-color" : "prev-color");
+        animBackEl.classList.add(isNext ? "next-color": "prev-color");
     }
 
-    index >= prevIndex ? setPrevColor() : setNextColor();
-    prevIndex = index;
-}
+    return {
+        setPrevIndex: (index) => { if (prevIndex >= 0) prevIndex = index; },
+        toggle: (index, force = false) => {
+            if (force) {
+                toggleColor(true);
+                return;
+            }
+
+            if (index === -1) {
+                prevIndex = -1;
+                return;
+            }
+
+            toggleColor(index >= prevIndex);
+            prevIndex = index;
+        }
+    }
+})();
 
 let Themes = {
     default: {
-        bodyBackground: "linear-gradient(0deg, #FF5555 0%, #ffdd00 100%)",
+        bodyBackground: "linear-gradient(0deg, rgb(255, 85, 85) 0%, rgb(255, 221, 0) 100%)",
         color: "#ffffff",
     },
     light: {
-        bodyBackground: "linear-gradient(0deg, #F2F3F2 0%, #F9F9F8 100%)",
+        bodyBackground: "linear-gradient(0deg, rgb(242, 243, 242) 0%, rgb(249, 249, 248) 100%)",
         color: "#202c3d",
-        backgroundColor: "#ECECEB", 
+        backgroundColor: "#ECECEB",
         selectedItemColor: "#FFA653"
     },
     dark: {
-        bodyBackground: "linear-gradient(0deg, #121212 0%, #222222 100%)",
+        bodyBackground: "linear-gradient(0deg, rgb(18, 18, 18) 0%, rgb(34, 34, 34) 100%)",
         colors: {
             dark: "#222222",
             white: "#EEEEEE",
@@ -63,10 +59,16 @@ let Themes = {
             red: "#DB0000",
             yellow: "#EDCD00"
         }
+    },
+    Old: {
+        color: "light",
+        name: "Old",
+        gradient: "linear-gradient(0deg, rgb(255, 85, 85) 0%, rgb(255, 221, 0) 100%)",
+        index: 0
     }
 }
 
-const OtherTheme = {
+const ColorTheme = {
     index: undefined,
     gradient: undefined,
     prevGradient: undefined,
@@ -162,6 +164,8 @@ const getTextColor = (color = []) => {
     return sum >= 382.5 ? "dark" : "light";
 }
 
+const OtherTheme = { color: undefined, name: undefined, gradient: undefined, index: undefined }
+
 const createSelection = function () {
     if (Extension.windowName === 'extension') {
         if(Options.theme.name === "CoverTheme") { // coverTheme
@@ -171,6 +175,7 @@ const createSelection = function () {
         }
 
         const { color, name, gradient } = Options.theme;
+        Object.assign(OtherTheme, Options.theme);
 
         otherTheme.style.display = "flex";
         otherTheme.style.background = gradient;
@@ -204,7 +209,7 @@ const clearSelection = function () {
 }
 
 const getCoverTheme = () => { // todo double set theme
-    if (!Player.track) return { name: "dark" }; // dark theme if colors is empty
+    if (!Player.track) return { name: null }; // dark theme if colors is empty
 
     const colors = Player.track.derivedColors;
     const rgb1 = hexToRgb(colors.average);
@@ -220,146 +225,164 @@ const getCoverTheme = () => { // todo double set theme
     }
 }
 
-let setTheme = (theme = "default", windowName = "default") => {
-    if(theme === "Old") {
-        theme = "default";
-        OtherTheme.index = 0;
-        OtherTheme.name = "Old";
-        OtherTheme.color = "light";
-        OtherTheme.gradient = "linear-gradient(0deg, rgb(255, 85, 85) 0%, rgb(255, 221, 0) 100%)";
+const setProgressOverlayColor = () => {
+    const gradient = ColorTheme.gradient;
+    const regex = /rgb\((\d+),\s*(\d+),\s*(\d+)\)/g;
+    let [topColor, bottomColor] = [...gradient.matchAll(regex)].filter((value, index, array) => {
+        if (index == 0) return true;
+        if (index == array.length - 1) return true;
+    }).map(value => value.filter(value => isFinite(value)).map(value => Number(value)));
+        
+    let middleColor = topColor.map((value, index) => (value + bottomColor[index]) / 2);
+    topColor = rgbToHsl(topColor);
+    bottomColor = rgbToHsl(bottomColor);
+    middleColor = rgbToHsl(middleColor);
+
+    const wColor = Extension.windowName === "extension" ? bottomColor : topColor;
+    let lightness = 20.78;
+    if (middleColor.array[2] >= 50) { // light
+        lightness = wColor.array[2] + 35 > 100 ? wColor.array[2] - 35 : wColor.array[2] + 35;
+    } else { // dark
+        lightness = wColor.array[2] - 35 > 0 ? wColor.array[2] - 35 : wColor.array[2] + 35;
     }
-    
-    const light = () => {
-        rootCss.style.setProperty('--slider', '#dcdcdc');
-        rootCss.style.setProperty('--handleWhite', '#ffffff');
-        rootCss.style.setProperty('--backgroundControl', 'rgba(252, 252, 255, 0.17)');
-        rootCss.style.setProperty('--toggleHover', '#ffffff');
-        rootCss.style.setProperty("--progress-overlay-color", "rgb(200 200 200 / 45%)");
+    lightness = parseFloat(lightness.toFixed(2));
+    rootCss.style.setProperty("--progress-overlay-color", `hsl(0deg 0% ${lightness}% / 30%)`); // dark
+    // todo from body
+}
 
-        document.body.style.setProperty("--color", "#000000"); // Themes.light.color
+const getWindowColorScheme = () => {
+    const name = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return name ? "dark" : "light";
+}
 
-        rootCss.style.setProperty("--listTrackBackground", 
-            theme === "light" ? "rgba(127 127 127 / 35%)" : "rgba(200 200 200 / 35%)"
-        );
+const light = (theme, windowName) => {
+    rootCss.style.setProperty('--slider', '#dcdcdc');
+    rootCss.style.setProperty('--handleWhite', '#ffffff');
+    rootCss.style.setProperty('--backgroundControl', 'rgba(252, 252, 255, 0.17)');
+    rootCss.style.setProperty('--toggleHover', '#ffffff');
+    setProgressOverlayColor();
 
-        if (windowName === "default") {
-            darkContentMenu.style.background = "";
-            darkContentMenu.style.color = "";
-            rootCss.style.setProperty("--settingItemBackground", "rgba(255 255 255 / 50%)");
-            listTrack.style.background = "rgb(255 255 255 / 70%)";
+    document.body.style.setProperty("--color", "#000000"); // Themes.light.color
 
-            rootCss.style.setProperty('--settingItemHover', 'rgba(0,0,0, 0.2)');
-            //  btnPopup.style.backgroundImage = "";
-            control.forEach((element) => {
-                element.style.borderStyle = "unset";
-                element.style.filter = "";
-            });
-            if (theme !== "light") return;
-            clearSelection();
-            lightTheme.classList.add("user-theme-selected");
-        }
+    rootCss.style.setProperty("--listTrackBackground",
+        theme === "light" ? "rgba(127 127 127 / 35%)" : "rgba(200 200 200 / 35%)"
+    );
+
+    if (windowName === "extension") {
+        darkContentMenu.style.background = "";
+        darkContentMenu.style.color = "";
+        rootCss.style.setProperty("--settingItemBackground", "rgba(255 255 255 / 50%)");
+        listTrack.style.background = "rgb(255 255 255 / 50%)";
+
+        rootCss.style.setProperty('--settingItemHover', 'rgba(0,0,0, 0.2)');
+        control.forEach((element) => {
+            element.style.borderStyle = "unset";
+            element.style.filter = "";
+        });
+        if (theme !== "light") return;
+        clearSelection();
+        lightTheme.classList.add("user-theme-selected");
+    }
+}
+
+const dark = (theme, windowName) => {
+    rootCss.style.setProperty('--slider', '#929292');
+    rootCss.style.setProperty('--handleWhite', '#EEEEEE');
+    rootCss.style.setProperty('--backgroundControl', 'rgba(252, 252, 255, 0.1)');
+    rootCss.style.setProperty('--toggleHover', 'rgba(32 48 71 / 30%)');
+    rootCss.style.setProperty('--settingItemHover', 'rgba(255, 255, 255, 0.2)');
+    rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 35%)');
+    setProgressOverlayColor();
+
+    document.body.style.setProperty("--color", "#ffffff"); // Themes.dark.colors.white
+
+    if (windowName === "extension") {
+        rootCss.style.setProperty("--settingItemBackground", "rgba(0 0 0 / 50%)");
+        listTrack.style.background = "";
+        darkContentMenu.setStyle({
+            background: Themes.dark.colors.dark,
+            color: "#ffffff"
+        });
+        control.forEach((element) => {
+            element.style.borderStyle = "";
+            element.style.filter = "";
+        });
+        if (theme !== "dark") return;
+        clearSelection();
+        darkTheme.classList.add("user-theme-selected");
+    }
+}
+
+const other = (props) => {
+    const themeProp = props ? props : Options.theme;
+
+    const { color, name, gradient, index } = themeProp;
+
+    ColorTheme.index = index;
+    ColorTheme.name = name;
+    ColorTheme.color = color;
+
+    if (ColorTheme.prevGradient === undefined) {
+        ColorTheme.prevGradient = gradient;
+    } else {
+        ColorTheme.prevGradient = ColorTheme.gradient;
     }
 
-    const dark = () => {
-        rootCss.style.setProperty('--slider', '#929292');
-        rootCss.style.setProperty('--handleWhite', '#EEEEEE');
-        rootCss.style.setProperty('--backgroundControl', 'rgba(252, 252, 255, 0.1)');
-        rootCss.style.setProperty('--toggleHover', 'rgba(32 48 71 / 30%)');
-        rootCss.style.setProperty('--settingItemHover', 'rgba(255, 255, 255, 0.2)');
-        rootCss.style.setProperty("--progress-overlay-color", "rgb(53 53 53 / 45%)");
+    ColorTheme.gradient = gradient;
 
-        document.body.style.setProperty("--color", "#ffffff"); // Themes.dark.colors.white
+    createSelection();
 
-        switch (windowName) {
-            case "default":
-                //rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 40%)');
-                rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 35%)');
-                rootCss.style.setProperty("--settingItemBackground", "rgba(0 0 0 / 50%)");
-                listTrack.style.background = "";
-                darkContentMenu.setStyle({
-                    background: Themes.dark.colors.dark,
-                    color: "#ffffff"
-                });
-                control.forEach((element) => {
-                    element.style.borderStyle = "";
-                    element.style.filter = "";
-                });
-                if (theme !== "dark") return; 
-                clearSelection();
-                darkTheme.classList.add("user-theme-selected");
-                break;
-            case "popup":
-                rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 35%)');
-                break;
-            case "side-panel":
-                rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 35%)');
-                break;
-        }
+    const regex = /rgb\((\d+),\s*(\d+),\s*(\d+)\)/g;
+    let [topColor, bottomColor] = [...gradient.matchAll(regex)].filter((value, index, array) => {
+        if (index == 0) return true;
+        if (index == array.length - 1) return true;
+    }).map(value => value.filter(value => isFinite(value)).map(value => Number(value)));
+
+    let middleColor = topColor.map((value, index) => (value + bottomColor[index]) / 2);
+    topColor = rgbToHsl(topColor);
+    bottomColor = rgbToHsl(bottomColor);
+    middleColor = rgbToHsl(middleColor);
+
+    if (middleColor.array[2] >= 50) { // make the colors darker
+        light(name, Extension.windowName);
+    } else {
+        dark(name, Extension.windowName);
     }
 
-    const other = () => {
-        const themeProp = theme === "CoverTheme" ? getCoverTheme() : Options.theme;
-        if(themeProp.name === "dark" && theme === "CoverTheme") {
-            setTheme("dark", Extension.windowName);
-            return;
-        }
+    const middleLight = middleColor.array[2];
+    const toggleLight = middleLight + 50 > 100 ? middleLight - 50 : middleLight + 50;
+    const sliderShadow = topColor.array[2] > 45 ? "rgb(0 0 0 / 15%)" : "rgb(255 255 255 / 15%)";
+    const selected = getContrastColor(middleColor.array, 10, 20, 20);
+    rootCss.style.setProperty('--toggleColor', `hsl(0deg, 0%, ${parseFloat(toggleLight.toFixed(2))}%)`);
+    rootCss.style.setProperty("--topButtonColor", getContrastColor(topColor.array, 15, 25, 25));
+    rootCss.style.setProperty("--mainRed", getContrastColor(topColor.array, 15, 20, 20));
+    rootCss.style.setProperty("--selectedItemColor", selected);
+    rootCss.style.setProperty("--progress", selected);
+    rootCss.style.setProperty("--trackPosition", getContrastColor(middleColor.array, 15, 30, 30, true));
 
-        const { color, name, gradient, index } = themeProp;
+    rootCss.style.setProperty("--topColor", topColor.str);
+    rootCss.style.setProperty("--middleColor", middleColor.str);
+    rootCss.style.setProperty("--bottomColor", bottomColor.str);
+    rootCss.style.setProperty("--slider-shadow", `drop-shadow(0px 0px 2px ${sliderShadow})`);
+    document.body.style.setProperty("--bodyGradient", gradient);
+}
 
-        OtherTheme.index = index;
-        OtherTheme.name = name;
-        OtherTheme.color = color;
-
-        if (OtherTheme.prevGradient === undefined) {
-            OtherTheme.prevGradient = gradient;
-        } else {
-            OtherTheme.prevGradient = OtherTheme.gradient;
-        }
-
-        OtherTheme.gradient = gradient;
-
-        createSelection();
-
-        const regex = /rgb\((\d+),\s*(\d+),\s*(\d+)\)/g;
-        let [topColor, bottomColor] = [...gradient.matchAll(regex)].filter((value, index, array) => {
-            if (index == 0) return true;
-            if (index == array.length - 1) return true;
-        }).map(value => value.filter(value => isFinite(value)).map(value => Number(value)));
-
-        let middleColor = topColor.map((value, index) => (value + bottomColor[index]) / 2);
-        topColor = rgbToHsl(topColor);
-        bottomColor = rgbToHsl(bottomColor);
-        middleColor = rgbToHsl(middleColor);
-
-        if (middleColor.array[2] >= 50) { // make the colors darker
-            light();
-        } else {
-            dark();
-        }
-
-        const middleLight = middleColor.array[2];
-        const toggleLight = middleLight + 50 > 100 ? middleLight - 50 : middleLight + 50;
-        const sliderShadow = topColor.array[2] > 45 ? "rgb(0 0 0 / 15%)" : "rgb(255 255 255 / 15%)";
-        const selected = getContrastColor(middleColor.array, 10, 20, 20);
-        rootCss.style.setProperty('--toggleColor', `hsl(0deg, 0%, ${parseFloat(toggleLight.toFixed(2))}%)`);
-        rootCss.style.setProperty("--topButtonColor", getContrastColor(topColor.array, 15, 25, 25));
-        rootCss.style.setProperty("--mainRed", getContrastColor(topColor.array, 15, 20, 20));
-        rootCss.style.setProperty("--selectedItemColor", selected);
-        rootCss.style.setProperty("--progress", selected);
-        rootCss.style.setProperty("--trackPosition", getContrastColor(middleColor.array, 15, 30, 30, true));
-
-        rootCss.style.setProperty("--topColor", topColor.str);
-        rootCss.style.setProperty("--middleColor", middleColor.str);
-        rootCss.style.setProperty("--bottomColor", bottomColor.str);
-        rootCss.style.setProperty("--slider-shadow", `drop-shadow(0px 0px 2px ${sliderShadow})`);
-        document.body.style.setProperty("--bodyGradient", gradient);
-        document.body.style.setProperty("--bodyOpacity", 1);
+let setTheme = (theme, windowName) => {
+    if(!theme || theme === "default") theme = getWindowColorScheme();
+    if(!windowName) windowName = Extension.windowName;
+    if (theme === "Old" && Options.theme.index !== 0) {
+        Object.assign(Options.theme, Themes.Old);
+        writeOptions({ theme: Options.theme }, false);
     }
 
     try {
         switch (theme) {
             case "dark":
-                dark();
+                ColorTheme.prevGradient = ColorTheme.gradient;
+                ColorTheme.gradient = Themes.dark.bodyBackground;
+                dark(theme, windowName);
+
+                document.body.style.setProperty("--bodyGradient", ColorTheme.gradient); 
                 rootCss.style.setProperty('--mainRed', '#DB0000');
                 rootCss.style.setProperty('--progress', '#EDCD00');
                 rootCss.style.setProperty('--selectedItemColor', "");
@@ -372,14 +395,16 @@ let setTheme = (theme = "default", windowName = "default") => {
                 rootCss.style.setProperty("--topColor", '');
                 rootCss.style.setProperty("--middleColor", '');
                 rootCss.style.setProperty("--bottomColor", '');
-
-                document.body.style.setProperty("--bodyGradient", Themes.dark.bodyBackground); 
-                document.body.style.setProperty("--bodyOpacity", 1);  
-
+                
+                backgroundAnim.toggle(0, true);
                 break;
 
             case "light":
-                light();
+                ColorTheme.prevGradient = ColorTheme.gradient;
+                ColorTheme.gradient = Themes.light.bodyBackground;
+                light(theme, windowName);
+
+                document.body.style.setProperty("--bodyGradient", ColorTheme.gradient); 
                 rootCss.style.setProperty('--mainRed', '#FF3333');
                 rootCss.style.setProperty('--progress', '#ffdd00');
                 rootCss.style.setProperty('--selectedItemColor', Themes.light.selectedItemColor);
@@ -393,62 +418,23 @@ let setTheme = (theme = "default", windowName = "default") => {
                 rootCss.style.setProperty("--middleColor", '');
                 rootCss.style.setProperty("--bottomColor", '');
 
-                document.body.style.setProperty("--bodyOpacity", 1); 
-                document.body.style.setProperty("--bodyGradient", Themes.light.bodyBackground); 
+                backgroundAnim.toggle(0, true);
                 break;
-            case "default":
-                rootCss.style.setProperty('--mainRed', '');
-                rootCss.style.setProperty('--slider', '');
-                rootCss.style.setProperty('--progress', '');
-                rootCss.style.setProperty('--handleWhite', '');
-                rootCss.style.setProperty('--backgroundControl', '');
-                rootCss.style.setProperty('--toggleHover', '');
-                rootCss.style.setProperty('--settingsСolor', "");
-                rootCss.style.setProperty('--sideHoverColor', "#ffffff");
-                rootCss.style.setProperty('--settingItemHover', '');
-                rootCss.style.setProperty('--toggleColor', '');
-                rootCss.style.setProperty('--selectedItemColor', "");
-                rootCss.style.setProperty("--trackPosition", "");
-                rootCss.style.setProperty("--slider-shadow", "unset");
-                rootCss.style.setProperty("--topButtonColor", "");
 
-                rootCss.style.setProperty("--topColor", '');
-                rootCss.style.setProperty("--middleColor", '');
-                rootCss.style.setProperty("--bottomColor", '');
-        
-                document.body.style.setProperty("--color", '');
-                document.body.style.setProperty("--bodyOpacity", 0);
-                document.body.style.setProperty("--bodyGradient", '');
-                switch (windowName) {
-                    case "default":
-                        listTrack.style.background = "";
-                        rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 25%)'); 
-                        rootCss.style.setProperty("--settingItemBackground", "");
-                        darkTitle[0].style.background = "";
-                        darkTitle[0].style.color = "";
-                        darkContentMenu.style.background = "";
-                        darkContentMenu.style.color = "";
-                       // btnPopup.style.backgroundImage = "";
-                        control.forEach((element) => {
-                            element.style.borderStyle = "";
-                            element.style.filter = "unset";
-
-                        });
-                        clearSelection();
-                        createSelection();
-                        defaultTheme.classList.add("user-theme-selected");
-                        break;
-                    case "popup":
-                        rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 25%)');
-                        break;
-                    case "side-panel":
-                        rootCss.style.setProperty("--listTrackBackground", 'rgba(0 0 0 / 25%)');
-                     //   btnPopup.style.backgroundImage = "";
-                        break;
+            case "CoverTheme":
+                const themeProp = getCoverTheme();
+                if (themeProp.name === null) {
+                    setTheme(getWindowColorScheme(), Extension.windowName);
+                    return;
                 }
+                other(themeProp);
+                backgroundAnim.toggle(0, true);
                 break;
             default:
+               // if(theme === "Old")
+
                 other();
+                backgroundAnim.toggle(0, true);
                 break;
         }
         return;

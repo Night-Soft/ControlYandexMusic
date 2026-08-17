@@ -364,7 +364,10 @@ const BindMap = class {
                     result = target.set(key, value);
                 } else {
                     result = target.set(key, value);
-                    if (methods.has("set")) methods.get("set")(key, value);
+                    if (methods.has("set")) {
+                        const res = methods.get("set"); 
+                        res(key, value);
+                    }
                 }
 
                 return result;
@@ -1224,15 +1227,7 @@ const getDataForPopulate = (unloaded = []) => {
 }
 
 let sendEventBackground = (event, callback) => { // event should be as object.
-    chrome.runtime.sendMessage(event, response => {
-        if (callback) {
-            if (callback.name === "setOptions") {
-                callback(response.options);
-                return;
-            }
-            callback(response);
-        }
-    });
+    chrome.runtime.sendMessage(event, (response) => { callback?.(response); });
 };
 
 const getOptions = function (callback) {
@@ -1284,32 +1279,37 @@ const CoverAnimation = {
     element: undefined
 }
 
-const openCoverAnimate = function (element, reverse = false) {
-    function offset(el) {
-        let rect = el.getBoundingClientRect(),
-            scrollLeft = document.documentElement.scrollLeft,
-            scrollTop = document.documentElement.scrollTop;
-        return { top: rect.top + scrollTop, left: rect.left + scrollLeft }
-    }
+function getImgOffset(el) {
+    let rect = el.getBoundingClientRect(),
+        scrollLeft = document.documentElement.scrollLeft,
+        scrollTop = document.documentElement.scrollTop;
+    return { top: rect.top + scrollTop, left: rect.left + scrollLeft }
+}
 
+const openCoverAnimate = function (element, reverse = false) {
     const { options, keyframe } = CoverAnimation;
     CoverAnimation.element = element;
     let width = element.offsetWidth;
     let height = element.offsetHeight;
-    let elementOffset = offset(element);
+    let elementOffset = getImgOffset(element);
     let left = -(window.innerWidth / 2 - width / 2 - elementOffset.left);
     let top = -(window.innerHeight / 2 - height / 2 - elementOffset.top);
 
     const borderRadiusStart = getComputedStyle(element).borderRadius;
     const borderRadiusEnd = getComputedStyle(modalCover[0]).borderRadius;
-    
+
+    // modal[0].style.display = "flex";
+    // const startScale = width / modalCover[0].offsetWidth;
+
     keyframe.width = [width + 'px', 100 + '%'];
     keyframe.height = [height + 'px', 100 + '%'];
-    keyframe.transform = ['translate(' + left + 'px, ' + top + 'px)', 'translate(0px, 0px)'];
+    keyframe.transform = [
+        `translate(${left}px, ${top}px)`, 
+        'translate(0px, 0px)'
+    ];
     keyframe.borderRadius = [borderRadiusStart, borderRadiusEnd];
 
     options.direction = reverse ? "reverse" : "normal";
-
     modalCover[0].animate(keyframe, options);
 }
 
@@ -1321,27 +1321,34 @@ let openCover = (item, url) => {
     });
 }
 
-const toggleCover = (function () {
+const coverAnim = (function () {
+    const prevCover = document.querySelector('.prev-cover');
+    const cover = document.querySelector('.cover');
     const tempImage = new Image();
 
+    function toggleColor(isNext) {
+        prevCover.classList.remove(!isNext ? "next-color" : "prev-color");
+        prevCover.classList.add(isNext ? "next-color" : "prev-color");
+    }
+
     let imageUrl = "", prevImgIndex = -1, imgIndex = -1;
+    let isFirstLoad = true;
+    let firstLaodCallback;
     tempImage.addEventListener('load', () => {
         prevCover.style.backgroundImage = cover.style.backgroundImage;
         cover.style.backgroundImage = `url(${imageUrl})`;
+        
+        if (isFirstLoad) {
+            isFirstLoad = false;
+            firstLaodCallback?.(cover);
+        }
 
         if (prevImgIndex === -1) {
             prevImgIndex = imgIndex;
             return;
         }
 
-        if (imgIndex >= prevImgIndex) { // prev
-            prevCover.classList.remove("next-color");
-            prevCover.classList.add("prev-color");
-        } else { // next
-            prevCover.classList.remove("prev-color");
-            prevCover.classList.add("next-color");
-        }
-
+        toggleColor(imgIndex >= prevImgIndex);
         prevImgIndex = imgIndex;
     });
 
@@ -1349,23 +1356,41 @@ const toggleCover = (function () {
         console.error('Failed to load the background image', err);
     });
 
-    return function (url, index) {
-        if (index === -1) {
-            imgIndex = -1;
-            return;
-        }
+    prevCover.addEventListener("animationend", () => {
+        prevCover.classList.remove("prev-color", "next-color");
+    });
 
-        const imgSize = Extension.windowName === "extension" ? 200 : 50;
-        const tempUrl = getUrl(url, imgSize);
+    return {
+        setPrevIndex: (index) => {
+            if (prevImgIndex >= 0) prevImgIndex = index;
+        },
+        toggle: (url, index) => {
+            if (index === -1) {
+                imgIndex = -1;
+                return;
+            }
 
-        if (tempUrl === imageUrl) return;
+            const imgSize = Extension.windowName === "extension" ? 200 : 50;
+            const tempUrl = getUrl(url, imgSize);
 
-        imageUrl = tempUrl;
-        imgIndex = index;
+            if (tempUrl === imageUrl) return;
 
-        tempImage.src = imageUrl; // trigger tempImage load
+            imageUrl = tempUrl;
+            imgIndex = index;
+
+            tempImage.src = imageUrl; // trigger tempImage load
+        },
+        onFirstLoad: (callback) => { firstLaodCallback = callback; },
     }
 })();
+
+const enableTransition = (element, timeSec) => {
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            element.style.setProperty("--transition-duration", `${timeSec}s`);
+        });
+    });
+}
 
 let toggleLike = (isLike, toggleInList = true) => {
     like[0].children[0].classList[`${isLike ? "add" : "remove"}`]("btn-liked");
@@ -1542,7 +1567,7 @@ let setMediaData = (request) => {
         urlCover = getUrl(cover, 50);
     }
 
-    toggleCover(cover, request.trackInfo.index);
+    coverAnim.toggle(cover, request.trackInfo.index);
 }
 
 let setPlaybackStateStyle = (isPlaying) => {

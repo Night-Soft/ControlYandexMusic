@@ -240,6 +240,6 @@
         "message": "The file name field may contain a path relative to the 'Downloads' directory where the uploaded file is located, possibly including subdirectories. Absolute paths, empty paths, and paths containing back-references (..) will cause an error."
     },
     "showAlbumCover": {
-        "message": "Display album art next to playlist title?"
+        "message": "Display album cover next to playlist title"
     }
 }
