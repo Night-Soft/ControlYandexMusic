@@ -342,7 +342,7 @@ const Playlist = class {
                     this.forEach(index => {
                         if (
                             !playlist.elements.has(index) &&
-                            Player.possibleTracks.list.has(index)
+                            Player.possibleTracks.has(index)
                         ) indexesForCreated.push(index);
                     });
 
@@ -384,7 +384,7 @@ const BindMap = class {
                     if (methods.has("clear")) methods.get("clear")(target);
                 }
 
-                return target.clear();
+                return result;
             }
         }
         const del = (target) => {

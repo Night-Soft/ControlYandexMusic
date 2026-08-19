@@ -27,7 +27,7 @@ const PlayerInfo = class {
 
         Object.defineProperties(this, {
             track: {
-                get() { return this.possibleTracks.list.get(this.index)?.track; }
+                get() { return this.possibleTracks.get(this.index)?.track; }
             },
             liked: {
                 get() { return this.track.liked },
@@ -195,7 +195,8 @@ const PlayerInfo = class {
             }
         });
 
-        this.possibleTracks.list = new BindMap(new Map(), this.possibleTracks, {
+        const possibleTracks = new Map();
+        this.possibleTracks = new BindMap(possibleTracks, possibleTracks, {
             set(key) { // key === index
                 if (Number.isFinite(this.maxIndex) === false) {
                     this.maxIndex = key;
@@ -223,52 +224,64 @@ const PlayerInfo = class {
                 this.minIndex = undefined;
             }
         }, false);
+
+        Object.defineProperties(this.possibleTracks, {
+
+            maxIndex: { value: undefined, writable: true },
+            minIndex: { value: undefined, writable: true },
+
+            isFullList: {
+                get() {
+                    const { unloaded } = getUnrealizedIndexes();
+                    return unloaded.length === 0;
+                }
+            },
+
+            updateMinMaxIndex: {
+                value(index) {
+                    if (index > this.maxIndex) this.maxIndex = index;
+                    if (index < this.minIndex) this.minIndex = index;
+                }
+            },
+            update: {
+                value(tracksList) {
+                    tracksList.forEach((track, index) => {
+                        if (typeof track === "object" && track !== null) {
+                            const prevTrackItem = Player.possibleTracks.get(index);
+                            if (prevTrackItem) {
+                                Object.assign(prevTrackItem.track, track);
+                                return;
+                            }
+
+                            Player.possibleTracks.set(index, { index, track });
+                        }
+                    });
+                }
+            },
+            getConsistent: {
+                value(fromIndex = this.minIndex, toIndex = this.maxIndex) {
+                    const minIndex = this.minIndex;
+                    const maxIndex = this.maxIndex;
+
+                    if (toIndex > maxIndex) toIndex = maxIndex;
+                    if (fromIndex < minIndex) fromIndex = minIndex;
+
+                    const { unloaded } = getUnrealizedIndexes(fromIndex, toIndex);
+
+                    return {
+                        is: unloaded.length === 0,
+                        unloaded
+                    }
+                }
+
+            }
+        });
     }
     info = {
         source: {},
         tracks: []
     }
-    possibleTracks = {
-        maxIndex: undefined,
-        minIndex: undefined,
-
-        get isFullList() { 
-            const { unloaded } = getUnrealizedIndexes();
-            return unloaded.length === 0;
-        },
-
-        updateMinMaxIndex(index) {
-            if (index > this.maxIndex) this.maxIndex = index;
-            if (index < this.minIndex) this.minIndex = index;
-        },
-        update(tracksList) {
-            tracksList.forEach((track, index) => {
-                if (typeof track === "object" && track !== null) {
-                    const prevTrackItem = Player.possibleTracks.list.get(index);
-                    if(prevTrackItem) {
-                        Object.assign(prevTrackItem.track, track);
-                        return;
-                    }
-
-                    Player.possibleTracks.list.set(index, { index, track });
-                }
-            });
-        },
-        getConsistent(fromIndex = this.minIndex, toIndex = this.maxIndex) {
-            const minIndex = this.minIndex;
-            const maxIndex = this.maxIndex;
-
-            if (toIndex > maxIndex) toIndex = maxIndex;
-            if (fromIndex < minIndex) fromIndex = minIndex;
-
-            const { unloaded } = getUnrealizedIndexes(fromIndex, toIndex);
-
-            return {
-                is: unloaded.length === 0,
-                unloaded
-            }
-        },
-    }
+    possibleTracks;
     playlist = new Playlist();
     index;
     coverItem;
@@ -314,7 +327,7 @@ const PlayerInfo = class {
         if (position >= 0) { this.position = position; }
     }
     clearPlaylist() {
-        this.possibleTracks.list.clear();
+        this.possibleTracks.clear();
         this.playlist.clear();
         this.index = -1;
     }
@@ -337,6 +350,7 @@ const PlayerInfo = class {
 }
 
 const Player = new PlayerInfo();
+
 const playlist = Player.playlist;
 
 let updateTracksList = ({ tracksList, sourceInfo, index }) => {
@@ -392,7 +406,7 @@ let addPlaylistElements = (indexesForCreated, currentTabIndex) => {
 
     function predicate({ value: index }, item, refs) {
         const { likeItem, itemCover, contentItemName } = refs;
-        const { index: tabIndex, track } = Player.possibleTracks.list.get(index);
+        const { index: tabIndex, track } = Player.possibleTracks.get(index);
        
         const coverCick = function () {
             Player.coverItem = this;
@@ -511,7 +525,7 @@ let addPlaylistElements = (indexesForCreated, currentTabIndex) => {
 
     const item = new Component(template, indexesForCreated, predicate).nodes;
     indexesForCreated.forEach((indexVal, index) => {
-        const indexInList = Player.possibleTracks.list.get(indexVal).index;
+        const indexInList = Player.possibleTracks.get(indexVal).index;
         const referenceElement = playlist.getReferenceElement(indexVal);
 
         listTracks.insertBefore(item[index], referenceElement);
@@ -558,7 +572,7 @@ const compareSource = (sourceInfo, newTracksList) => {
 
 const getIndexesForCreated = (fromIdx, quantity = 10, insertDirection = "center") => {
     const { maxIndex, minIndex } = Player.possibleTracks;
-    const size = Player.possibleTracks.list.size;
+    const size = Player.possibleTracks.size;
     quantity = Math.min(quantity, size);
 
     let startIndex, endIndex;
@@ -605,7 +619,7 @@ const getUnrealizedIndexes = (fromIdx = 0, toIdx = Player.info.tracks.length - 1
     const notCreated = [], unloaded = [];
     for (let i = fromIdx; i <= toIdx; i++) {
         if (playlist.elements.has(i)) continue;
-        if (Player.possibleTracks.list.has(i)) {
+        if (Player.possibleTracks.has(i)) {
             notCreated.push(i);
             continue;
         }
@@ -671,16 +685,11 @@ const addElementsIfNeeded = (index) => {
     if (fromLoadIndex === Infinity) return;
 
     playlist.waitingElements.include(unloaded);
-    populate(fromLoadIndex, Player.waitingElements.size + viewSize);
+    populate(fromLoadIndex, playlist.waitingElements.size + viewSize);
 }
 
 let updateTitle = (title) => {
-    if (title.title != undefined) {
-        tracksListTitle.innerText = title.title;
-    } else {
-        tracksListTitle.innerText = title.type;
-    }
-    
+    tracksListTitle.innerText = title[title.title ? "title" : "type"];
     toggleAlbumCover();
 }
 
