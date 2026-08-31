@@ -329,6 +329,16 @@ const getCover = (url) => {
     return url;
 }
 
+const toggleDownloadUi = (() => {
+    isEnabled = true;
+    return async (enabled) => {
+        if (enabled === isEnabled) return enabled;
+        await chrome.downloads.setUiOptions({ enabled });
+        isEnabled = enabled;
+        return enabled;
+    }
+})();
+
 let lastDownload = {
     txt: {
         time: null,
@@ -383,17 +393,17 @@ const downloadTrackInfo = async (url, type) => {
         if (lastD.id != null) await chrome.downloads.erase({ id: lastD.id });
         lastD.id = id;
         lastD.time = Date.now();
-
+        return lastD;
     } catch (error) {
         console.warn(error);
     }
 }
 
-let prevCoverUrl = null;
+let prevCoverUrl = null, enableDownloadUiId;
 const checkSaveInfo = async (progress) => {
     if (Object.keys(currentTrack).length === 0) return;
 
-    let info = [];
+    const info = [];
     if (Options.saveInfo.isTrackArtist) {
         let trackArtist = currentTrack.title + " " + getArtists(currentTrack);
         info.push(trackArtist);
@@ -408,14 +418,22 @@ const checkSaveInfo = async (progress) => {
         const url = getCover(currentTrack.cover);
         if (prevCoverUrl != url) {
             prevCoverUrl = url;
-            downloadTrackInfo(url, ".jpg");
+            await toggleDownloadUi(false);
+            await downloadTrackInfo(url, ".jpg");
         }
     }
 
     if (info.length > 0) {
         const url = 'data:attachment/text,' + encodeURI(info.join("\n"));
-        downloadTrackInfo(url, ".txt");
+        await toggleDownloadUi(false);
+        await downloadTrackInfo(url, ".txt");
     }
+
+    clearTimeout(enableDownloadUiId);
+    enableDownloadUiId = setTimeout(() => {
+        toggleDownloadUi(true);
+    }, 1500);
+
 }
 
 optionsEvents.on("saveInfo", (saveInfo, currentFn) => {
@@ -425,8 +443,6 @@ optionsEvents.on("saveInfo", (saveInfo, currentFn) => {
         if (id === lastDownload.txt.id) lastDownload.txt.id = null;
         if (id === lastDownload.jpg.id) lastDownload.jpg.id = null;
     });
-
-    chrome.downloads.setUiOptions({ enabled: false });
 
     optionsEvents.off("saveInfo", currentFn);
 });
@@ -482,7 +498,7 @@ chrome.runtime.onMessageExternal.addListener(
     });
 
 chrome.runtime.onMessage.addListener( // content, extension, script
-    function(request, sender, sendResponse) {
+    function (request, sender, sendResponse) {
         if (request.backgroundMessage == "background") {
             setNotifications(request.name, request.artists, request.imageUrl);
         }
@@ -521,7 +537,7 @@ chrome.runtime.onMessage.addListener( // content, extension, script
                 sendResponse(result);
             });
         }
-        return true;  
+        return true;
     });
 
 chrome.windows.onRemoved.addListener((id) => {
