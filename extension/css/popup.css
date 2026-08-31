@@ -152,11 +152,6 @@ body {
     height: auto;
 }
 
-.content {
-    padding-top: unset;
-    margin: 10px 0px;
-}
-
 .content-track {
     justify-content: left;
     flex-direction: row;

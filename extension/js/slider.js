@@ -229,7 +229,7 @@ const sendVolumeDelay = new ExecutionDelay(() => {
     isThrottle: true
 });
 
-sliderVolume.onmousemovedown = sendVolumeDelay.start.bind(sendVolumeDelay);
+sliderVolume.onmousemovedown = sendVolumeDelay.start;
 
 sliderVolume.onmousedown = (event) => {
     sliderVolume.setTooltipPosition(event);

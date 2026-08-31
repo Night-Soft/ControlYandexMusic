@@ -208,8 +208,8 @@ const clearSelection = function () {
     }
 }
 
-const getCoverTheme = () => { // todo double set theme
-    if (!Player.track) return { name: null }; // dark theme if colors is empty
+const getCoverTheme = () => { 
+    if (!Player.track) return { name: null };
 
     const colors = Player.track.derivedColors;
     const rgb1 = hexToRgb(colors.average);
@@ -242,12 +242,11 @@ const setProgressOverlayColor = () => {
     let lightness = 20.78;
     if (middleColor.array[2] >= 50) { // light
         lightness = wColor.array[2] + 35 > 100 ? wColor.array[2] - 35 : wColor.array[2] + 35;
-    } else { // dark
+    } else {
         lightness = wColor.array[2] - 35 > 0 ? wColor.array[2] - 35 : wColor.array[2] + 35;
     }
     lightness = parseFloat(lightness.toFixed(2));
     rootCss.style.setProperty("--progress-overlay-color", `hsl(0deg 0% ${lightness}% / 30%)`); // dark
-    // todo from body
 }
 
 const getWindowColorScheme = () => {

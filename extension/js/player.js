@@ -1008,8 +1008,6 @@ const isScrollPinnedTo = (direction) => {
 const checkForNewElement = new ExecutionDelay(() => {
     if (Player.possibleTracks.isFullList && playlist.isFullList) return;
 
-    // todo pinned scrolll
-
     let indexes;
 
     if (isScrollNotPossible("up")) {
@@ -1081,10 +1079,14 @@ let setVolume = (volume) => {
 
 let updateRepeat = (repeat, isUpdate = false) => {
     if (repeat === null) {
-        toggleRepeat.style.display = "none";
+        toggleRepeat.parentElement.style.display = "none";
         return;
     }
-    if (toggleRepeat.style.display == "none") { toggleRepeat.style.display = ""; }
+
+    if (toggleRepeat.parentElement.style.display == "none") {
+        toggleRepeat.parentElement.style.display = "";
+    }
+
     if (repeat === true) {
         if (isUpdate) showNotification(chrome.i18n.getMessage("playListRepeatOn"), 5000);
         if (toggleRepeat.classList.contains('toggle-active') == false) {
@@ -1112,10 +1114,14 @@ let updateRepeat = (repeat, isUpdate = false) => {
 
 let updateShuffle = (shuffle, isUpdate = false) => {
     if (shuffle === null) {
-        toggleShuffle.style.display = "none";
+        toggleShuffle.parentElement.style.display = "none";
         return;
     }
-    if (toggleShuffle.style.display == "none") { toggleShuffle.style.display = ""; }
+
+    if (toggleShuffle.parentElement.style.display == "none") {
+        toggleShuffle.parentElement.style.display = "";
+    }
+
     if (shuffle === true) {
         if (isUpdate) showNotification(chrome.i18n.getMessage("randomOrder"), 6000);
         if (toggleShuffle.classList.contains('toggle-active') == false) {
